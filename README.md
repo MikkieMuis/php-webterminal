@@ -118,6 +118,19 @@ define('FS_VERSION', '4');  // increment this whenever fs_data.php changes
 
 ---
 
+## Known incompatibilities
+
+### Vimium / Surfingkeys and other keyboard extensions
+
+Browser extensions that intercept keyboard input — such as [Vimium](https://github.com/philc/vimium) and [Surfingkeys](https://github.com/brookhong/Surfingkeys) — will capture keystrokes before they reach the terminal, breaking typing completely.
+
+If the terminal is not responding to keyboard input, disable these extensions for the page or add the site to their exclusion list:
+
+- **Vimium** — open Vimium options → *Excluded URLs and keys* → add the site URL
+- **Surfingkeys** — press `Alt+s` on the page to toggle it off, or add an exclusion in settings
+
+---
+
 ## License
 
 MIT — do whatever you want with it.
