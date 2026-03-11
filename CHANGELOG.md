@@ -2,6 +2,18 @@
 
 All notable changes to php-webterminal will be documented here.
 
+## [1.2.0] - 2026-03-11
+
+### Security
+- Removed all real server data exposure: `shell_exec('uname -r/m')`, `disk_free_space()`, `disk_total_space()`, `sys_getloadavg()`, and `/etc/os-release` reads replaced with constants in `config.php`
+- Added `postMessage` origin validation — cross-origin messages are now rejected
+- Capped `php://input` at 4 KB; `cmd` field at 1024 chars, `user` at 64 chars, per-entry command log at 1024 chars
+- Session cookie hardened: `Secure`, `HttpOnly`, `SameSite=Strict`
+
+### Changed
+- All fake system info (kernel, OS, disk, load) is now fully configurable via `config.php`
+- `config.example.php` updated with all new constants
+
 ## [1.1.0] - 2026-03-11
 
 ### Added
@@ -27,7 +39,7 @@ All notable changes to php-webterminal will be documented here.
 
 ### Added
 - Initial release
-- Boot sequence with real kernel, CPU and disk info from server
+- Boot sequence with configurable kernel, CPU and disk info (via `config.php`)
 - Login prompt with password validation
 - Session-based fake filesystem (~165 entries)
 - `FS_VERSION` system — bumping forces all sessions to reload filesystem

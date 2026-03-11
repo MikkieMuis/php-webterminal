@@ -4,7 +4,7 @@
 ![PHP](https://img.shields.io/badge/PHP-7.4%2B-blue.svg)
 ![No dependencies](https://img.shields.io/badge/dependencies-none-brightgreen.svg)
 
-A fake interactive Linux terminal built in PHP and vanilla JavaScript. Drop it into any website and give visitors a realistic shell experience — complete with a fake filesystem, real system stats, animated commands, and a few surprises.
+A fake interactive Linux terminal built in PHP and vanilla JavaScript. Drop it into any website and give visitors a realistic shell experience — complete with a fake filesystem, configurable system info, animated commands, and a few surprises.
 
 **Live demo:** [www.clsoftware.nl](https://www.clsoftware.nl)
 
@@ -12,7 +12,7 @@ A fake interactive Linux terminal built in PHP and vanilla JavaScript. Drop it i
 
 ## Features
 
-- Realistic boot sequence with real kernel version, CPU and disk info pulled from the server
+- Realistic boot sequence with configurable kernel version, CPU and disk info (never exposes real server data)
 - Login prompt — password must be longer than 8 characters
 - Session-based fake filesystem — `cd`, `mkdir`, `touch`, `rm` persist across commands
 - Arrow key command history
@@ -24,7 +24,7 @@ A fake interactive Linux terminal built in PHP and vanilla JavaScript. Drop it i
 | Category | Commands |
 |---|---|
 | Navigation | `ls`, `cd`, `pwd` |
-| Files | `cat`, `touch`, `mkdir`, `rm`, `cp`, `mv`, `grep` |
+| Files | `cat`, `touch`, `mkdir`, `rm` |
 | System | `uname`, `uptime`, `hostname`, `date`, `df`, `free`, `ps`, `top`, `id`, `env`, `which` |
 | Network | `ping`, `ifconfig`, `ip`, `wget`, `curl` |
 | Shell | `echo`, `history`, `alias`, `clear`, `exit`, `logout`, `help`, `man` |
@@ -54,11 +54,7 @@ git clone https://github.com/MikkieMuis/php-webterminal.git
 cp config.example.php config.php
 ```
 
-3. Open `config.php` and set your hostname:
-
-```php
-define('CONF_HOSTNAME', 'myserver');
-```
+3. Edit `config.php` — every option is documented inline with comments.
 
 4. Visit `index.php` in your browser. Done.
 
@@ -82,7 +78,7 @@ document.addEventListener('keydown', function(e) {
   frame.contentWindow.postMessage({
     type: 'keydown', key: e.key,
     ctrlKey: e.ctrlKey, altKey: e.altKey, metaKey: e.metaKey
-  }, '*');
+  }, window.location.origin);  // same-origin only
 });
 </script>
 ```
@@ -111,10 +107,21 @@ define('FS_VERSION', '4');  // increment this whenever fs_data.php changes
 
 ## Configuration reference
 
-| Constant | Default | Description |
-|---|---|---|
-| `CONF_HOSTNAME` | `your-hostname-here` | Hostname shown in prompt and title bar |
-| `CONF_DEFAULT_USER` | *(empty)* | If set, skips the username prompt and uses this value |
+All constants live in `config.php`. Every option has an inline comment explaining it.
+
+| Constant | Description |
+|---|---|
+| `CONF_HOSTNAME` | Hostname shown in the shell prompt and title bar |
+| `CONF_DEFAULT_USER` | If set, skips the username prompt and uses this value |
+| `CONF_KERNEL` | Kernel version string shown by `uname -a`, `top`, boot sequence |
+| `CONF_ARCH` | CPU architecture shown by `uname -a` |
+| `CONF_OS` | OS name shown by `uname -a` and boot sequence |
+| `CONF_DISK_TOTAL` | Fake total disk size in bytes, shown by `df` |
+| `CONF_DISK_USED` | Fake used disk space in bytes, shown by `df` |
+| `CONF_DISK_FREE` | Fake free disk space in bytes, shown by `df` |
+| `CONF_LOAD_1` | Fake 1-minute load average, shown by `uptime` and `top` |
+| `CONF_LOAD_5` | Fake 5-minute load average, shown by `uptime` and `top` |
+| `CONF_LOAD_15` | Fake 15-minute load average, shown by `uptime` and `top` |
 
 ---
 
