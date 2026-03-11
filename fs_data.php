@@ -76,7 +76,7 @@ function fs_get_data() {
 
     '/etc/hostname'     => ['type'=>'file','content'=>$H],
     '/etc/os-release'   => ['type'=>'file','content'=>
-        @file_get_contents('/etc/os-release') ?: "NAME=\"AlmaLinux\"\nVERSION=\"9.7\"\nPRETTY_NAME=\"AlmaLinux 9.7\""],
+        "NAME=\"AlmaLinux\"\nVERSION=\"9.7 (Seafoam Ocelot)\"\nID=almalinux\nID_LIKE=\"rhel fedora\"\nVERSION_ID=\"9.7\"\nPLATFORM_ID=\"platform:el9\"\nPRETTY_NAME=\"AlmaLinux 9.7 (Seafoam Ocelot)\"\nANSI_COLOR=\"0;34\"\nLOGO=\"fedora-logo-icon\"\nCPE_NAME=\"cpe:/o:almalinux:almalinux:9::baseos\"\nHOME_URL=\"https://almalinux.org/\"\nBUG_REPORT_URL=\"https://bugs.almalinux.org/\""],
     '/etc/passwd'       => ['type'=>'file','content'=>
 "root:x:0:0:root:/root:/bin/bash\ndaemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin\nbin:x:2:2:bin:/bin:/usr/sbin/nologin\nsys:x:3:3:sys:/dev:/usr/sbin/nologin\nsync:x:4:65534:sync:/bin:/bin/sync\nwww-data:x:33:33:www-data:/var/www:/usr/sbin/nologin\nmysql:x:102:105:MySQL Server,,,:/var/lib/mysql:/bin/false\ndeploy:x:1001:1001:Deploy User:/home/deploy:/bin/bash\nnobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin"],
     '/etc/shadow'       => ['type'=>'file','content'=>

@@ -6,19 +6,22 @@
 
 require_once __DIR__ . '/config.php';
 
+session_set_cookie_params([
+    'lifetime' => 0,
+    'path'     => '/',
+    'secure'   => true,
+    'httponly' => true,
+    'samesite' => 'Strict',
+]);
 session_start();
 
 header('Content-Type: application/json');
 header('X-Content-Type-Options: nosniff');
 
-// ── real system info ───────────────────────────────────────
-define('SYS_KERNEL', trim(shell_exec('uname -r') ?: '5.14.0-1-default'));
-define('SYS_ARCH',   trim(shell_exec('uname -m') ?: 'x86_64'));
-
-$_os_raw = @file_get_contents('/etc/os-release') ?: '';
-preg_match('/^PRETTY_NAME="?([^"\n]+)"?/m', $_os_raw, $_os_m);
-define('SYS_OS', isset($_os_m[1]) ? $_os_m[1] : 'Linux');
-unset($_os_raw, $_os_m);
+// ── system info (from config — never use shell_exec/os-release) ───────────
+define('SYS_KERNEL', CONF_KERNEL);
+define('SYS_ARCH',   CONF_ARCH);
+define('SYS_OS',     CONF_OS);
 
 // ── sysinfo endpoint (GET ?sysinfo) ───────────────────────
 if (isset($_GET['sysinfo'])) {
@@ -106,14 +109,15 @@ function ls_dir($path, $long) {
 }
 
 // ── read input ─────────────────────────────────────────────
-$body = json_decode(file_get_contents('php://input'), true);
-$raw  = isset($body['cmd'])  ? trim($body['cmd'])  : '';
-$user = isset($body['user']) ? trim($body['user']) : 'user';
+$raw_body = file_get_contents('php://input', false, null, 0, 4096);  // cap at 4 KB
+$body = json_decode($raw_body, true);
+$raw  = isset($body['cmd'])  ? substr(trim($body['cmd']),  0, 1024) : '';
+$user = isset($body['user']) ? substr(trim($body['user']), 0, 64)   : 'user';
 
 if ($raw === '') out('');
 
-// log command
-$_SESSION['cmdlog'][] = $raw;
+// log command (cap entry length and total entries)
+$_SESSION['cmdlog'][] = substr($raw, 0, 1024);
 if (count($_SESSION['cmdlog']) > 100) {
     $_SESSION['cmdlog'] = array_slice($_SESSION['cmdlog'], -100);
 }
@@ -152,9 +156,9 @@ switch ($cmd) {
         $days   = floor($secs / 86400);
         $hours  = floor(($secs % 86400) / 3600);
         $mins   = floor(($secs % 3600)  / 60);
-        $load   = number_format(sys_getloadavg()[0], 2) . ', '
-                . number_format(sys_getloadavg()[1], 2) . ', '
-                . number_format(sys_getloadavg()[2], 2);
+        $load   = number_format(CONF_LOAD_1,  2) . ', '
+                . number_format(CONF_LOAD_5,  2) . ', '
+                . number_format(CONF_LOAD_15, 2);
         out(sprintf(' %s up %d days, %d:%02d,  1 user,  load average: %s',
             date('H:i:s'), $days, $hours, $mins, $load));
 
@@ -314,10 +318,10 @@ switch ($cmd) {
 
     // ── df ──
     case 'df':
-        // sda1 — real data from server
-        $free  = @disk_free_space('/')  ?: 408893440000;
-        $total = @disk_total_space('/') ?: 532070400000;
-        $used  = $total - $free;
+        // use config constants — never call disk_free_space() / disk_total_space()
+        $free  = CONF_DISK_FREE;
+        $total = CONF_DISK_TOTAL;
+        $used  = CONF_DISK_USED;
         $pct   = round(($used/$total)*100);
 
         if (strpos($args, '-h') !== false) {
@@ -547,7 +551,7 @@ switch ($cmd) {
 
     // ── top ──
     case 'top':
-        $load = sys_getloadavg();
+        $load = [CONF_LOAD_1, CONF_LOAD_5, CONF_LOAD_15];
         $upSecs = time() - $_SESSION['boot'];
         $upH = floor($upSecs/3600); $upM = floor(($upSecs%3600)/60);
         $procs = [

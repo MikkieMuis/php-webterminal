@@ -213,6 +213,8 @@ document.addEventListener('keydown', function(e) {
 
 // postMessage from parent iframe wrapper — only fires when iframe does NOT have focus
 window.addEventListener('message', function(e) {
+  // reject messages from any origin other than our own page
+  if (e.origin !== window.location.origin) return;
   if (e.data && e.data.type === 'keydown') {
     // if this document has focus, the native keydown above already handled it
     if (document.hasFocus()) return;
