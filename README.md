@@ -1,5 +1,9 @@
 # php-webterminal
 
+![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
+![PHP](https://img.shields.io/badge/PHP-7.4%2B-blue.svg)
+![No dependencies](https://img.shields.io/badge/dependencies-none-brightgreen.svg)
+
 A fake interactive Linux terminal built in PHP and vanilla JavaScript. Drop it into any website and give visitors a realistic shell experience — complete with a fake filesystem, real system stats, animated commands, and a few surprises.
 
 **Live demo:** [www.clsoftware.nl](https://www.clsoftware.nl)
