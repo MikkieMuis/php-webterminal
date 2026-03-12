@@ -8,19 +8,28 @@ switch ($cmd) {
 
     // ── ls ──
     case 'ls':
-        $long   = (strpos($args, '-l') !== false);
-        $all    = (strpos($args, '-a') !== false);
+        // parse flags — collect all chars from flag args (e.g. -ltr → l,t,r)
+        $flags = '';
         $target = $_SESSION['cwd'];
         foreach ($argv as $a) {
-            if ($a[0] !== '-') { $target = res_path($a); break; }
+            if ($a[0] === '-') { $flags .= ltrim($a, '-'); }
+            else { $target = res_path($a); }
         }
+        $long    = (strpos($flags, 'l') !== false);
+        $all     = (strpos($flags, 'a') !== false);
+        $sortTime = (strpos($flags, 't') !== false);
+        $sortSize = (strpos($flags, 'S') !== false);
+        $reverse  = (strpos($flags, 'r') !== false);
+
         $target = res_path($target);
         if (!isset($_SESSION['fs'][$target])) {
             err('ls: cannot access \'' . $target . '\': No such file or directory');
         }
         if ($_SESSION['fs'][$target]['type'] === 'file') {
-            out($long ? sprintf('-rw-r--r--  1 root root %6d  Mar  9 08:11  %s',
-                strlen($_SESSION['fs'][$target]['content']), basename($target)) : basename($target));
+            $node = $_SESSION['fs'][$target];
+            $sz   = isset($node['content']) ? strlen($node['content']) : 0;
+            $mt   = isset($node['mtime']) ? date('M d H:i', $node['mtime']) : 'Mar  9 08:11';
+            out($long ? sprintf('-rw-r--r--  1 root root %6d  %s  %s', $sz, $mt, basename($target)) : basename($target));
         }
         $fs      = $_SESSION['fs'];
         $prefix  = rtrim($target, '/');
@@ -33,13 +42,41 @@ switch ($cmd) {
             if (!$all && $name[0] === '.') continue;
             $perm  = $node['type'] === 'dir' ? 'drwxr-xr-x' : '-rw-r--r--';
             $size  = isset($node['content']) ? strlen($node['content']) : 4096;
-            $mtime = isset($node['mtime']) ? date('M d H:i', $node['mtime']) : 'Mar  9 08:11';
-            $entries[] = ['name'=>$name,'perm'=>$perm,'size'=>$size,'mtime'=>$mtime,'type'=>$node['type']];
+            $mtime_raw = isset($node['mtime']) ? $node['mtime'] : 1741507200;
+            $mtime = date('M d H:i', $mtime_raw);
+            $entries[] = ['name'=>$name,'perm'=>$perm,'size'=>$size,'mtime'=>$mtime,'mtime_raw'=>$mtime_raw,'type'=>$node['type']];
         }
         if (empty($entries)) { out(''); }
-        usort($entries, function($a,$b){ return strcmp($a['name'],$b['name']); });
+
+        // sort
+        if ($sortTime) {
+            usort($entries, function($a,$b){ return $b['mtime_raw'] - $a['mtime_raw']; }); // newest first
+        } elseif ($sortSize) {
+            usort($entries, function($a,$b){ return $b['size'] - $a['size']; });            // largest first
+        } else {
+            usort($entries, function($a,$b){ return strcmp($a['name'],$b['name']); });      // alpha
+        }
+        if ($reverse) { $entries = array_reverse($entries); }
+
         if (!$long) {
-            out(implode('  ', array_map(function($e){ return $e['name']; }, $entries)));
+            $names    = array_map(function($e){ return $e['name']; }, $entries);
+            $maxLen   = max(array_map('strlen', $names) ?: [0]);
+            $colWidth = $maxLen + 2;
+            $termW    = isset($cols) ? $cols : 80;
+            $numCols  = max(1, (int)floor($termW / $colWidth));
+            $rows     = (int)ceil(count($names) / $numCols);
+            $lines    = [];
+            for ($r = 0; $r < $rows; $r++) {
+                $parts = [];
+                for ($c = 0; $c < $numCols; $c++) {
+                    $idx = $c * $rows + $r;
+                    if ($idx >= count($names)) break;
+                    $isLast = ($c === $numCols - 1) || (($idx + $rows) >= count($names));
+                    $parts[] = $isLast ? $names[$idx] : str_pad($names[$idx], $colWidth);
+                }
+                $lines[] = implode('', $parts);
+            }
+            out(implode("\n", $lines));
         }
         $lines = ['total ' . (count($entries) * 8)];
         foreach ($entries as $e) {

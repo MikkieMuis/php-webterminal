@@ -88,6 +88,51 @@ html, body {
   background:#39ff14;
   animation:blink 1s infinite;
 }
+
+/* ── nano overlay ────────────────────────────────────────── */
+#nano-overlay {
+  position:absolute; top:0; left:0; width:100%; height:100%;
+  background:#0a0a0a; color:#39ff14;
+  font-family:'Courier New',Courier,monospace; font-size:13px;
+  display:flex; flex-direction:column;
+  z-index:100; overflow:hidden;
+}
+#nano-titlebar {
+  background:#39ff14; color:#0a0a0a;
+  padding:2px 4px; text-align:center;
+  font-weight:bold; flex-shrink:0;
+  white-space:nowrap; overflow:hidden;
+}
+#nano-content {
+  flex:1; overflow:hidden; position:relative;
+  padding:2px 4px;
+  white-space:pre; font-family:'Courier New',Courier,monospace;
+}
+#nano-status {
+  background:#0a0a0a; color:#39ff14;
+  padding:1px 4px; min-height:1.4em; flex-shrink:0;
+  font-size:13px;
+}
+#nano-shortcuts {
+  flex-shrink:0;
+}
+.nano-shortcut-row {
+  display:flex; flex-wrap:wrap;
+  background:#39ff14; color:#0a0a0a;
+  font-size:12px; padding:1px 2px;
+}
+.nano-sc {
+  display:inline-flex; margin-right:8px; white-space:nowrap;
+}
+.nano-sc-key {
+  background:#0a0a0a; color:#39ff14;
+  padding:0 3px; margin-right:2px;
+}
+#nano-search-bar {
+  background:#0a0a0a; color:#39ff14;
+  padding:1px 4px; flex-shrink:0;
+  display:none;
+}
 </style>
 </head>
 <body>
@@ -100,6 +145,31 @@ html, body {
   </div>
   <div id="screen">
     <div id="curline"><span id="curprompt"></span><span id="curtyped"></span><span id="curcursor"></span></div>
+  </div>
+  <!-- nano overlay (hidden until nano command runs) -->
+  <div id="nano-overlay" style="display:none;">
+    <div id="nano-titlebar"></div>
+    <div id="nano-content"></div>
+    <div id="nano-status"></div>
+    <div id="nano-search-bar"></div>
+    <div id="nano-shortcuts">
+      <div class="nano-shortcut-row">
+        <span class="nano-sc"><span class="nano-sc-key">^G</span>Help</span>
+        <span class="nano-sc"><span class="nano-sc-key">^O</span>Write Out</span>
+        <span class="nano-sc"><span class="nano-sc-key">^W</span>Where Is</span>
+        <span class="nano-sc"><span class="nano-sc-key">^K</span>Cut</span>
+        <span class="nano-sc"><span class="nano-sc-key">^U</span>Paste</span>
+        <span class="nano-sc"><span class="nano-sc-key">^T</span>Execute</span>
+      </div>
+      <div class="nano-shortcut-row">
+        <span class="nano-sc"><span class="nano-sc-key">^X</span>Exit</span>
+        <span class="nano-sc"><span class="nano-sc-key">^R</span>Read File</span>
+        <span class="nano-sc"><span class="nano-sc-key">^\</span>Replace</span>
+        <span class="nano-sc"><span class="nano-sc-key">^U</span>Paste</span>
+        <span class="nano-sc"><span class="nano-sc-key">^J</span>Justify</span>
+        <span class="nano-sc"><span class="nano-sc-key">^C</span>Location</span>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -117,6 +187,18 @@ var sysKernel   = '5.14.0-1-default';
 var sysArch     = 'x86_64';
 var sysOS       = 'Linux';
 var sysHostname = 'localhost';
+
+// ── terminal column count (measured from actual screen width) ─
+function termCols() {
+  var testEl = document.createElement('span');
+  testEl.style.cssText = 'visibility:hidden;position:absolute;white-space:pre;font-family:"Courier New",Courier,monospace;font-size:14px;';
+  testEl.textContent = 'X';
+  document.body.appendChild(testEl);
+  var charW = testEl.getBoundingClientRect().width;
+  document.body.removeChild(testEl);
+  var screenW = document.getElementById('screen').getBoundingClientRect().width;
+  return charW > 0 ? Math.floor(screenW / charW) : 80;
+}
 
 // ── state ─────────────────────────────────────────────────
 var mode      = 'boot';   // boot | username | password | command
@@ -168,6 +250,7 @@ function renderTyped(str) {
 
 function handleKey(key, ctrlKey, altKey, metaKey) {
   if (mode === 'boot') return;
+  if (nanoActive) { nanoKey(key, ctrlKey); return; }
   if (topActive) return;
 
   if (key === 'Enter') {
@@ -285,7 +368,7 @@ function runCmd(raw) {
   fetch('terminal.php', {
     method:  'POST',
     headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify({ cmd: trimmed, user: loginUser })
+    body:    JSON.stringify({ cmd: trimmed, user: loginUser, cols: termCols() })
   })
   .then(function(r){ return r.json(); })
   .then(function(data) {
@@ -306,6 +389,8 @@ function runCmd(raw) {
       doWget(data); return;
     } else if (data.curl) {
       doCurl(data); return;
+    } else if (data.nano) {
+      doNano(data); return;
     } else if (data.sudo_prompt) {
       doSudoPrompt(data.sudo_cmd); return;
     } else if (data.output !== undefined && data.output !== '') {
@@ -452,7 +537,7 @@ function doSudoPrompt(sudoCmd) {
       fetch('terminal.php', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ cmd: sudoCmd, user: 'root' })
+        body:    JSON.stringify({ cmd: sudoCmd, user: 'root', cols: termCols() })
       })
       .then(function(r){ return r.json(); })
       .then(function(data) {
@@ -671,6 +756,311 @@ function doCurl(data) {
     scr.scrollTop = scr.scrollHeight;
   }
   nextBar();
+}
+
+// ── nano editor ───────────────────────────────────────────
+var nanoActive = false;
+var nanoData   = { path:'', filename:'', lines:[], curRow:0, curCol:0, modified:false, cutBuffer:'' };
+var nanoMode   = 'edit';   // edit | confirm_exit | search | writename
+
+function doNano(data) {
+  nanoActive = true;
+  nanoMode   = 'edit';
+  nanoData.path     = data.path;
+  nanoData.filename = data.filename;
+  nanoData.lines    = data.content.split('\n');
+  nanoData.curRow   = 0;
+  nanoData.curCol   = 0;
+  nanoData.modified = false;
+  nanoData.cutBuffer = '';
+  nanoData.isnew    = data.isnew;
+
+  document.getElementById('nano-overlay').style.display = 'flex';
+  hidePrompt();
+  nanoRender();
+}
+
+function nanoRender() {
+  // title bar
+  var modified = nanoData.modified ? ' Modified' : '';
+  document.getElementById('nano-titlebar').textContent =
+    'GNU nano 5.6.1          ' + nanoData.filename + modified;
+
+  // content — show lines, insert block cursor
+  var contentEl = document.getElementById('nano-content');
+  var html = '';
+  for (var r = 0; r < nanoData.lines.length; r++) {
+    var line = nanoData.lines[r];
+    if (r === nanoData.curRow) {
+      var col = Math.min(nanoData.curCol, line.length);
+      var before = escHtml(line.slice(0, col));
+      var cursor = escHtml(col < line.length ? line[col] : ' ');
+      var after  = escHtml(line.slice(col + 1));
+      html += before + '<span style="background:#39ff14;color:#0a0a0a;">' + cursor + '</span>' + after + '\n';
+    } else {
+      html += escHtml(line) + '\n';
+    }
+  }
+  contentEl.innerHTML = html;
+
+  // status bar
+  var statusEl = document.getElementById('nano-status');
+  if (nanoMode === 'confirm_exit') {
+    statusEl.textContent = 'Save modified buffer? (Answering "No" will DISCARD changes.)  Y/N/?';
+  } else if (nanoMode === 'writename') {
+    statusEl.textContent = 'File Name to Write: ' + nanoData.writeNameTyped;
+  } else if (nanoMode === 'search') {
+    statusEl.textContent = 'Search: ' + nanoData.searchTyped;
+  } else {
+    statusEl.textContent = '';
+  }
+}
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function nanoKey(key, ctrlKey) {
+  if (!nanoActive) return;
+
+  // ── confirm exit mode ──
+  if (nanoMode === 'confirm_exit') {
+    if (key === 'y' || key === 'Y') {
+      nanoMode = 'writename';
+      nanoData.writeNameTyped = nanoData.filename;
+      nanoData._exitAfterSave = true;
+      nanoRender();
+    } else if (key === 'n' || key === 'N') {
+      nanoClose(false);
+    } else if (key === 'Escape' || (ctrlKey && key === 'c') || key === '?') {
+      nanoMode = 'edit';
+      nanoRender();
+    }
+    return;
+  }
+
+  // ── write name mode (Ctrl+O or confirm save) ──
+  if (nanoMode === 'writename') {
+    if (key === 'Enter') {
+      nanoSave(nanoData.writeNameTyped);
+    } else if (key === 'Escape') {
+      nanoMode = 'edit';
+      nanoRender();
+    } else if (key === 'Backspace') {
+      nanoData.writeNameTyped = nanoData.writeNameTyped.slice(0,-1);
+      nanoRender();
+    } else if (key.length === 1 && !ctrlKey) {
+      nanoData.writeNameTyped += key;
+      nanoRender();
+    }
+    return;
+  }
+
+  // ── search mode ──
+  if (nanoMode === 'search') {
+    if (key === 'Enter') {
+      nanoDoSearch(nanoData.searchTyped);
+      nanoMode = 'edit';
+      nanoRender();
+    } else if (key === 'Escape') {
+      nanoMode = 'edit';
+      nanoRender();
+    } else if (key === 'Backspace') {
+      nanoData.searchTyped = nanoData.searchTyped.slice(0,-1);
+      nanoRender();
+    } else if (key.length === 1 && !ctrlKey) {
+      nanoData.searchTyped += key;
+      nanoRender();
+    }
+    return;
+  }
+
+  // ── normal edit mode ──
+  if (ctrlKey) {
+    switch (key.toLowerCase()) {
+      case 'x':  // Exit
+        if (nanoData.modified) {
+          nanoMode = 'confirm_exit';
+        } else {
+          nanoClose(false);
+        }
+        nanoRender();
+        return;
+      case 'o':  // Write Out
+        nanoMode = 'writename';
+        nanoData.writeNameTyped = nanoData.filename;
+        nanoData._exitAfterSave = false;
+        nanoRender();
+        return;
+      case 'w':  // Where Is (search)
+        nanoMode = 'search';
+        nanoData.searchTyped = '';
+        nanoRender();
+        return;
+      case 'k':  // Cut line
+        nanoData.cutBuffer = nanoData.lines[nanoData.curRow];
+        nanoData.lines.splice(nanoData.curRow, 1);
+        if (nanoData.lines.length === 0) nanoData.lines = [''];
+        if (nanoData.curRow >= nanoData.lines.length) nanoData.curRow = nanoData.lines.length - 1;
+        nanoData.curCol  = 0;
+        nanoData.modified = true;
+        nanoRender();
+        return;
+      case 'u':  // Paste
+        nanoData.lines.splice(nanoData.curRow, 0, nanoData.cutBuffer);
+        nanoData.modified = true;
+        nanoRender();
+        return;
+      case 'g':  // Help — show brief help in status
+        document.getElementById('nano-status').textContent =
+          '^X=Exit  ^O=Save  ^W=Search  ^K=Cut  ^U=Paste  ^G=Help';
+        return;
+      case 'c':  // Location
+        document.getElementById('nano-status').textContent =
+          'line ' + (nanoData.curRow+1) + '/' + nanoData.lines.length +
+          ', col ' + (nanoData.curCol+1);
+        return;
+    }
+    return;
+  }
+
+  // non-ctrl keys
+  switch (key) {
+    case 'ArrowUp':
+      if (nanoData.curRow > 0) {
+        nanoData.curRow--;
+        nanoData.curCol = Math.min(nanoData.curCol, nanoData.lines[nanoData.curRow].length);
+      }
+      break;
+    case 'ArrowDown':
+      if (nanoData.curRow < nanoData.lines.length - 1) {
+        nanoData.curRow++;
+        nanoData.curCol = Math.min(nanoData.curCol, nanoData.lines[nanoData.curRow].length);
+      }
+      break;
+    case 'ArrowLeft':
+      if (nanoData.curCol > 0) {
+        nanoData.curCol--;
+      } else if (nanoData.curRow > 0) {
+        nanoData.curRow--;
+        nanoData.curCol = nanoData.lines[nanoData.curRow].length;
+      }
+      break;
+    case 'ArrowRight':
+      if (nanoData.curCol < nanoData.lines[nanoData.curRow].length) {
+        nanoData.curCol++;
+      } else if (nanoData.curRow < nanoData.lines.length - 1) {
+        nanoData.curRow++;
+        nanoData.curCol = 0;
+      }
+      break;
+    case 'Home':
+      nanoData.curCol = 0;
+      break;
+    case 'End':
+      nanoData.curCol = nanoData.lines[nanoData.curRow].length;
+      break;
+    case 'Enter':
+      var line = nanoData.lines[nanoData.curRow];
+      var before = line.slice(0, nanoData.curCol);
+      var after  = line.slice(nanoData.curCol);
+      nanoData.lines.splice(nanoData.curRow, 1, before, after);
+      nanoData.curRow++;
+      nanoData.curCol   = 0;
+      nanoData.modified = true;
+      break;
+    case 'Backspace':
+      if (nanoData.curCol > 0) {
+        var l = nanoData.lines[nanoData.curRow];
+        nanoData.lines[nanoData.curRow] = l.slice(0, nanoData.curCol-1) + l.slice(nanoData.curCol);
+        nanoData.curCol--;
+        nanoData.modified = true;
+      } else if (nanoData.curRow > 0) {
+        var prevLen = nanoData.lines[nanoData.curRow-1].length;
+        nanoData.lines[nanoData.curRow-1] += nanoData.lines[nanoData.curRow];
+        nanoData.lines.splice(nanoData.curRow, 1);
+        nanoData.curRow--;
+        nanoData.curCol   = prevLen;
+        nanoData.modified = true;
+      }
+      break;
+    case 'Delete':
+      var l = nanoData.lines[nanoData.curRow];
+      if (nanoData.curCol < l.length) {
+        nanoData.lines[nanoData.curRow] = l.slice(0, nanoData.curCol) + l.slice(nanoData.curCol+1);
+        nanoData.modified = true;
+      } else if (nanoData.curRow < nanoData.lines.length - 1) {
+        nanoData.lines[nanoData.curRow] += nanoData.lines[nanoData.curRow+1];
+        nanoData.lines.splice(nanoData.curRow+1, 1);
+        nanoData.modified = true;
+      }
+      break;
+    default:
+      if (key.length === 1) {
+        var l = nanoData.lines[nanoData.curRow];
+        nanoData.lines[nanoData.curRow] = l.slice(0, nanoData.curCol) + key + l.slice(nanoData.curCol);
+        nanoData.curCol++;
+        nanoData.modified = true;
+      }
+  }
+  nanoRender();
+}
+
+function nanoDoSearch(term) {
+  if (!term) return;
+  var total = nanoData.lines.length;
+  for (var i = 0; i < total; i++) {
+    var r   = (nanoData.curRow + i + 1) % total;
+    var idx = nanoData.lines[r].indexOf(term);
+    if (idx !== -1) {
+      nanoData.curRow = r;
+      nanoData.curCol = idx;
+      document.getElementById('nano-status').textContent = '';
+      return;
+    }
+  }
+  document.getElementById('nano-status').textContent = '"' + term + '": Not found';
+}
+
+function nanoSave(filename) {
+  var savePath = nanoData.path.replace(/[^/]+$/, '') + filename;
+  var content  = nanoData.lines.join('\n');
+  fetch('terminal.php', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ cmd: '__nano_save', path: savePath, content: content, user: loginUser })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(d) {
+    nanoData.modified = false;
+    nanoData.filename = filename;
+    nanoData.path     = savePath;
+    // if we were saving on exit, close; otherwise stay open and show confirmation
+    if (nanoMode === 'writename' && nanoData._exitAfterSave) {
+      nanoClose(true, d.lines);
+    } else {
+      nanoMode = 'edit';
+      document.getElementById('nano-status').textContent =
+        'Wrote ' + d.lines + ' line' + (d.lines === 1 ? '' : 's');
+      nanoRender();
+      // clear status after 2s
+      setTimeout(function(){
+        if (nanoActive) document.getElementById('nano-status').textContent = '';
+      }, 2000);
+    }
+  });
+}
+
+function nanoClose(saved, lines) {
+  nanoActive = false;
+  document.getElementById('nano-overlay').style.display = 'none';
+  if (saved) {
+    print('', 'n');
+  }
+  print('', 'n');
+  updateTitleAndPrompt();
+  curline.style.display = 'flex';
+  scr.scrollTop = scr.scrollHeight;
 }
 
 // ── boot sequence ─────────────────────────────────────────
