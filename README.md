@@ -28,6 +28,7 @@ A fake interactive Linux terminal built in PHP and vanilla JavaScript. Drop it i
 | System | `uname`, `uptime`, `hostname`, `date`, `df`, `free`, `ps`, `top`, `id`, `env`, `which` |
 | Network | `ping`, `ifconfig`, `ip`, `wget`, `curl` |
 | Shell | `echo`, `history`, `alias`, `clear`, `exit`, `logout`, `help`, `man` |
+| Editors | `nano` |
 | Users | `whoami`, `sudo`, `last` |
 | Easter egg | `sudo rm -rf /` |
 
