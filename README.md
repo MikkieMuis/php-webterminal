@@ -141,6 +141,15 @@ If the terminal is not responding to keyboard input, disable these extensions fo
 
 ---
 
+## Similar projects
+
+These take a different approach (pure JavaScript, browser-only, no PHP backend) but are worth knowing about:
+
+- [jcubic/fake-linux-terminal](https://github.com/jcubic/fake-linux-terminal) — browser-only fake GNU/Linux environment using LightningFS and jQuery Terminal. More ambitious in scope, still a work in progress.
+- [edgorman/edgorman.github.io](https://github.com/edgorman/edgorman.github.io) — personal portfolio site that uses real GitHub repos as the filesystem content via git submodules. Clever idea.
+
+---
+
 ## License
 
 MIT — do whatever you want with it.
