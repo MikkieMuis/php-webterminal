@@ -64,7 +64,7 @@ function fs_get_data() {
     '/etc/httpd'            => ['type'=>'dir'],
     '/etc/httpd/conf'       => ['type'=>'dir'],
     '/etc/httpd/conf.d'     => ['type'=>'dir'],
-    '/etc/mysql'            => ['type'=>'dir'],
+    '/etc/my.cnf.d'         => ['type'=>'dir'],
     '/etc/logrotate.d'      => ['type'=>'dir'],
     '/etc/sysconfig'        => ['type'=>'dir'],
     '/etc/profile.d'        => ['type'=>'dir'],
@@ -90,7 +90,7 @@ function fs_get_data() {
     '/etc/crontab'      => ['type'=>'file','content'=>
 "SHELL=/bin/bash\nPATH=/sbin:/bin:/usr/sbin:/usr/bin\n\n# .---------------- minute (0-59)\n# |  .------------- hour (0-23)\n# |  |  .---------- day of month (1-31)\n# |  |  |  .------- month (1-12)\n# |  |  |  |  .---- day of week (0-6)\n# m  h dom mon dow  user  command\n  0  2  *   *   *   root  /usr/local/bin/backup.sh\n  */5 * *   *   *   root  /usr/local/bin/health-check.sh\n 30  3  *   *   0   root  /usr/local/bin/weekly-report.sh\n  0  0  1   *   *   root  /usr/local/bin/monthly-cleanup.sh"],
     '/etc/sudoers'      => ['type'=>'file','content'=>
-"# /etc/sudoers\nDefaults    env_reset\nDefaults    mail_badpass\nDefaults    secure_path=\"/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\"\n\nroot    ALL=(ALL:ALL) ALL\ndeploy  ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart apache2, /usr/bin/systemctl restart php-fpm"],
+"# /etc/sudoers\nDefaults    env_reset\nDefaults    mail_badpass\nDefaults    secure_path=\"/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\"\n\nroot    ALL=(ALL:ALL) ALL\ndeploy  ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart httpd, /usr/bin/systemctl restart php-fpm"],
     '/etc/environment'  => ['type'=>'file','content'=>
 "PATH=\"/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\"\nLANG=en_US.UTF-8\nLC_ALL=en_US.UTF-8"],
     '/etc/timezone'     => ['type'=>'file','content'=>'Europe/Amsterdam'],
@@ -107,17 +107,19 @@ function fs_get_data() {
     '/etc/ssh/ssh_host_rsa_key' => ['type'=>'file','content'=>'-----BEGIN OPENSSH PRIVATE KEY-----\n[private key — not readable]\n-----END OPENSSH PRIVATE KEY-----'],
 
     '/etc/httpd/conf/httpd.conf' => ['type'=>'file','content'=>
-"ServerRoot \"/etc/httpd\"\nListen 80\nListen 443\nServerName $H\nServerAdmin webmaster@$H\nDocumentRoot \"/var/www/html\"\nDirectoryIndex index.php index.html\nErrorLog \"/var/log/httpd/error.log\"\nCustomLog \"/var/log/httpd/access.log\" combined\nKeepAlive On\nMaxKeepAliveRequests 100\nKeepAliveTimeout 5"],
+"ServerRoot \"/etc/httpd\"\nListen 80\nListen 443\nServerName $H\nServerAdmin webmaster@$H\nDocumentRoot \"/var/www/html\"\nDirectoryIndex index.php index.html\nErrorLog \"/var/log/httpd/error_log\"\nCustomLog \"/var/log/httpd/access_log\" combined\nKeepAlive On\nMaxKeepAliveRequests 100\nKeepAliveTimeout 5"],
     '/etc/httpd/conf.d/ssl.conf' => ['type'=>'file','content'=>
 "<VirtualHost *:443>\n    ServerName $H\n    SSLEngine on\n    SSLCertificateFile /etc/pki/tls/certs/server.crt\n    SSLCertificateKeyFile /etc/pki/tls/private/server.key\n    DocumentRoot /var/www/html\n</VirtualHost>"],
 
-    '/etc/mysql/my.cnf' => ['type'=>'file','content'=>
-"[mysqld]\nuser            = mysql\npid-file        = /var/run/mysqld/mysqld.pid\nsocket          = /var/run/mysqld/mysqld.sock\nport            = 3306\ndatadir         = /mnt/db/mysql\nbind-address    = 127.0.0.1\nmax_connections = 200\ninnodb_buffer_pool_size = 4G\ninnodb_log_file_size    = 512M\nslow_query_log  = 1\nslow_query_log_file = /var/log/mysql/slow.log\nlong_query_time = 2\n\n[mysqldump]\nquick\nmax_allowed_packet = 64M"],
+    '/etc/my.cnf' => ['type'=>'file','content'=>
+"[mysqld]\ndatadir=/mnt/db/mysql\nsocket=/var/lib/mysql/mysql.sock\nlog-error=/var/log/mariadb/mariadb.log\npid-file=/run/mariadb/mariadb.pid\n\n[client]\nport=3306\nsocket=/var/lib/mysql/mysql.sock\n\n!includedir /etc/my.cnf.d"],
+    '/etc/my.cnf.d/mariadb-server.cnf' => ['type'=>'file','content'=>
+"[mysqld]\nbind-address    = 127.0.0.1\nmax_connections = 200\ninnodb_buffer_pool_size = 4G\ninnodb_log_file_size    = 512M\nslow_query_log  = 1\nslow_query_log_file = /var/log/mariadb/slow.log\nlong_query_time = 2\n\n[mysqldump]\nquick\nmax_allowed_packet = 64M"],
 
     '/etc/logrotate.d/httpd' => ['type'=>'file','content'=>
-"/var/log/httpd/*.log {\n    daily\n    missingok\n    rotate 14\n    compress\n    delaycompress\n    notifempty\n    sharedscripts\n    postrotate\n        /bin/systemctl reload httpd > /dev/null 2>/dev/null || true\n    endscript\n}"],
-    '/etc/logrotate.d/mysql'  => ['type'=>'file','content'=>
-"/var/log/mysql/*.log {\n    daily\n    rotate 7\n    compress\n    missingok\n    notifempty\n    create 640 mysql adm\n}"],
+"/var/log/httpd/access_log /var/log/httpd/error_log /var/log/httpd/ssl_access_log /var/log/httpd/ssl_error_log /var/log/httpd/ssl_request_log {\n    daily\n    missingok\n    rotate 8\n    compress\n    delaycompress\n    notifempty\n    sharedscripts\n    postrotate\n        /bin/systemctl reload httpd > /dev/null 2>/dev/null || true\n    endscript\n}"],
+    '/etc/logrotate.d/mariadb' => ['type'=>'file','content'=>
+"/var/log/mariadb/mariadb.log {\n    daily\n    rotate 7\n    compress\n    missingok\n    notifempty\n    create 640 mysql adm\n    postrotate\n        /bin/systemctl reload mariadb > /dev/null 2>/dev/null || true\n    endscript\n}"],
 
     '/etc/cron.d/backup'      => ['type'=>'file','content'=>"0 2 * * * root /usr/local/bin/backup.sh >> /var/log/backup.log 2>&1"],
     '/etc/cron.daily/logcheck' => ['type'=>'file','content'=>"#!/bin/bash\n/usr/sbin/logcheck"],
@@ -143,7 +145,7 @@ function fs_get_data() {
     '/home/deploy/.bashrc'      => ['type'=>'file','content'=>
 "# .bashrc\nexport PS1='\\u@\\h:\\w\\$ '\nexport PATH=\$PATH:/home/deploy/.local/bin\nexport EDITOR=vim\nalias ll='ls -la'\nalias deploy='cd /var/www && git pull && sudo systemctl restart apache2'"],
     '/home/deploy/.bash_history' => ['type'=>'file','content'=>
-"git pull origin main\nsudo systemctl restart apache2\ntail -f /var/log/httpd/error.log\nmysql -u root -p\ndf -h\nfree -h\nps aux | grep apache\nssh backup-server\nrsync -avz /var/www/ backup-server:/mnt/backup/www/"],
+"git pull origin main\nsudo systemctl restart httpd\ntail -f /var/log/httpd/error_log\nmysql -u root -p\ndf -h\nfree -h\nps aux | grep httpd\nssh backup-server\nrsync -avz /var/www/ backup-server:/mnt/backup/www/"],
     '/home/deploy/.profile'     => ['type'=>'file','content'=>
 "# .profile\nif [ -n \"\$BASH_VERSION\" ]; then\n    if [ -f \"\$HOME/.bashrc\" ]; then\n        . \"\$HOME/.bashrc\"\n    fi\nfi"],
     '/home/deploy/deploy.sh'    => ['type'=>'file','content'=>
@@ -159,7 +161,7 @@ function fs_get_data() {
     '/root/.bashrc'             => ['type'=>'file','content'=>
 "# .bashrc\nexport PS1='\\u@\\h:\\w# '\nexport EDITOR=vim\nexport HISTSIZE=10000\nexport HISTFILESIZE=20000\nexport HISTTIMEFORMAT=\"%F %T \"\nalias ll='ls -la'\nalias la='ls -A'\nalias grep='grep --color=auto'\nalias df='df -h'\nalias free='free -h'\nalias ports='netstat -tulanp'\nalias myip='curl -s ifconfig.me'"],
     '/root/.bash_history'       => ['type'=>'file','content'=>
-"apt-get update\napt-get upgrade -y\ndf -h\nfree -h\nps aux\ntail -f /var/log/httpd/error.log\nmysql -u root -p\nsystemctl status httpd\nsystemctl restart httpd\ncertbot renew\ncrontab -l\nls -la /var/www/html\ncat /var/log/auth.log | grep Failed\nnetstat -tulanp\niptables -L -v\nuname -a\nuptime"],
+"apt-get update\napt-get upgrade -y\ndf -h\nfree -h\nps aux\ntail -f /var/log/httpd/error_log\nmysql -u root -p\nsystemctl status httpd\nsystemctl restart httpd\ncertbot renew\ncrontab -l\nls -la /var/www/html\ncat /var/log/secure | grep Failed\nnetstat -tulanp\niptables -L -v\nuname -a\nuptime"],
     '/root/.bash_profile'       => ['type'=>'file','content'=>
 "# .bash_profile\nif [ -f ~/.bashrc ]; then\n    . ~/.bashrc\nfi"],
     '/root/.vimrc'              => ['type'=>'file','content'=>
@@ -173,41 +175,149 @@ function fs_get_data() {
     '/root/.aws/credentials'     => ['type'=>'file','content'=>
 "[default]\naws_access_key_id = AKIAIOSFODNN7EXAMPLE\naws_secret_access_key = wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY\nregion = eu-west-1"],
     '/root/notes.txt'            => ['type'=>'file','content'=>
-"Server maintenance notes\n========================\n\nLast updated: March 2026\n\n- MySQL slow query log enabled, check weekly\n- SSL cert expires 2026-09-14, renew with: certbot renew\n- Backup job runs nightly at 02:00, check /var/log/backup.log\n- Deploy user has passwordless sudo for apache2 + php-fpm restarts only\n- Firewall: only 22, 80, 443 open externally\n- /mnt/db is on separate SSD, do NOT fill above 80%\n- See /usr/local/bin/ for all maintenance scripts"],
+"Server maintenance notes\n========================\n\nLast updated: March 2026\n\n- MariaDB slow query log enabled, check weekly (/var/log/mariadb/slow.log)\n- SSL cert expires 2026-09-14, renew with: certbot renew\n- Backup job runs nightly at 02:00, check /var/log/backup.log\n- Deploy user has passwordless sudo for httpd + php-fpm restarts only\n- Firewall: only 22, 80, 443 open externally\n- /mnt/db is on separate SSD, do NOT fill above 80%\n- See /usr/local/bin/ for all maintenance scripts"],
     '/root/server-setup.sh'      => ['type'=>'file','content'=>
 "#!/bin/bash\n# Initial server setup script\n# Run once as root\n\nset -e\n\napt-get update && apt-get upgrade -y\napt-get install -y apache2 mysql-server php8.2 php8.2-mysql \\\n    php8.2-curl php8.2-gd php8.2-mbstring php8.2-xml \\\n    certbot python3-certbot-apache fail2ban ufw git composer\n\n# Firewall\nufw allow 22/tcp\nufw allow 80/tcp\nufw allow 443/tcp\nufw --force enable\n\n# MySQL hardening\nmysql_secure_installation\n\n# Create deploy user\nuseradd -m -s /bin/bash deploy\nmkdir -p /home/deploy/.ssh\nchmod 700 /home/deploy/.ssh\n\necho \"Setup complete.\""],
 
     // ──────────────────────────────────────────────────────────
     //  /var
     // ──────────────────────────────────────────────────────────
-    '/var/log'              => ['type'=>'dir'],
-    '/var/log/httpd'        => ['type'=>'dir'],
-    '/var/log/mysql'        => ['type'=>'dir'],
-    '/var/log/php-fpm'      => ['type'=>'dir'],
-    '/var/www'              => ['type'=>'dir'],
-    '/var/www/html'         => ['type'=>'dir'],
-    '/var/spool'            => ['type'=>'dir'],
-    '/var/spool/cron'       => ['type'=>'dir'],
-    '/var/spool/cron/crontabs' => ['type'=>'dir'],
-    '/var/run'              => ['type'=>'dir'],
-    '/var/cache'            => ['type'=>'dir'],
-    '/var/lib'              => ['type'=>'dir'],
-    '/var/lib/mysql'        => ['type'=>'dir'],
+    // ── /var subdirs ──
+    '/var/log'                  => ['type'=>'dir'],
+    '/var/log/anaconda'         => ['type'=>'dir'],
+    '/var/log/audit'            => ['type'=>'dir'],
+    '/var/log/chrony'           => ['type'=>'dir'],
+    '/var/log/httpd'            => ['type'=>'dir'],
+    '/var/log/letsencrypt'      => ['type'=>'dir'],
+    '/var/log/mail'             => ['type'=>'dir'],
+    '/var/log/mariadb'          => ['type'=>'dir'],
+    '/var/log/php-fpm'          => ['type'=>'dir'],
+    '/var/log/private'          => ['type'=>'dir'],
+    '/var/log/samba'            => ['type'=>'dir'],
+    '/var/log/sssd'             => ['type'=>'dir'],
+    '/var/log/tuned'            => ['type'=>'dir'],
+    '/var/www'                  => ['type'=>'dir'],
+    '/var/www/html'             => ['type'=>'dir'],
+    '/var/spool'                => ['type'=>'dir'],
+    '/var/spool/cron'           => ['type'=>'dir'],
+    '/var/spool/cron/crontabs'  => ['type'=>'dir'],
+    '/var/run'                  => ['type'=>'dir'],
+    '/var/cache'                => ['type'=>'dir'],
+    '/var/lib'                  => ['type'=>'dir'],
+    '/var/lib/mysql'            => ['type'=>'dir'],
 
-    '/var/log/httpd/access.log' => ['type'=>'file','content'=>
-"192.168.1.42 - - [10/Mar/2026:08:14:22 +0100] \"GET / HTTP/1.1\" 200 4823 \"-\" \"Mozilla/5.0\"\n192.168.1.42 - - [10/Mar/2026:08:14:23 +0100] \"GET /css/style.css HTTP/1.1\" 200 1842\n185.220.101.45 - - [10/Mar/2026:09:02:11 +0100] \"GET /wp-admin/ HTTP/1.1\" 404 512\n185.220.101.45 - - [10/Mar/2026:09:02:12 +0100] \"POST /xmlrpc.php HTTP/1.1\" 404 512\n10.0.0.5 - deploy [10/Mar/2026:10:31:07 +0100] \"GET /api/status HTTP/1.1\" 200 128\n93.184.216.34 - - [10/Mar/2026:11:15:44 +0100] \"GET /index.php HTTP/1.1\" 200 9241\n192.168.1.42 - - [10/Mar/2026:14:22:09 +0100] \"POST /api/login HTTP/1.1\" 200 312\n192.168.1.42 - - [10/Mar/2026:14:22:11 +0100] \"GET /dashboard HTTP/1.1\" 200 18432\n45.33.32.156 - - [10/Mar/2026:15:01:33 +0100] \"GET /etc/passwd HTTP/1.1\" 404 512\n45.33.32.156 - - [10/Mar/2026:15:01:34 +0100] \"GET /.env HTTP/1.1\" 404 512"],
-    '/var/log/httpd/error.log'  => ['type'=>'file','content'=>
-"[Mon Mar 09 02:14:11.842310 2026] [mpm_prefork:notice] [pid 1105] AH00163: Apache/2.4.62 configured\n[Mon Mar 09 02:14:11.843201 2026] [core:notice] [pid 1105] AH00094: Command line: '/usr/sbin/apache2'\n[Tue Mar 10 03:12:44.112233 2026] [php:error] [pid 2241] PHP Warning: include(/var/www/html/config.php): failed to open stream in /var/www/html/index.php on line 14\n[Tue Mar 10 08:02:11.334455 2026] [authz_core:error] [pid 2244] AH01630: client denied by server configuration: /var/www/html/.env\n[Tue Mar 10 09:02:12.556677 2026] [authz_core:error] [pid 2244] AH01630: client denied by server configuration: /var/www/html/xmlrpc.php"],
-    '/var/log/mysql/error.log'  => ['type'=>'file','content'=>
-"2026-03-09T02:00:01.123456Z 0 [System] [MY-010116] [Server] /usr/sbin/mysqld starting\n2026-03-09T02:00:01.234567Z 1 [System] [MY-013576] [InnoDB] InnoDB initialization has started.\n2026-03-09T02:00:02.345678Z 1 [System] [MY-013577] [InnoDB] InnoDB initialization has ended.\n2026-03-09T02:00:02.456789Z 0 [System] [MY-010229] [Server] Starting XA crash recovery.\n2026-03-09T02:00:02.567890Z 0 [System] [MY-010031] [Server] /usr/sbin/mysqld: ready for connections.\n2026-03-10T14:22:09.678901Z 42 [Warning] [MY-010055] [Server] IP address '45.33.32.156' could not be resolved"],
-    '/var/log/mysql/slow.log'   => ['type'=>'file','content'=>
-"# Time: 2026-03-10T03:15:22.123456Z\n# User@Host: webapp[webapp] @ localhost [127.0.0.1]\n# Query_time: 3.441  Lock_time: 0.000  Rows_sent: 1  Rows_examined: 184291\nSELECT * FROM orders WHERE status='pending' AND created_at < DATE_SUB(NOW(), INTERVAL 7 DAY);\n\n# Time: 2026-03-10T11:42:07.654321Z\n# Query_time: 5.112  Lock_time: 0.001  Rows_sent: 842  Rows_examined: 1204891\nSELECT u.*, COUNT(o.id) as order_count FROM users u LEFT JOIN orders o ON u.id = o.user_id GROUP BY u.id;"],
-    '/var/log/auth.log'         => ['type'=>'file','content'=>
-"Mar 10 00:00:01 $H sshd[914]: Server listening on 0.0.0.0 port 22.\nMar 10 08:14:05 $H sshd[2201]: Accepted publickey for deploy from 192.168.1.42 port 54821 ssh2\nMar 10 09:02:10 $H sshd[2211]: Invalid user admin from 185.220.101.45 port 39812\nMar 10 09:02:11 $H sshd[2211]: Failed password for invalid user admin from 185.220.101.45 port 39812\nMar 10 09:02:12 $H sshd[2212]: Invalid user root from 185.220.101.45 port 39813\nMar 10 09:02:13 $H sshd[2212]: Failed password for invalid user root from 185.220.101.45 port 39813\nMar 10 09:02:14 $H sshd[2213]: Disconnecting invalid user root 185.220.101.45 port 39813: Too many authentication failures\nMar 10 10:31:05 $H sshd[2301]: Accepted publickey for deploy from 10.0.0.5 port 51234 ssh2\nMar 10 14:22:01 $H sudo[2401]: root : TTY=pts/0 ; PWD=/root ; USER=root ; COMMAND=/usr/bin/systemctl restart httpd"],
-    '/var/log/syslog'           => ['type'=>'file','content'=>
-"Mar 10 00:00:01 $H systemd[1]: Starting Daily apt download activities...\nMar 10 00:00:02 $H cron[2048]: (root) CMD (/usr/local/bin/health-check.sh)\nMar 10 02:00:01 $H cron[2048]: (root) CMD (/usr/local/bin/backup.sh)\nMar 10 02:00:01 $H backup[3101]: Starting backup...\nMar 10 02:04:33 $H backup[3101]: Backup complete. 4.2GB written to /mnt/backup/daily/\nMar 10 03:12:44 $H kernel: [123456.789] EXT4-fs error (device sda1): ext4_find_entry:1455\nMar 10 06:17:02 $H systemd[1]: logrotate.service: Succeeded.\nMar 10 08:14:05 $H sshd[2201]: Accepted publickey for deploy\nMar 10 09:02:10 $H sshd[2211]: Invalid user admin from 185.220.101.45\nMar 10 10:31:05 $H sshd[2301]: Accepted publickey for deploy"],
-    '/var/log/backup.log'       => ['type'=>'file','content'=>
-"[2026-03-08 02:00:01] Starting nightly backup\n[2026-03-08 02:00:02] Dumping MySQL databases...\n[2026-03-08 02:02:44] MySQL dump complete: 1.8GB\n[2026-03-08 02:02:45] Syncing /var/www to backup...\n[2026-03-08 02:03:12] Sync complete: 842MB\n[2026-03-08 02:03:13] Compressing...\n[2026-03-08 02:04:33] Done. Total: 4.2GB written to /mnt/backup/daily/db-2026-03-08.sql.gz\n[2026-03-09 02:00:01] Starting nightly backup\n[2026-03-09 02:04:41] Done. Total: 4.2GB written to /mnt/backup/daily/db-2026-03-09.sql.gz\n[2026-03-10 02:00:01] Starting nightly backup\n[2026-03-10 02:04:38] Done. Total: 4.3GB written to /mnt/backup/daily/db-2026-03-10.sql.gz"],
+    // ── /var/log/httpd — matches real server layout ──
+    '/var/log/httpd/access_log'               => ['type'=>'file','mtime'=>mktime(13,52,0,3,12,2026),'content'=>
+"192.168.1.42 - - [12/Mar/2026:08:14:22 +0100] \"GET / HTTP/1.1\" 200 4823 \"-\" \"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36\"\n192.168.1.42 - - [12/Mar/2026:08:14:23 +0100] \"GET /css/style.css HTTP/1.1\" 200 1842 \"https://$H/\" \"Mozilla/5.0\"\n185.220.101.45 - - [12/Mar/2026:09:02:11 +0100] \"GET /wp-admin/ HTTP/1.1\" 404 512 \"-\" \"python-requests/2.28\"\n185.220.101.45 - - [12/Mar/2026:09:02:12 +0100] \"POST /xmlrpc.php HTTP/1.1\" 404 512\n10.0.0.5 - deploy [12/Mar/2026:10:31:07 +0100] \"GET /api/status HTTP/1.1\" 200 128\n93.184.216.34 - - [12/Mar/2026:11:15:44 +0100] \"GET /index.php HTTP/1.1\" 200 9241\n192.168.1.42 - - [12/Mar/2026:13:22:09 +0100] \"POST /api/login HTTP/1.1\" 200 312\n45.33.32.156 - - [12/Mar/2026:13:01:33 +0100] \"GET /etc/passwd HTTP/1.1\" 404 512\n45.33.32.156 - - [12/Mar/2026:13:01:34 +0100] \"GET /.env HTTP/1.1\" 404 512"],
+    '/var/log/httpd/access_log-20260215'      => ['type'=>'file','mtime'=>mktime(23,58,0,2,14,2026),'content'=>'[rotated access log — Feb 8-14 2026]'],
+    '/var/log/httpd/access_log-20260222'      => ['type'=>'file','mtime'=>mktime(23,58,0,2,21,2026),'content'=>'[rotated access log — Feb 15-21 2026]'],
+    '/var/log/httpd/access_log-20260301'      => ['type'=>'file','mtime'=>mktime(23,59,0,2,28,2026),'content'=>'[rotated access log — Feb 22-28 2026]'],
+    '/var/log/httpd/access_log-20260308'      => ['type'=>'file','mtime'=>mktime(23,59,0,3,7,2026), 'content'=>'[rotated access log — Mar 1-7 2026]'],
+
+    '/var/log/httpd/error_log'                => ['type'=>'file','mtime'=>mktime(13,24,0,3,12,2026),'content'=>
+"[Wed Mar 12 02:14:11.842310 2026] [mpm_prefork:notice] [pid 1105] AH00163: Apache/2.4.62 (AlmaLinux) configured -- resuming normal operations\n[Wed Mar 12 02:14:11.843201 2026] [core:notice] [pid 1105] AH00094: Command line: '/usr/sbin/httpd -D FOREGROUND'\n[Wed Mar 12 09:02:11.334455 2026] [authz_core:error] [pid 2244] AH01630: client denied by server configuration: /var/www/html/.env\n[Wed Mar 12 09:02:12.556677 2026] [authz_core:error] [pid 2244] AH01630: client denied by server configuration: /var/www/html/xmlrpc.php\n[Wed Mar 12 13:01:33.112233 2026] [authz_core:error] [pid 2251] AH01630: client denied by server configuration: /var/www/html/etc/passwd"],
+    '/var/log/httpd/error_log-20260215'       => ['type'=>'file','mtime'=>mktime(0,0,0,2,15,2026),'content'=>'[rotated error log — Feb 8-14 2026]'],
+    '/var/log/httpd/error_log-20260222'       => ['type'=>'file','mtime'=>mktime(0,0,0,2,22,2026),'content'=>'[rotated error log — Feb 15-21 2026]'],
+    '/var/log/httpd/error_log-20260301'       => ['type'=>'file','mtime'=>mktime(0,0,0,3,1,2026), 'content'=>'[rotated error log — Feb 22-28 2026]'],
+    '/var/log/httpd/error_log-20260308'       => ['type'=>'file','mtime'=>mktime(0,0,0,3,8,2026), 'content'=>'[rotated error log — Mar 1-7 2026]'],
+
+    '/var/log/httpd/ssl_access_log'           => ['type'=>'file','mtime'=>mktime(13,51,0,3,12,2026),'content'=>
+"192.168.1.42 - - [12/Mar/2026:08:14:25 +0100] \"GET / HTTP/1.1\" 200 4823 \"-\" \"Mozilla/5.0\"\n10.0.0.5 - - [12/Mar/2026:10:31:09 +0100] \"GET /api/status HTTP/1.1\" 200 128\n93.184.216.34 - - [12/Mar/2026:11:15:46 +0100] \"GET /index.php HTTP/1.1\" 200 9241"],
+    '/var/log/httpd/ssl_access_log-20260215'  => ['type'=>'file','mtime'=>mktime(23,43,0,2,14,2026),'content'=>'[rotated SSL access log — Feb 8-14 2026]'],
+    '/var/log/httpd/ssl_access_log-20260222'  => ['type'=>'file','mtime'=>mktime(23,16,0,2,21,2026),'content'=>'[rotated SSL access log — Feb 15-21 2026]'],
+    '/var/log/httpd/ssl_access_log-20260301'  => ['type'=>'file','mtime'=>mktime(23,22,0,2,28,2026),'content'=>'[rotated SSL access log — Feb 22-28 2026]'],
+    '/var/log/httpd/ssl_access_log-20260308'  => ['type'=>'file','mtime'=>mktime(23,59,0,3,7,2026), 'content'=>'[rotated SSL access log — Mar 1-7 2026]'],
+
+    '/var/log/httpd/ssl_error_log'            => ['type'=>'file','mtime'=>mktime(13,39,0,3,12,2026),'content'=>
+"[Wed Mar 12 02:14:11.001122 2026] [ssl:notice] [pid 1105] AH01876: mod_ssl/2.4.62 compiled against OpenSSL 3.2.1\n[Wed Mar 12 02:14:11.002233 2026] [ssl:info] [pid 1108] AH01887: Init: Initializing (virtual) servers for SSL"],
+    '/var/log/httpd/ssl_error_log-20260215'   => ['type'=>'file','mtime'=>mktime(23,43,0,2,14,2026),'content'=>'[rotated SSL error log]'],
+    '/var/log/httpd/ssl_error_log-20260222'   => ['type'=>'file','mtime'=>mktime(23,15,0,2,21,2026),'content'=>'[rotated SSL error log]'],
+    '/var/log/httpd/ssl_error_log-20260301'   => ['type'=>'file','mtime'=>mktime(23,22,0,2,28,2026),'content'=>'[rotated SSL error log]'],
+    '/var/log/httpd/ssl_error_log-20260308'   => ['type'=>'file','mtime'=>mktime(23,59,0,3,7,2026), 'content'=>'[rotated SSL error log]'],
+
+    '/var/log/httpd/ssl_request_log'          => ['type'=>'file','mtime'=>mktime(13,51,0,3,12,2026),'content'=>
+"[12/Mar/2026:08:14:25 +0100] 192.168.1.42 TLSv1.3 TLS_AES_256_GCM_SHA384 \"GET / HTTP/1.1\" 4823\n[12/Mar/2026:10:31:09 +0100] 10.0.0.5 TLSv1.3 TLS_AES_256_GCM_SHA384 \"GET /api/status HTTP/1.1\" 128"],
+    '/var/log/httpd/ssl_request_log-20260215' => ['type'=>'file','mtime'=>mktime(23,43,0,2,14,2026),'content'=>'[rotated SSL request log]'],
+    '/var/log/httpd/ssl_request_log-20260222' => ['type'=>'file','mtime'=>mktime(23,16,0,2,21,2026),'content'=>'[rotated SSL request log]'],
+    '/var/log/httpd/ssl_request_log-20260301' => ['type'=>'file','mtime'=>mktime(23,22,0,2,28,2026),'content'=>'[rotated SSL request log]'],
+    '/var/log/httpd/ssl_request_log-20260308' => ['type'=>'file','mtime'=>mktime(23,59,0,3,7,2026), 'content'=>'[rotated SSL request log]'],
+
+    '/var/log/httpd/wget_log'                 => ['type'=>'file','mtime'=>mktime(13,52,0,3,12,2026),'content'=>
+"[12/Mar/2026:00:05:01] wget cron job started\n[12/Mar/2026:00:05:02] fetching https://$H/api/health\n[12/Mar/2026:00:05:02] 200 OK\n[12/Mar/2026:00:10:01] wget cron job started\n[12/Mar/2026:00:10:02] 200 OK"],
+    '/var/log/httpd/wget_log-20260215'        => ['type'=>'file','mtime'=>mktime(22,31,0,2,14,2026),'content'=>'[rotated wget log]'],
+    '/var/log/httpd/wget_log-20260222'        => ['type'=>'file','mtime'=>mktime(14,37,0,2,21,2026),'content'=>'[rotated wget log]'],
+    '/var/log/httpd/wget_log-20260301'        => ['type'=>'file','mtime'=>mktime(18,17,0,2,28,2026),'content'=>'[rotated wget log]'],
+    '/var/log/httpd/wget_log-20260308'        => ['type'=>'file','mtime'=>mktime(19,29,0,3,7,2026), 'content'=>'[rotated wget log]'],
+
+    // ── /var/log — top-level log files matching real server ──
+    '/var/log/btmp'             => ['type'=>'file','mtime'=>mktime(13,53,0,3,12,2026),'content'=>'[binary — failed login attempts]'],
+    '/var/log/btmp-20260301'    => ['type'=>'file','mtime'=>mktime(23,51,0,2,28,2026),'content'=>'[binary — rotated failed logins]'],
+    '/var/log/cron'             => ['type'=>'file','mtime'=>mktime(13,53,0,3,12,2026),'content'=>
+"Mar 12 00:00:01 $H crond[1512]: (root) CMD (/usr/local/bin/backup.sh >> /var/log/backup.log 2>&1)\nMar 12 00:05:01 $H crond[1512]: (root) CMD (/usr/local/bin/health-check.sh)\nMar 12 00:10:01 $H crond[1512]: (root) CMD (/usr/local/bin/health-check.sh)\nMar 12 02:00:01 $H crond[1512]: (root) CMD (/usr/local/bin/backup.sh)\nMar 12 06:25:01 $H crond[1512]: (root) CMD (run-parts /etc/cron.daily)\nMar 12 13:52:01 $H crond[1512]: (root) CMD (/usr/local/bin/health-check.sh)"],
+    '/var/log/cron-20260215'    => ['type'=>'file','mtime'=>mktime(0,0,0,2,15,2026),'content'=>'[rotated cron log]'],
+    '/var/log/cron-20260222'    => ['type'=>'file','mtime'=>mktime(23,59,0,2,21,2026),'content'=>'[rotated cron log]'],
+    '/var/log/cron-20260301'    => ['type'=>'file','mtime'=>mktime(23,59,0,2,28,2026),'content'=>'[rotated cron log]'],
+    '/var/log/cron-20260308'    => ['type'=>'file','mtime'=>mktime(23,59,0,3,7,2026), 'content'=>'[rotated cron log]'],
+    '/var/log/dnf.librepo.log'  => ['type'=>'file','mtime'=>mktime(13,26,0,3,12,2026),'content'=>"2026-03-12T13:26:01Z DEBUG librepo: checking metadata freshness\n2026-03-12T13:26:02Z DEBUG librepo: metadata up to date"],
+    '/var/log/dnf.librepo.log.1'=> ['type'=>'file','mtime'=>mktime(14,23,0,3,1,2026), 'content'=>'[rotated dnf librepo log]'],
+    '/var/log/dnf.librepo.log.2'=> ['type'=>'file','mtime'=>mktime(13,17,0,12,26,2025),'content'=>'[rotated dnf librepo log]'],
+    '/var/log/dnf.librepo.log.3'=> ['type'=>'file','mtime'=>mktime(12,57,0,10,25,2025),'content'=>'[rotated dnf librepo log]'],
+    '/var/log/dnf.librepo.log.4'=> ['type'=>'file','mtime'=>mktime(0,0,0,8,25,2025),  'content'=>'[rotated dnf librepo log]'],
+    '/var/log/dnf.log'          => ['type'=>'file','mtime'=>mktime(13,26,0,3,12,2026),'content'=>
+"2026-03-12T13:26:01Z DEBUG dnf: Running transaction check\n2026-03-12T13:26:02Z INFO dnf: Transaction complete\n2026-03-12T13:26:02Z DEBUG dnf: Cleaning up"],
+    '/var/log/dnf.log.1'        => ['type'=>'file','mtime'=>mktime(15,29,0,3,3,2026), 'content'=>'[rotated dnf log]'],
+    '/var/log/dnf.log.2'        => ['type'=>'file','mtime'=>mktime(17,59,0,2,1,2026), 'content'=>'[rotated dnf log]'],
+    '/var/log/dnf.log.3'        => ['type'=>'file','mtime'=>mktime(18,14,0,1,2,2026), 'content'=>'[rotated dnf log]'],
+    '/var/log/dnf.log.4'        => ['type'=>'file','mtime'=>mktime(11,50,0,12,1,2025),'content'=>'[rotated dnf log]'],
+    '/var/log/dnf.rpm.log'      => ['type'=>'file','mtime'=>mktime(13,26,0,3,12,2026),'content'=>"2026-03-12T13:26:01Z INFO rpm: Upgrade: httpd-2.4.62-1.el9.x86_64\n2026-03-12T13:26:02Z INFO rpm: Upgrade: php-8.2.28-1.el9.x86_64"],
+    '/var/log/dnf.rpm.log.1'    => ['type'=>'file','mtime'=>mktime(14,59,0,9,21,2025),'content'=>'[rotated dnf rpm log]'],
+    '/var/log/firewalld'        => ['type'=>'file','mtime'=>mktime(0,0,0,12,14,2024),'content'=>
+"2024-12-14 00:00:01 INFO  Running firewalld\n2024-12-14 00:00:01 INFO  Permanent and runtime config differ on zone public.\n2024-12-14 00:00:02 INFO  Firewall started"],
+    '/var/log/hawkey.log'       => ['type'=>'file','mtime'=>mktime(13,26,0,3,12,2026),'content'=>"2026-03-12T13:26:01Z DEBUG hawkey: Downloading filelists for repo: baseos\n2026-03-12T13:26:02Z DEBUG hawkey: Sack: 12842 packages"],
+    '/var/log/hawkey.log-20260215' => ['type'=>'file','mtime'=>mktime(23,15,0,2,14,2026),'content'=>'[rotated hawkey log]'],
+    '/var/log/hawkey.log-20260222' => ['type'=>'file','mtime'=>mktime(23,33,0,2,21,2026),'content'=>'[rotated hawkey log]'],
+    '/var/log/hawkey.log-20260301' => ['type'=>'file','mtime'=>mktime(23,17,0,2,28,2026),'content'=>'[rotated hawkey log]'],
+    '/var/log/hawkey.log-20260308' => ['type'=>'file','mtime'=>mktime(20,13,0,3,7,2026), 'content'=>'[rotated hawkey log]'],
+    '/var/log/kdump.log'        => ['type'=>'file','mtime'=>mktime(0,0,0,11,9,2024),'content'=>"kdump: No memory area to be reserved at system initialization.\nkdump: Disabled."],
+    '/var/log/lastlog'          => ['type'=>'file','mtime'=>mktime(13,52,0,3,12,2026),'content'=>'[binary — last login records]'],
+    '/var/log/lynis.log'        => ['type'=>'file','mtime'=>mktime(0,0,0,12,25,2024),'content'=>
+"[2024-12-25 00:00:01] ====\n[2024-12-25 00:00:01] Lynis 3.0.9\n[2024-12-25 00:00:02] OS: AlmaLinux 9.7\n[2024-12-25 00:00:05] Hardening index: 74\n[2024-12-25 00:00:05] Tests performed: 263\n[2024-12-25 00:00:05] Warnings: 3\n[2024-12-25 00:00:05] Suggestions: 22"],
+    '/var/log/lynis-report.dat' => ['type'=>'file','mtime'=>mktime(0,0,0,12,25,2024),'content'=>'[lynis report data]'],
+    '/var/log/maillog'          => ['type'=>'file','mtime'=>mktime(12,46,0,3,12,2026),'content'=>
+"Mar 12 00:00:01 $H postfix/pickup[1601]: message queued\nMar 12 06:25:02 $H postfix/smtp[1701]: connect to mail.example.com\nMar 12 12:46:01 $H postfix/qmgr[1602]: removed from queue"],
+    '/var/log/maillog-20260215' => ['type'=>'file','mtime'=>mktime(20,35,0,2,14,2026),'content'=>'[rotated maillog]'],
+    '/var/log/maillog-20260222' => ['type'=>'file','mtime'=>mktime(20,10,0,2,21,2026),'content'=>'[rotated maillog]'],
+    '/var/log/maillog-20260301' => ['type'=>'file','mtime'=>mktime(20,10,0,2,28,2026),'content'=>'[rotated maillog]'],
+    '/var/log/maillog-20260308' => ['type'=>'file','mtime'=>mktime(20,10,0,3,7,2026), 'content'=>'[rotated maillog]'],
+    '/var/log/messages'         => ['type'=>'file','mtime'=>mktime(13,53,0,3,12,2026),'content'=>
+"Mar 12 00:00:01 $H systemd[1]: Starting Daily Cleanup of Temporary Directories...\nMar 12 02:00:02 $H kernel: XFS (sda1): Unmounting Filesystem\nMar 12 06:25:01 $H systemd[1]: logrotate.service: Succeeded.\nMar 12 08:14:05 $H sshd[2201]: Accepted publickey for deploy from 192.168.1.42 port 54821\nMar 12 09:02:10 $H sshd[2211]: Invalid user admin from 185.220.101.45\nMar 12 13:15:01 $H systemd[1]: Starting dnf makecache..."],
+    '/var/log/messages-20260215'=> ['type'=>'file','mtime'=>mktime(0,0,0,2,15,2026),'content'=>'[rotated messages log]'],
+    '/var/log/messages-20260222'=> ['type'=>'file','mtime'=>mktime(23,59,0,2,21,2026),'content'=>'[rotated messages log]'],
+    '/var/log/messages-20260301'=> ['type'=>'file','mtime'=>mktime(23,59,0,2,28,2026),'content'=>'[rotated messages log]'],
+    '/var/log/messages-20260308'=> ['type'=>'file','mtime'=>mktime(23,59,0,3,7,2026), 'content'=>'[rotated messages log]'],
+    '/var/log/README'           => ['type'=>'file','mtime'=>mktime(0,0,0,7,17,2023),'content'=>'See /usr/share/doc/systemd/README.logs for log file documentation.'],
+    '/var/log/secure'           => ['type'=>'file','mtime'=>mktime(13,53,0,3,12,2026),'content'=>
+"Mar 12 00:00:01 $H sshd[914]: Server listening on 0.0.0.0 port 22.\nMar 12 08:14:05 $H sshd[2201]: Accepted publickey for deploy from 192.168.1.42 port 54821 ssh2\nMar 12 09:02:10 $H sshd[2211]: Invalid user admin from 185.220.101.45 port 39812\nMar 12 09:02:11 $H sshd[2211]: Failed password for invalid user admin from 185.220.101.45 port 39812\nMar 12 09:02:12 $H sshd[2212]: Invalid user root from 185.220.101.45 port 39813\nMar 12 09:02:13 $H sshd[2212]: Failed password for invalid user root from 185.220.101.45 port 39813\nMar 12 09:02:14 $H sshd[2213]: Disconnecting invalid user root 185.220.101.45: Too many authentication failures\nMar 12 10:31:05 $H sshd[2301]: Accepted publickey for deploy from 10.0.0.5 port 51234 ssh2\nMar 12 13:22:01 $H sudo[2401]: root : TTY=pts/0 ; PWD=/root ; USER=root ; COMMAND=/usr/bin/systemctl restart httpd"],
+    '/var/log/secure-20260215'  => ['type'=>'file','mtime'=>mktime(23,58,0,2,14,2026),'content'=>'[rotated secure log]'],
+    '/var/log/secure-20260222'  => ['type'=>'file','mtime'=>mktime(23,59,0,2,21,2026),'content'=>'[rotated secure log]'],
+    '/var/log/secure-20260301'  => ['type'=>'file','mtime'=>mktime(23,59,0,2,28,2026),'content'=>'[rotated secure log]'],
+    '/var/log/secure-20260308'  => ['type'=>'file','mtime'=>mktime(23,59,0,3,7,2026), 'content'=>'[rotated secure log]'],
+    '/var/log/spooler'          => ['type'=>'file','mtime'=>mktime(0,0,0,3,8,2026),'content'=>''],
+    '/var/log/spooler-20260215' => ['type'=>'file','mtime'=>mktime(0,0,0,2,8,2026),'content'=>''],
+    '/var/log/spooler-20260222' => ['type'=>'file','mtime'=>mktime(0,0,0,2,15,2026),'content'=>''],
+    '/var/log/spooler-20260301' => ['type'=>'file','mtime'=>mktime(0,0,0,2,22,2026),'content'=>''],
+    '/var/log/spooler-20260308' => ['type'=>'file','mtime'=>mktime(0,0,0,3,1,2026),'content'=>''],
+    '/var/log/tallylog'         => ['type'=>'file','mtime'=>mktime(0,0,0,7,17,2023),'content'=>'[binary — login failure counts]'],
+    '/var/log/wtmp'             => ['type'=>'file','mtime'=>mktime(13,52,0,3,12,2026),'content'=>'[binary — login/logout records]'],
+    '/var/log/wtmp-20260211'    => ['type'=>'file','mtime'=>mktime(22,37,0,2,10,2026),'content'=>'[binary — rotated wtmp]'],
+    '/var/log/xferlog'          => ['type'=>'file','mtime'=>mktime(0,0,0,3,6,2024),'content'=>''],
+
+    // ── /var/log/mariadb ──
+    '/var/log/mariadb/mariadb.log' => ['type'=>'file','mtime'=>mktime(0,0,0,3,12,2026),'content'=>
+"2026-03-12  0:00:01 0 [Note] /usr/sbin/mariadbd: ready for connections.\n2026-03-12  0:00:01 0 [Note] mysqld: Startup complete\n2026-03-12 14:22:09 42 [Warning] Access denied for user 'root'@'45.33.32.156'"],
+
+    '/var/log/backup.log'       => ['type'=>'file','mtime'=>mktime(2,4,0,3,12,2026),'content'=>
+"[2026-03-10 02:00:01] Starting nightly backup\n[2026-03-10 02:00:02] Dumping MariaDB databases...\n[2026-03-10 02:02:44] MariaDB dump complete: 1.8GB\n[2026-03-10 02:02:45] Syncing /var/www to backup...\n[2026-03-10 02:03:12] Sync complete: 842MB\n[2026-03-10 02:04:33] Done. Total: 4.2GB written to /mnt/backup/daily/db-2026-03-10.sql.gz\n[2026-03-11 02:00:01] Starting nightly backup\n[2026-03-11 02:04:41] Done. Total: 4.2GB written to /mnt/backup/daily/db-2026-03-11.sql.gz\n[2026-03-12 02:00:01] Starting nightly backup\n[2026-03-12 02:04:38] Done. Total: 4.3GB written to /mnt/backup/daily/db-2026-03-12.sql.gz"],
 
     '/var/www/html/index.php'       => ['type'=>'file','content'=>
 "<?php\n// Main entry point\nrequire_once 'config.php';\nrequire_once 'vendor/autoload.php';\n\n\$app = new App\\Application();\n\$app->run();"],

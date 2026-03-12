@@ -36,7 +36,7 @@ if (isset($_GET['sysinfo'])) {
 
 // ── initialise session filesystem ──────────────────────────
 // Bump this version string whenever fs_data.php changes to force a session reset.
-define('FS_VERSION', '3');
+define('FS_VERSION', '4');
 
 if (!isset($_SESSION['fs']) || ($_SESSION['fs_version'] ?? '') !== FS_VERSION) {
     require_once __DIR__ . '/fs_data.php';
@@ -74,7 +74,7 @@ function res_path($path) {
     return '/' . implode('/', $stack);
 }
 
-function ls_dir($path, $long) {
+function ls_dir($path, $long, $cols = 80) {
     $fs      = $_SESSION['fs'];
     $prefix  = rtrim($path, '/');
     $entries = [];
@@ -91,7 +91,25 @@ function ls_dir($path, $long) {
     }
     if (empty($entries)) return $long ? 'total 0' : '';
     usort($entries, function($a,$b){ return strcmp($a['name'],$b['name']); });
-    if (!$long) return implode('  ', array_map(function($e){ return $e['name']; }, $entries));
+    if (!$long) {
+        $names    = array_map(function($e){ return $e['name']; }, $entries);
+        $maxLen   = max(array_map('strlen', $names));
+        $colWidth = $maxLen + 2;
+        $numCols  = max(1, (int)floor($cols / $colWidth));
+        $rows     = (int)ceil(count($names) / $numCols);
+        $lines    = [];
+        for ($r = 0; $r < $rows; $r++) {
+            $parts = [];
+            for ($c = 0; $c < $numCols; $c++) {
+                $idx = $c * $rows + $r;
+                if ($idx >= count($names)) break;
+                $isLast = ($c === $numCols - 1) || (($idx + $rows) >= count($names));
+                $parts[] = $isLast ? $names[$idx] : str_pad($names[$idx], $colWidth);
+            }
+            $lines[] = implode('', $parts);
+        }
+        return implode("\n", $lines);
+    }
     $lines = ['total ' . (count($entries)*8)];
     foreach ($entries as $e) {
         $lines[] = sprintf('%s  2 root root %6d  %s  %s', $e['perm'], $e['size'], $e['mtime'], $e['name']);
@@ -104,6 +122,7 @@ $raw_body = file_get_contents('php://input', false, null, 0, 4096);  // cap at 4
 $body = json_decode($raw_body, true);
 $raw  = isset($body['cmd'])  ? substr(trim($body['cmd']),  0, 1024) : '';
 $user = isset($body['user']) ? substr(trim($body['user']), 0, 64)   : 'user';
+$cols = isset($body['cols']) ? max(20, min(500, (int)$body['cols'])) : 80;
 
 if ($raw === '') out('');
 
