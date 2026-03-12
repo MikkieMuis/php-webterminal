@@ -4,7 +4,9 @@
 ![PHP](https://img.shields.io/badge/PHP-7.4%2B-blue.svg)
 ![No dependencies](https://img.shields.io/badge/dependencies-none-brightgreen.svg)
 
-A fake interactive Linux terminal built in PHP and vanilla JavaScript. Drop it into any website and give visitors a realistic shell experience — complete with a fake filesystem, configurable system info, animated commands, and a few surprises.
+A fake interactive Linux terminal emulator for your website — built in PHP and vanilla JavaScript, zero dependencies. Drop it into any page via a single `<iframe>` and give visitors a realistic shell experience complete with a fake filesystem, boot sequence, configurable system info, and a few surprises.
+
+Whether you want to show off your server-side skills, add a geeky touch to your portfolio, or just give visitors something fun to poke at — this is a self-contained, fully sessionised terminal that feels like the real thing.
 
 **Live demo:** [www.clsoftware.nl](https://www.clsoftware.nl)
 
