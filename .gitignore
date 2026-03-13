@@ -1,8 +1,16 @@
 # Ignore real config (contains your actual hostname)
 config.php
 
-# AI session notes (local only, never pushed)
+# Internal notes and session docs (local only, never pushed)
 .ai/
+*.notes.md
+NOTES*.md
+TODO*.md
+SESSION*.md
+# Block all .md except README.md and CHANGELOG.md
+*.md
+!README.md
+!CHANGELOG.md
 
 # Common junk
 .DS_Store
