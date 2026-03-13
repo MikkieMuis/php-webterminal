@@ -8,21 +8,27 @@ switch ($cmd) {
 
     // ── nano ──
     case 'nano':
-        if ($args === '') err('nano: missing filename');
-        $path    = res_path($args);
-        $isNew   = !isset($_SESSION['fs'][$path]);
-        $content = '';
-        if (!$isNew) {
-            if ($_SESSION['fs'][$path]['type'] === 'dir') {
-                err('nano: ' . $args . ': Is a directory');
+        if ($args === '') {
+            // no filename — open a new empty buffer (like real nano)
+            $path    = res_path('New Buffer');
+            $isNew   = true;
+            $content = '';
+        } else {
+            $path    = res_path($args);
+            $isNew   = !isset($_SESSION['fs'][$path]);
+            $content = '';
+            if (!$isNew) {
+                if ($_SESSION['fs'][$path]['type'] === 'dir') {
+                    err('nano: ' . $args . ': Is a directory');
+                }
+                $content = $_SESSION['fs'][$path]['content'] ?? '';
             }
-            $content = $_SESSION['fs'][$path]['content'] ?? '';
         }
         echo json_encode([
             'output'   => '',
             'nano'     => true,
             'path'     => $path,
-            'filename' => basename($path),
+            'filename' => $args === '' ? 'New Buffer' : basename($path),
             'content'  => $content,
             'isnew'    => $isNew,
         ]);
