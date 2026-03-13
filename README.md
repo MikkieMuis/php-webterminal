@@ -28,13 +28,16 @@ Whether you want to show off your server-side skills, add a geeky touch to your 
 | Category | Commands |
 |---|---|
 | Navigation | `ls`, `cd`, `pwd` |
-| Files | `cat`, `touch`, `mkdir`, `rm` |
-| System | `uname`, `uptime`, `hostname`, `date`, `df`, `free`, `ps`, `top`, `id`, `env`, `which` |
+| Files | `cat`, `touch`, `mkdir`, `rm`, `wc` |
+| Pagers | `more`, `less` |
+| System | `uname`, `uptime`, `hostname`, `date`, `df`, `free`, `ps`, `top`, `id`, `env`, `printenv`, `which` |
 | Network | `ping`, `ifconfig`, `ip`, `wget`, `curl` |
 | Shell | `echo`, `history`, `alias`, `clear`, `exit`, `logout`, `help`, `man` |
 | Editors | `nano` |
 | Users | `whoami`, `sudo`, `last` |
 | Easter egg | `sudo rm -rf /` |
+
+`more` and `less` support paging through any file in the fake filesystem. `less` additionally supports backward navigation (`b`, `↑`, `g`/`G`). Press `q` or `Ctrl+C` to exit either pager.
 
 ---
 
@@ -123,7 +126,7 @@ Edit `fs_data.php` to change what files and directories exist. Each entry is an 
 After changing `fs_data.php`, bump the `FS_VERSION` constant at the top of `terminal.php` to force all active browser sessions to reload the new filesystem:
 
 ```php
-define('FS_VERSION', '5');  // increment this whenever fs_data.php changes
+define('FS_VERSION', '7');  // increment this whenever fs_data.php changes
 ```
 
 ---

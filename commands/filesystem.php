@@ -1,6 +1,6 @@
 <?php
 // ============================================================
-//  filesystem commands: ls, cd, mkdir, touch, rm, cat
+//  filesystem commands: ls, cd, mkdir, touch, rm, cat, wc, more, less
 //  Receives: $cmd, $args, $argv, $user, $body  (from terminal.php scope)
 // ============================================================
 
@@ -156,4 +156,62 @@ switch ($cmd) {
         if (!isset($_SESSION['fs'][$target])) err('cat: ' . $args . ': No such file or directory');
         if ($_SESSION['fs'][$target]['type'] === 'dir') err('cat: ' . $args . ': Is a directory');
         out($_SESSION['fs'][$target]['content']);
+
+    // ── wc ──
+    case 'wc':
+        // parse flags and filename
+        $flags   = '';
+        $wcfile  = '';
+        foreach ($argv as $a) {
+            if ($a[0] === '-') { $flags .= ltrim($a, '-'); }
+            else { $wcfile = $a; }
+        }
+        if ($wcfile === '') err('wc: missing operand');
+        $target = res_path($wcfile);
+        if (!isset($_SESSION['fs'][$target])) err('wc: ' . $wcfile . ': No such file or directory');
+        if ($_SESSION['fs'][$target]['type'] === 'dir') err('wc: ' . $wcfile . ': Is a directory');
+        $content = $_SESSION['fs'][$target]['content'] ?? '';
+        $lines   = $content === '' ? 0 : substr_count($content, "\n") + (substr($content, -1) !== "\n" ? 1 : 0);
+        $words   = $content === '' ? 0 : str_word_count($content);
+        $bytes   = strlen($content);
+        $name    = basename($target);
+        // decide what to show based on flags
+        if ($flags === '') {
+            out(sprintf(' %4d %4d %4d %s', $lines, $words, $bytes, $name));
+        } elseif (strpos($flags, 'l') !== false && strpos($flags, 'w') === false && strpos($flags, 'c') === false && strpos($flags, 'm') === false) {
+            out(sprintf(' %4d %s', $lines, $name));
+        } elseif (strpos($flags, 'w') !== false && strpos($flags, 'l') === false && strpos($flags, 'c') === false) {
+            out(sprintf(' %4d %s', $words, $name));
+        } elseif (strpos($flags, 'c') !== false || strpos($flags, 'm') !== false) {
+            out(sprintf(' %4d %s', $bytes, $name));
+        } else {
+            // multiple flags — show each requested column
+            $parts = [];
+            if (strpos($flags, 'l') !== false) $parts[] = sprintf('%4d', $lines);
+            if (strpos($flags, 'w') !== false) $parts[] = sprintf('%4d', $words);
+            if (strpos($flags, 'c') !== false || strpos($flags, 'm') !== false) $parts[] = sprintf('%4d', $bytes);
+            out(implode(' ', $parts) . ' ' . $name);
+        }
+
+    // ── more / less ──
+    case 'more':
+    case 'less':
+        if ($args === '') err($cmd . ': missing operand — try \'' . $cmd . ' <file>\'');
+        // strip any leading flags (e.g. less -N)
+        $pagerfile = '';
+        foreach ($argv as $a) {
+            if ($a[0] !== '-') { $pagerfile = $a; break; }
+        }
+        if ($pagerfile === '') err($cmd . ': missing filename');
+        $target = res_path($pagerfile);
+        if (!isset($_SESSION['fs'][$target])) err($cmd . ': ' . $pagerfile . ': No such file or directory');
+        if ($_SESSION['fs'][$target]['type'] === 'dir') err($cmd . ': ' . $pagerfile . ': Is a directory');
+        $content = $_SESSION['fs'][$target]['content'] ?? '';
+        // return pager payload — JS will handle rendering + scrolling
+        echo json_encode([
+            'pager'    => $content,
+            'pagercmd' => $cmd,
+            'filename' => basename($target),
+        ]);
+        exit;
 }
