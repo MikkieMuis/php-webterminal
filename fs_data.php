@@ -54,84 +54,233 @@ function fs_get_data() {
     '/boot/config-' . $K                => ['type'=>'file','content'=>"# Linux kernel config\nCONFIG_SMP=y\nCONFIG_X86_64=y\nCONFIG_MODULES=y\nCONFIG_NETFILTER=y"],
 
     // ──────────────────────────────────────────────────────────
-    //  /etc
+    //  /etc  — full AlmaLinux 9 layout (matches real server)
     // ──────────────────────────────────────────────────────────
-    '/etc/ssh'              => ['type'=>'dir'],
-    '/etc/cron.d'           => ['type'=>'dir'],
-    '/etc/cron.daily'       => ['type'=>'dir'],
-    '/etc/cron.weekly'      => ['type'=>'dir'],
-    '/etc/php.d'            => ['type'=>'dir'],
-    '/etc/httpd'            => ['type'=>'dir'],
-    '/etc/httpd/conf'       => ['type'=>'dir'],
-    '/etc/httpd/conf.d'     => ['type'=>'dir'],
-    '/etc/my.cnf.d'         => ['type'=>'dir'],
-    '/etc/logrotate.d'      => ['type'=>'dir'],
-    '/etc/sysconfig'        => ['type'=>'dir'],
-    '/etc/profile.d'        => ['type'=>'dir'],
-    '/etc/sudoers.d'        => ['type'=>'dir'],
-    '/etc/pki'              => ['type'=>'dir'],
-    '/etc/pki/tls'          => ['type'=>'dir'],
-    '/etc/pki/tls/certs'    => ['type'=>'dir'],
-    '/etc/pki/tls/private'  => ['type'=>'dir'],
 
-    '/etc/hostname'     => ['type'=>'file','content'=>$H],
-    '/etc/os-release'   => ['type'=>'file','content'=>
-        "NAME=\"AlmaLinux\"\nVERSION=\"9.7 (Seafoam Ocelot)\"\nID=almalinux\nID_LIKE=\"rhel fedora\"\nVERSION_ID=\"9.7\"\nPLATFORM_ID=\"platform:el9\"\nPRETTY_NAME=\"AlmaLinux 9.7 (Seafoam Ocelot)\"\nANSI_COLOR=\"0;34\"\nLOGO=\"fedora-logo-icon\"\nCPE_NAME=\"cpe:/o:almalinux:almalinux:9::baseos\"\nHOME_URL=\"https://almalinux.org/\"\nBUG_REPORT_URL=\"https://bugs.almalinux.org/\""],
-    '/etc/passwd'       => ['type'=>'file','content'=>
-"root:x:0:0:root:/root:/bin/bash\ndaemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin\nbin:x:2:2:bin:/bin:/usr/sbin/nologin\nsys:x:3:3:sys:/dev:/usr/sbin/nologin\nsync:x:4:65534:sync:/bin:/bin/sync\nwww-data:x:33:33:www-data:/var/www:/usr/sbin/nologin\nmysql:x:102:105:MySQL Server,,,:/var/lib/mysql:/bin/false\ndeploy:x:1001:1001:Deploy User:/home/deploy:/bin/bash\nnobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin"],
-    '/etc/shadow'       => ['type'=>'file','content'=>
-"root:\$6\$rounds=5000\$salt\$hashedpassword:19500:0:99999:7:::\ndeploy:\$6\$rounds=5000\$salt\$hashedpassword:19500:0:99999:7:::"],
-    '/etc/group'        => ['type'=>'file','content'=>
-"root:x:0:\ndaemon:x:1:\nbin:x:2:\nsys:x:3:\nwww-data:x:33:\nmysql:x:105:\ndeploy:x:1001:\ndocker:x:999:deploy"],
-    '/etc/hosts'        => ['type'=>'file','content'=>
-"127.0.0.1   localhost\n127.0.1.1   $H\n::1         localhost ip6-localhost ip6-loopback\n192.168.1.10  $H\n192.168.1.20  db-server\n192.168.1.30  backup-server"],
-    '/etc/fstab'        => ['type'=>'file','content'=>
-"# <file system>  <mount point>  <type>  <options>        <dump>  <pass>\n/dev/sda1        /              ext4    errors=remount-ro 0       1\n/dev/sda2        /boot          ext4    defaults          0       2\n/dev/sdb1        /mnt/db        ext4    defaults,noatime  0       2\n/dev/sdc1        /mnt/backup    ext4    defaults,noatime  0       2\n/dev/sdd1        /home          ext4    defaults          0       2\ntmpfs            /tmp           tmpfs   defaults,nosuid   0       0\ntmpfs            /dev/shm       tmpfs   defaults          0       0"],
-    '/etc/crontab'      => ['type'=>'file','content'=>
+    // ── subdirectories ────────────────────────────────────────
+    '/etc/alsa'             => ['type'=>'dir','mtime'=>mktime(0,0,0,2,14,2024)],
+    '/etc/alternatives'     => ['type'=>'dir','mtime'=>mktime(18,38,0,1,28,2026)],
+    '/etc/audit'            => ['type'=>'dir','mtime'=>mktime(13,48,0,9,21,2023)],
+    '/etc/authselect'       => ['type'=>'dir','mtime'=>mktime(0,0,0,3,12,2025)],
+    '/etc/bash_completion.d'=> ['type'=>'dir','mtime'=>mktime(16,44,0,11,29,2024)],
+    '/etc/binfmt.d'         => ['type'=>'dir','mtime'=>mktime(9,27,0,12,4,2024)],
+    '/etc/bluetooth'        => ['type'=>'dir','mtime'=>mktime(16,44,0,11,29,2024)],
+    '/etc/cifs-utils'       => ['type'=>'dir','mtime'=>mktime(16,36,0,11,27,2024)],
+    '/etc/cockpit'          => ['type'=>'dir','mtime'=>mktime(16,39,0,9,21,2023)],
+    '/etc/cron.d'           => ['type'=>'dir','mtime'=>mktime(13,43,0,9,25,2023)],
+    '/etc/cron.daily'       => ['type'=>'dir','mtime'=>mktime(0,0,0,4,11,2022)],
+    '/etc/cron.hourly'      => ['type'=>'dir','mtime'=>mktime(16,44,0,11,29,2024)],
+    '/etc/cron.monthly'     => ['type'=>'dir','mtime'=>mktime(0,0,0,4,11,2022)],
+    '/etc/cron.weekly'      => ['type'=>'dir','mtime'=>mktime(0,0,0,4,11,2022)],
+    '/etc/crypto-policies'  => ['type'=>'dir','mtime'=>mktime(12,20,0,10,20,2024)],
+    '/etc/dbus-1'           => ['type'=>'dir','mtime'=>mktime(0,0,0,2,14,2024)],
+    '/etc/dconf'            => ['type'=>'dir','mtime'=>mktime(0,0,0,2,14,2024)],
+    '/etc/debuginfod'       => ['type'=>'dir','mtime'=>mktime(16,44,0,11,29,2024)],
+    '/etc/default'          => ['type'=>'dir','mtime'=>mktime(16,44,0,11,29,2024)],
+    '/etc/depmod.d'         => ['type'=>'dir','mtime'=>mktime(16,44,0,11,29,2024)],
+    '/etc/dhcp'             => ['type'=>'dir','mtime'=>mktime(0,0,0,10,27,2023)],
+    '/etc/dnf'              => ['type'=>'dir','mtime'=>mktime(16,43,0,11,29,2024)],
+    '/etc/dracut.conf.d'    => ['type'=>'dir','mtime'=>mktime(18,48,0,12,17,2024)],
+    '/etc/firewalld'        => ['type'=>'dir','mtime'=>mktime(12,48,0,11,4,2024)],
+    '/etc/fonts'            => ['type'=>'dir','mtime'=>mktime(0,0,0,2,14,2024)],
+    '/etc/gcrypt'           => ['type'=>'dir','mtime'=>mktime(0,0,0,10,1,2024)],
+    '/etc/gnupg'            => ['type'=>'dir','mtime'=>mktime(22,34,0,1,15,2026)],
+    '/etc/goaccess'         => ['type'=>'dir','mtime'=>mktime(0,0,0,5,28,2025)],
+    '/etc/grub.d'           => ['type'=>'dir','mtime'=>mktime(16,44,0,11,29,2024)],
+    '/etc/httpd'            => ['type'=>'dir','mtime'=>mktime(4,33,0,2,13,2026)],
+    '/etc/httpd/conf'       => ['type'=>'dir','mtime'=>mktime(4,33,0,2,13,2026)],
+    '/etc/httpd/conf.d'     => ['type'=>'dir','mtime'=>mktime(4,33,0,2,13,2026)],
+    '/etc/httpd/conf.modules.d' => ['type'=>'dir','mtime'=>mktime(4,33,0,2,13,2026)],
+    '/etc/iproute2'         => ['type'=>'dir','mtime'=>mktime(16,43,0,11,29,2024)],
+    '/etc/issue.d'          => ['type'=>'dir','mtime'=>mktime(11,15,0,11,11,2024)],
+    '/etc/kdump'            => ['type'=>'dir','mtime'=>mktime(8,15,0,9,24,2024)],
+    '/etc/kernel'           => ['type'=>'dir','mtime'=>mktime(9,27,0,12,4,2024)],
+    '/etc/krb5.conf.d'      => ['type'=>'dir','mtime'=>mktime(0,0,0,6,24,2025)],
+    '/etc/ld.so.conf.d'     => ['type'=>'dir','mtime'=>mktime(12,3,0,2,17,2026)],
+    '/etc/letsencrypt'      => ['type'=>'dir','mtime'=>mktime(8,32,0,3,13,2026)],
+    '/etc/logrotate.d'      => ['type'=>'dir','mtime'=>mktime(12,40,0,2,17,2026)],
+    '/etc/lvm'              => ['type'=>'dir','mtime'=>mktime(15,56,0,12,18,2024)],
+    '/etc/lynis'            => ['type'=>'dir','mtime'=>mktime(16,41,0,10,23,2024)],
+    '/etc/mc'               => ['type'=>'dir','mtime'=>mktime(0,0,0,10,27,2023)],
+    '/etc/modprobe.d'       => ['type'=>'dir','mtime'=>mktime(16,44,0,11,29,2024)],
+    '/etc/modules-load.d'   => ['type'=>'dir','mtime'=>mktime(9,27,0,12,4,2024)],
+    '/etc/motd.d'           => ['type'=>'dir','mtime'=>mktime(0,0,0,9,3,2025)],
+    '/etc/my.cnf.d'         => ['type'=>'dir','mtime'=>mktime(0,0,0,2,14,2024)],
+    '/etc/NetworkManager'   => ['type'=>'dir','mtime'=>mktime(19,39,0,11,11,2024)],
+    '/etc/nginx'            => ['type'=>'dir','mtime'=>mktime(11,24,0,10,20,2024)],
+    '/etc/nginx/conf.d'     => ['type'=>'dir','mtime'=>mktime(11,24,0,10,20,2024)],
+    '/etc/pam.d'            => ['type'=>'dir','mtime'=>mktime(16,44,0,11,29,2024)],
+    '/etc/php.d'            => ['type'=>'dir','mtime'=>mktime(6,30,0,2,11,2026)],
+    '/etc/php-fpm.d'        => ['type'=>'dir','mtime'=>mktime(15,26,0,3,4,2026)],
+    '/etc/pki'              => ['type'=>'dir','mtime'=>mktime(0,0,0,10,2,2024)],
+    '/etc/pki/tls'          => ['type'=>'dir','mtime'=>mktime(0,0,0,10,2,2024)],
+    '/etc/pki/tls/certs'    => ['type'=>'dir','mtime'=>mktime(0,0,0,10,2,2024)],
+    '/etc/pki/tls/private'  => ['type'=>'dir','mtime'=>mktime(0,0,0,10,2,2024)],
+    '/etc/profile.d'        => ['type'=>'dir','mtime'=>mktime(16,44,0,11,29,2024)],
+    '/etc/rc.d'             => ['type'=>'dir','mtime'=>mktime(9,27,0,12,4,2024)],
+    '/etc/rpm'              => ['type'=>'dir','mtime'=>mktime(9,58,0,10,1,2024)],
+    '/etc/rsyslog.d'        => ['type'=>'dir','mtime'=>mktime(17,12,0,9,21,2023)],
+    '/etc/samba'            => ['type'=>'dir','mtime'=>mktime(11,25,0,2,22,2026)],
+    '/etc/security'         => ['type'=>'dir','mtime'=>mktime(0,0,0,9,6,2025)],
+    '/etc/selinux'          => ['type'=>'dir','mtime'=>mktime(10,38,0,3,2,2026)],
+    '/etc/skel'             => ['type'=>'dir','mtime'=>mktime(0,0,0,10,2,2024)],
+    '/etc/ssh'              => ['type'=>'dir','mtime'=>mktime(2,52,0,12,18,2024)],
+    '/etc/ssl'              => ['type'=>'dir','mtime'=>mktime(16,43,0,11,29,2024)],
+    '/etc/sudoers.d'        => ['type'=>'dir','mtime'=>mktime(14,30,0,9,21,2023)],
+    '/etc/sysconfig'        => ['type'=>'dir','mtime'=>mktime(14,25,0,2,28,2026)],
+    '/etc/sysctl.d'         => ['type'=>'dir','mtime'=>mktime(9,27,0,12,4,2024)],
+    '/etc/systemd'          => ['type'=>'dir','mtime'=>mktime(9,27,0,12,4,2024)],
+    '/etc/tmpfiles.d'       => ['type'=>'dir','mtime'=>mktime(18,37,0,1,28,2026)],
+    '/etc/tuned'            => ['type'=>'dir','mtime'=>mktime(16,44,0,11,29,2024)],
+    '/etc/udev'             => ['type'=>'dir','mtime'=>mktime(18,39,0,1,28,2026)],
+    '/etc/X11'              => ['type'=>'dir','mtime'=>mktime(0,0,0,10,2,2024)],
+    '/etc/xdg'              => ['type'=>'dir','mtime'=>mktime(0,0,0,10,2,2024)],
+    '/etc/yum'              => ['type'=>'dir','mtime'=>mktime(18,38,0,1,28,2026)],
+    '/etc/yum.repos.d'      => ['type'=>'dir','mtime'=>mktime(18,38,0,1,28,2026)],
+
+    // ── files ─────────────────────────────────────────────────
+    '/etc/adjtime'          => ['type'=>'file','mtime'=>mktime(0,0,0,10,27,2023),'content'=>"0.000000 0 0.000000\n0\nUTC"],
+    '/etc/aliases'          => ['type'=>'file','mtime'=>mktime(0,0,0,6,23,2020),'content'=>"# /etc/aliases\nmailer-daemon: postmaster\npostmaster: root\nnobody: root\nhostmaster: root\nusenet: root\nnews: root\nwebmaster: root\nwww: root\nftp: root\nabuse: root\nsecurity: root\nroot: admin@$H"],
+    '/etc/almalinux-release'=> ['type'=>'file','mtime'=>mktime(11,15,0,11,11,2024),'content'=>"AlmaLinux release 9.7 (Seafoam Ocelot)"],
+    '/etc/anacrontab'       => ['type'=>'file','mtime'=>mktime(13,43,0,9,25,2023),'content'=>"# /etc/anacrontab: configuration file for anacron\nSHELL=/bin/sh\nPATH=/sbin:/bin:/usr/sbin:/usr/bin\nMAILTO=root\n1\t5\tcron.daily\trun-parts /etc/cron.daily\n7\t25\tcron.weekly\trun-parts /etc/cron.weekly\n@monthly 45\tcron.monthly\trun-parts /etc/cron.monthly"],
+    '/etc/at.deny'          => ['type'=>'file','mtime'=>mktime(1,38,0,11,12,2024),'content'=>''],
+    '/etc/bashrc'           => ['type'=>'file','mtime'=>mktime(0,0,0,4,3,2024),'content'=>"# /etc/bashrc\nif [ \$EUID -eq 0 ]; then\n    PS1='\\u@\\h:\\w# '\nelse\n    PS1='\\u@\\h:\\w\\$ '\nfi\nalias ll='ls -la'\nalias la='ls -A'\nalias l='ls -CF'\nalias grep='grep --color=auto'"],
+    '/etc/chrony.conf'      => ['type'=>'file','mtime'=>mktime(0,0,0,10,27,2023),'content'=>"pool 2.almalinux.pool.ntp.org iburst\ndriftfile /var/lib/chrony/drift\nmakestep 1.0 3\nrtcsync\nlogdir /var/log/chrony"],
+    '/etc/colordiffrc'      => ['type'=>'file','mtime'=>mktime(18,46,0,1,17,2026),'content'=>"plain=off\nnewtext=darkgreen\noldtext=darkred\ndiffstuff=darkcyan\ncvsstuff=darkmagenta"],
+    '/etc/crontab'          => ['type'=>'file','mtime'=>mktime(13,43,0,9,25,2023),'content'=>
 "SHELL=/bin/bash\nPATH=/sbin:/bin:/usr/sbin:/usr/bin\n\n# .---------------- minute (0-59)\n# |  .------------- hour (0-23)\n# |  |  .---------- day of month (1-31)\n# |  |  |  .------- month (1-12)\n# |  |  |  |  .---- day of week (0-6)\n# m  h dom mon dow  user  command\n  0  2  *   *   *   root  /usr/local/bin/backup.sh\n  */5 * *   *   *   root  /usr/local/bin/health-check.sh\n 30  3  *   *   0   root  /usr/local/bin/weekly-report.sh\n  0  0  1   *   *   root  /usr/local/bin/monthly-cleanup.sh"],
-    '/etc/sudoers'      => ['type'=>'file','content'=>
-"# /etc/sudoers\nDefaults    env_reset\nDefaults    mail_badpass\nDefaults    secure_path=\"/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\"\n\nroot    ALL=(ALL:ALL) ALL\ndeploy  ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart httpd, /usr/bin/systemctl restart php-fpm"],
-    '/etc/environment'  => ['type'=>'file','content'=>
-"PATH=\"/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\"\nLANG=en_US.UTF-8\nLC_ALL=en_US.UTF-8"],
-    '/etc/timezone'     => ['type'=>'file','content'=>'Europe/Amsterdam'],
-    '/etc/resolv.conf'  => ['type'=>'file','content'=>
-"# Generated by NetworkManager\nnameserver 8.8.8.8\nnameserver 8.8.4.4\nsearch $H.local"],
-    '/etc/motd'         => ['type'=>'file','content'=>
-"\nWelcome to $H\n\nAlmaLinux 9.7 — Kernel $K\nAll access is logged and monitored.\nUnauthorised use is strictly prohibited.\n"],
-    '/etc/issue'        => ['type'=>'file','content'=>"AlmaLinux 9.7 (Seafoam Ocelot)\nKernel \\r on an \\m\n"],
-    '/etc/shells'       => ['type'=>'file','content'=>"/bin/sh\n/bin/bash\n/bin/dash\n/usr/bin/bash\n/usr/bin/sh"],
-    '/etc/locale.conf'  => ['type'=>'file','content'=>"LANG=en_US.UTF-8\nLC_TIME=en_GB.UTF-8"],
-
-    '/etc/ssh/sshd_config' => ['type'=>'file','content'=>
-"Port 22\nAddressFamily any\nListenAddress 0.0.0.0\nPermitRootLogin prohibit-password\nPubkeyAuthentication yes\nPasswordAuthentication no\nPermitEmptyPasswords no\nChallengeResponseAuthentication no\nUsePAM yes\nX11Forwarding no\nPrintMotd yes\nAcceptEnv LANG LC_*\nSubsystem sftp /usr/lib/openssh/sftp-server\nAllowUsers root deploy\nMaxAuthTries 3\nClientAliveInterval 300\nClientAliveCountMax 2"],
-    '/etc/ssh/ssh_host_rsa_key' => ['type'=>'file','content'=>'-----BEGIN OPENSSH PRIVATE KEY-----\n[private key — not readable]\n-----END OPENSSH PRIVATE KEY-----'],
-
-    '/etc/httpd/conf/httpd.conf' => ['type'=>'file','content'=>
-"ServerRoot \"/etc/httpd\"\nListen 80\nListen 443\nServerName $H\nServerAdmin webmaster@$H\nDocumentRoot \"/var/www/html\"\nDirectoryIndex index.php index.html\nErrorLog \"/var/log/httpd/error_log\"\nCustomLog \"/var/log/httpd/access_log\" combined\nKeepAlive On\nMaxKeepAliveRequests 100\nKeepAliveTimeout 5"],
-    '/etc/httpd/conf.d/ssl.conf' => ['type'=>'file','content'=>
-"<VirtualHost *:443>\n    ServerName $H\n    SSLEngine on\n    SSLCertificateFile /etc/pki/tls/certs/server.crt\n    SSLCertificateKeyFile /etc/pki/tls/private/server.key\n    DocumentRoot /var/www/html\n</VirtualHost>"],
-
-    '/etc/my.cnf' => ['type'=>'file','content'=>
+    '/etc/crypttab'         => ['type'=>'file','mtime'=>mktime(0,0,0,10,27,2023),'content'=>''],
+    '/etc/dracut.conf'      => ['type'=>'file','mtime'=>mktime(18,48,0,12,17,2024),'content'=>"# dracut config\nadd_drivers+=\" nvme \""],
+    '/etc/environment'      => ['type'=>'file','mtime'=>mktime(0,0,0,4,3,2024),'content'=>''],
+    '/etc/exports'          => ['type'=>'file','mtime'=>mktime(0,0,0,6,23,2020),'content'=>''],
+    '/etc/filesystems'      => ['type'=>'file','mtime'=>mktime(0,0,0,6,23,2020),'content'=>"ext4\next3\next2\nnodev proc\nnodev devpts\niso9660\nvfat\nhfs\nhfsplus\n*"],
+    '/etc/fstab'            => ['type'=>'file','mtime'=>mktime(0,0,0,2,14,2024),'content'=>
+"# /etc/fstab\n# <device>          <mount>    <type>  <options>           <dump> <pass>\n/dev/sda1           /          xfs     defaults            0      1\n/dev/sda2           /boot      xfs     defaults            0      2\n/dev/sdb1           /mnt/db    xfs     defaults,noatime    0      2\n/dev/sdc1           /mnt/backup xfs    defaults,noatime    0      2\ntmpfs               /tmp       tmpfs   defaults,nosuid,nodev 0    0\ntmpfs               /dev/shm   tmpfs   defaults            0      0"],
+    '/etc/fuse.conf'        => ['type'=>'file','mtime'=>mktime(0,0,0,10,2,2024),'content'=>"# /etc/fuse.conf\n# Set the maximum number of FUSE mounts allowed to non-root users.\n# The default is 1000.\n#mount_max = 1000\nuser_allow_other"],
+    '/etc/group'            => ['type'=>'file','mtime'=>mktime(0,0,0,5,28,2025),'content'=>
+"root:x:0:\nbin:x:1:\ndaemon:x:2:\nsys:x:3:\nadm:x:4:\ntty:x:5:\ndisk:x:6:\nlp:x:7:\nmem:x:8:\nkmem:x:9:\nwheel:x:10:deploy\nmail:x:12:\nman:x:15:\ndialout:x:18:\nfloppy:x:19:\ngames:x:20:\ntape:x:33:\nvideo:x:39:\nftp:x:50:\nlock:x:54:\naudio:x:63:\nnobody:x:65534:\nusers:x:100:\nhttpd:x:48:\nmysql:x:27:\nnginx:x:998:\nphp-fpm:x:997:\nsshd:x:74:\nchrony:x:994:\ndeploy:x:1001:\ndocker:x:999:deploy"],
+    '/etc/host.conf'        => ['type'=>'file','mtime'=>mktime(0,0,0,6,23,2020),'content'=>"multi on"],
+    '/etc/hostname'         => ['type'=>'file','mtime'=>mktime(0,0,0,2,14,2024),'content'=>$H],
+    '/etc/hosts'            => ['type'=>'file','mtime'=>mktime(0,0,0,2,14,2024),'content'=>
+"127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4\n::1         localhost localhost.localdomain localhost6 localhost6.localdomain6\n127.0.1.1   $H\n192.168.1.10  $H\n192.168.1.20  db-server\n192.168.1.30  backup-server"],
+    '/etc/inittab'          => ['type'=>'file','mtime'=>mktime(9,27,0,12,4,2024),'content'=>"# inittab is no longer used.\n# The default runlevel is defined in /etc/systemd/system/default.target\nid:3:initdefault:"],
+    '/etc/inputrc'          => ['type'=>'file','mtime'=>mktime(13,24,0,10,13,2024),'content'=>"# /etc/inputrc\nset meta-flag on\nset input-meta on\nset output-meta on\nset convert-meta off\n\"\\e[1~\": beginning-of-line\n\"\\e[4~\": end-of-line\n\"\\e[5~\": beginning-of-history\n\"\\e[6~\": end-of-history\n\"\\e[3~\": delete-char\n\"\\e[2~\": quoted-insert"],
+    '/etc/issue'            => ['type'=>'file','mtime'=>mktime(11,15,0,11,11,2024),'content'=>"AlmaLinux 9.7 (Seafoam Ocelot)\nKernel \\r on an \\m\n"],
+    '/etc/issue.net'        => ['type'=>'file','mtime'=>mktime(11,15,0,11,11,2024),'content'=>"AlmaLinux 9.7 (Seafoam Ocelot)"],
+    '/etc/kdump.conf'       => ['type'=>'file','mtime'=>mktime(16,44,0,11,29,2024),'content'=>"path /var/crash\ncore_collector makedumpfile -l --message-level 7 -d 31"],
+    '/etc/krb5.conf'        => ['type'=>'file','mtime'=>mktime(0,0,0,6,24,2025),'content'=>"[logging]\ndefault = FILE:/var/log/krb5libs.log\n\n[libdefaults]\ndns_lookup_realm = false\nticket_lifetime = 24h\nrenew_lifetime = 7d\nforwardable = true\ndefault_realm = EXAMPLE.COM"],
+    '/etc/ld.so.cache'      => ['type'=>'file','mtime'=>mktime(15,26,0,3,4,2026),'content'=>'[binary — shared library cache]'],
+    '/etc/ld.so.conf'       => ['type'=>'file','mtime'=>mktime(11,54,0,2,17,2026),'content'=>"include /etc/ld.so.conf.d/*.conf"],
+    '/etc/locale.conf'      => ['type'=>'file','mtime'=>mktime(0,0,0,2,14,2024),'content'=>"LANG=en_US.UTF-8\nLC_TIME=en_GB.UTF-8"],
+    '/etc/logrotate.conf'   => ['type'=>'file','mtime'=>mktime(12,28,0,2,12,2026),'content'=>"# global options\nweekly\nrotate 4\ncreate\ndateext\ncompress\ninclude /etc/logrotate.d\n/var/log/wtmp {\n    monthly\n    create 0664 root utmp\n    minsize 1M\n    rotate 1\n}\n/var/log/btmp {\n    missingok\n    monthly\n    create 0600 root utmp\n    rotate 1\n}"],
+    '/etc/machine-id'       => ['type'=>'file','mtime'=>mktime(0,0,0,10,27,2023),'content'=>"a3f2c1d4e5b6789012345678abcdef01"],
+    '/etc/magic'            => ['type'=>'file','mtime'=>mktime(0,0,0,4,3,2024),'content'=>'# magic(5) - file magic patterns'],
+    '/etc/man_db.conf'      => ['type'=>'file','mtime'=>mktime(14,56,0,9,21,2023),'content'=>"MANDB_MAP\t/usr/man\t/var/cache/man/fsstnd\nMANDB_MAP\t/usr/share/man\t/var/cache/man\nMANDB_MAP\t/usr/local/man\t/var/cache/man/oldlocal\nMANDB_MAP\t/usr/local/share/man\t/var/cache/man/local"],
+    '/etc/motd'             => ['type'=>'file','mtime'=>mktime(0,0,0,6,23,2020),'content'=>''],
+    '/etc/my.cnf'           => ['type'=>'file','mtime'=>mktime(0,0,0,2,24,2024),'content'=>
 "[mysqld]\ndatadir=/mnt/db/mysql\nsocket=/var/lib/mysql/mysql.sock\nlog-error=/var/log/mariadb/mariadb.log\npid-file=/run/mariadb/mariadb.pid\n\n[client]\nport=3306\nsocket=/var/lib/mysql/mysql.sock\n\n!includedir /etc/my.cnf.d"],
-    '/etc/my.cnf.d/mariadb-server.cnf' => ['type'=>'file','content'=>
+    '/etc/nanorc'           => ['type'=>'file','mtime'=>mktime(0,0,0,3,4,2026),'content'=>"# GNU nano config\nset autoindent\nset linenumbers\nset mouse\nset smooth\nset tabsize 4\nset tabstospaces\ninclude /usr/share/nano/*.nanorc"],
+    '/etc/netconfig'        => ['type'=>'file','mtime'=>mktime(0,0,0,10,1,2024),'content'=>"udp6       tpi_clts      v     inet6    udp     -       -\ntcp6       tpi_cots_ord  v     inet6    tcp     -       -\nudp        tpi_clts      v     inet     udp     -       -\ntcp        tpi_cots_ord  v     inet     tcp     -       -\nrawip6     tpi_raw       -     inet6     -      -       -\nrawip      tpi_raw       -     inet      -      -       -\nlocal      tpi_cots_ord  -      -        -      -       -"],
+    '/etc/networks'         => ['type'=>'file','mtime'=>mktime(0,0,0,6,23,2020),'content'=>"default 0.0.0.0\nloopback 127.0.0.0\nlink-local 169.254.0.0"],
+    '/etc/npmrc'            => ['type'=>'file','mtime'=>mktime(16,47,0,2,17,2026),'content'=>"prefix=/usr/local"],
+    '/etc/nsswitch.conf'    => ['type'=>'file','mtime'=>mktime(0,0,0,10,27,2023),'content'=>"passwd:     sss files systemd\nshadow:     files sss\ngroup:      sss files systemd\nhosts:      files dns myhostname\nnetworks:   files dns\nprotocols:  files\nservices:   files sss\nethers:     files\nrpc:        files\nnetgroup:   sss files"],
+    '/etc/os-release'       => ['type'=>'file','mtime'=>mktime(11,15,0,11,11,2024),'content'=>
+"NAME=\"AlmaLinux\"\nVERSION=\"9.7 (Seafoam Ocelot)\"\nID=almalinux\nID_LIKE=\"rhel centos fedora\"\nVERSION_ID=\"9.7\"\nPLATFORM_ID=\"platform:el9\"\nPRETTY_NAME=\"AlmaLinux 9.7 (Seafoam Ocelot)\"\nANSI_COLOR=\"0;34\"\nLOGO=\"fedora-logo-icon\"\nCPE_NAME=\"cpe:/o:almalinux:almalinux:9::baseos\"\nHOME_URL=\"https://almalinux.org/\"\nDOCUMENTATION_URL=\"https://wiki.almalinux.org/\"\nBUG_REPORT_URL=\"https://bugs.almalinux.org/\"\nALMA_SUPPORT_END_DATE=\"2032-06-01\""],
+    '/etc/passwd'           => ['type'=>'file','mtime'=>mktime(0,0,0,5,28,2025),'content'=>
+"root:x:0:0:root:/root:/bin/bash\nbin:x:1:1:bin:/bin:/sbin/nologin\ndaemon:x:2:2:daemon:/sbin:/sbin/nologin\nadm:x:3:4:adm:/var/adm:/sbin/nologin\nlp:x:4:7:lp:/var/spool/lpd:/sbin/nologin\nsync:x:5:0:sync:/sbin:/bin/sync\nshutdown:x:6:0:shutdown:/sbin:/sbin/shutdown\nhalt:x:7:0:halt:/sbin:/sbin/halt\nmail:x:8:12:mail:/var/spool/mail:/sbin/nologin\nnobody:x:65534:65534:Kernel Overflow User:/:/sbin/nologin\nhttpd:x:48:48:Apache:/usr/share/httpd:/sbin/nologin\nmysql:x:27:27:MySQL Server:/var/lib/mysql:/sbin/nologin\nnginx:x:998:998:Nginx web server:/var/lib/nginx:/sbin/nologin\nphp-fpm:x:997:997:php-fpm:/run/php-fpm:/sbin/nologin\nsshd:x:74:74:Privilege-separated SSH:/usr/share/empty.sshd:/sbin/nologin\nchrony:x:994:994::/var/lib/chrony:/sbin/nologin\ndeploy:x:1001:1001:Deploy User:/home/deploy:/bin/bash"],
+    '/etc/php-fpm.conf'     => ['type'=>'file','mtime'=>mktime(6,30,0,2,11,2026),'content'=>"[global]\npid = /run/php-fpm/php-fpm.pid\nerror_log = /var/log/php-fpm/error.log\nlog_level = warning\ndaemonize = yes\ninclude=/etc/php-fpm.d/*.conf"],
+    '/etc/php.ini'          => ['type'=>'file','mtime'=>mktime(11,35,0,2,6,2026),'content'=>
+"[PHP]\nengine = On\nshort_open_tag = Off\nprecision = 14\noutput_buffering = 4096\nzlib.output_compression = Off\nimplicit_flush = Off\nmax_execution_time = 30\nmemory_limit = 256M\nerror_reporting = E_ALL & ~E_DEPRECATED & ~E_STRICT\ndisplay_errors = Off\nlog_errors = On\nerror_log = /var/log/php-fpm/php_errors.log\npost_max_size = 64M\nupload_max_filesize = 64M\nmax_file_uploads = 20\ndefault_charset = \"UTF-8\"\nextension_dir = /usr/lib64/php/modules\ndate.timezone = Europe/Amsterdam\n\n[Session]\nsession.save_handler = files\nsession.save_path = /var/lib/php/session\nsession.use_strict_mode = 1\nsession.cookie_httponly = 1\nsession.cookie_secure = 1"],
+    '/etc/printcap'         => ['type'=>'file','mtime'=>mktime(0,0,0,6,23,2020),'content'=>'# /etc/printcap'],
+    '/etc/profile'          => ['type'=>'file','mtime'=>mktime(0,0,0,2,14,2024),'content'=>
+"# /etc/profile\nif [ \"\$EUID\" = \"0\" ]; then\n    pathmunge /usr/sbin\n    pathmunge /usr/local/sbin\nelse\n    pathmunge /usr/local/sbin after\n    pathmunge /usr/sbin after\nfi\nexport PATH USER LOGNAME MAIL HOSTNAME HISTSIZE HISTCONTROL\nfor i in /etc/profile.d/*.sh; do\n    [ -r \"\$i\" ] && . \"\$i\"\ndone\nunset i pathmunge"],
+    '/etc/protocols'        => ['type'=>'file','mtime'=>mktime(0,0,0,6,23,2020),'content'=>"ip\t0\tIP\nicmp\t1\tICMP\ntcp\t6\tTCP\nudp\t17\tUDP\nipv6\t41\tIPv6\nospf\t89\tOSPF\nsctp\t132\tSCTP"],
+    '/etc/resolv.conf'      => ['type'=>'file','mtime'=>mktime(14,36,0,2,28,2026),'content'=>
+"# Generated by NetworkManager\nnameserver 8.8.8.8\nnameserver 8.8.4.4\nsearch $H.local"],
+    '/etc/rsyncd.conf'      => ['type'=>'file','mtime'=>mktime(0,0,0,3,13,2025),'content'=>"# /etc/rsyncd.conf\nlog file = /var/log/rsyncd.log\ntransfer logging = yes\n\n[backup]\npath = /mnt/backup\ncomment = Backup volume\nread only = no\nauth users = backup\nsecrets file = /etc/rsyncd.secrets"],
+    '/etc/rsyslog.conf'     => ['type'=>'file','mtime'=>mktime(15,8,0,9,21,2023),'content'=>
+"# /etc/rsyslog.conf\nmodule(load=\"imuxsock\")\nmodule(load=\"imjournal\")\n\n*.info;mail.none;authpriv.none;cron.none  /var/log/messages\nauthpriv.*                                /var/log/secure\nmail.*                                    -/var/log/maillog\ncron.*                                    /var/log/cron\n*.emerg                                   :omusrmsg:*\nuucp,news.crit                            /var/log/spooler\nlocal7.*                                  /var/log/boot.log"],
+    '/etc/shadow'           => ['type'=>'file','mtime'=>mktime(0,0,0,5,28,2025),'content'=>
+"root:\$6\$rounds=5000\$rAnDoMsAlT123\$hashedpassword1234567890:19500:0:99999:7:::\ndeploy:\$6\$rounds=5000\$rAnDoMsAlT456\$hashedpassword0987654321:19500:0:99999:7:::"],
+    '/etc/shells'           => ['type'=>'file','mtime'=>mktime(0,0,0,3,18,2024),'content'=>"/bin/sh\n/bin/bash\n/usr/bin/bash\n/usr/bin/sh\n/usr/bin/tmux"],
+    '/etc/strato-release'   => ['type'=>'file','mtime'=>mktime(0,0,0,10,27,2023),'content'=>"Strato Managed Server"],
+    '/etc/sudoers'          => ['type'=>'file','mtime'=>mktime(14,30,0,9,21,2023),'content'=>
+"# /etc/sudoers\nDefaults    env_reset\nDefaults    mail_badpass\nDefaults    secure_path=\"/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\"\nDefaults    logfile=/var/log/sudo.log\n\nroot    ALL=(ALL:ALL) ALL\n%wheel  ALL=(ALL) ALL\ndeploy  ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart httpd, /usr/bin/systemctl restart php-fpm, /usr/bin/systemctl reload nginx"],
+    '/etc/sysctl.conf'      => ['type'=>'file','mtime'=>mktime(9,27,0,12,4,2024),'content'=>"# /etc/sysctl.conf\nnet.ipv4.ip_forward = 0\nnet.ipv4.conf.default.rp_filter = 1\nnet.ipv4.conf.default.accept_source_route = 0\nkernel.sysrq = 0\nnet.ipv4.tcp_syncookies = 1\nvm.swappiness = 10"],
+    '/etc/tmux.conf'        => ['type'=>'file','mtime'=>mktime(12,28,0,2,12,2026),'content'=>"set -g default-terminal \"tmux-256color\"\nset -ga terminal-overrides \",*256col*:Tc\"\nset -g history-limit 50000\nset -g mouse on\nset -g base-index 1\nbind r source-file ~/.tmux.conf"],
+    '/etc/vconsole.conf'    => ['type'=>'file','mtime'=>mktime(0,0,0,10,27,2023),'content'=>"KEYMAP=us\nFONT=eurlatgr"],
+    '/etc/virc'             => ['type'=>'file','mtime'=>mktime(0,24,0,11,12,2024),'content'=>"set nocompatible\nset backspace=indent,eol,start"],
+    '/etc/wgetrc'           => ['type'=>'file','mtime'=>mktime(0,0,0,9,3,2024),'content'=>"# /etc/wgetrc\nverbose = off\ntimestamping = on\nquiet = off"],
+
+    // ── symlinks (shown as files with -> in content) ───────────
+    '/etc/grub2.cfg'        => ['type'=>'file','mtime'=>mktime(11,41,0,11,11,2024),'content'=>'-> ../boot/grub2/grub.cfg'],
+    '/etc/grub2-efi.cfg'    => ['type'=>'file','mtime'=>mktime(11,41,0,11,11,2024),'content'=>'-> ../boot/grub2/grub.cfg'],
+    '/etc/localtime'        => ['type'=>'file','mtime'=>mktime(0,0,0,2,14,2024),'content'=>'-> ../usr/share/zoneinfo/Europe/Amsterdam'],
+    '/etc/mtab'             => ['type'=>'file','mtime'=>mktime(0,0,0,10,27,2023),'content'=>'-> ../proc/self/mounts'],
+    '/etc/os-release~link'  => ['type'=>'file','mtime'=>mktime(11,15,0,11,11,2024),'content'=>'-> ../usr/lib/os-release'],
+    '/etc/rc.local'         => ['type'=>'file','mtime'=>mktime(9,27,0,12,4,2024),'content'=>'-> rc.d/rc.local'],
+    '/etc/redhat-release'   => ['type'=>'file','mtime'=>mktime(11,15,0,11,11,2024),'content'=>'-> almalinux-release'],
+    '/etc/system-release'   => ['type'=>'file','mtime'=>mktime(11,15,0,11,11,2024),'content'=>'-> almalinux-release'],
+    '/etc/yum.conf'         => ['type'=>'file','mtime'=>mktime(13,27,0,9,22,2023),'content'=>'-> dnf/dnf.conf'],
+
+    // ── /etc/ssh ──────────────────────────────────────────────
+    '/etc/ssh/sshd_config'      => ['type'=>'file','mtime'=>mktime(2,52,0,12,18,2024),'content'=>
+"Port 22\nAddressFamily any\nListenAddress 0.0.0.0\nPermitRootLogin prohibit-password\nPubkeyAuthentication yes\nPasswordAuthentication no\nPermitEmptyPasswords no\nChallengeResponseAuthentication no\nUsePAM yes\nX11Forwarding no\nPrintMotd yes\nAcceptEnv LANG LC_*\nSubsystem sftp /usr/lib/openssh/sftp-server\nAllowUsers root deploy\nMaxAuthTries 3\nClientAliveInterval 300\nClientAliveCountMax 2\nBanner /etc/issue.net"],
+    '/etc/ssh/ssh_config'       => ['type'=>'file','mtime'=>mktime(0,0,0,2,14,2024),'content'=>"Host *\n    GSSAPIAuthentication yes\n    SendEnv LANG LC_*\n    HashKnownHosts yes"],
+    '/etc/ssh/ssh_host_rsa_key' => ['type'=>'file','mtime'=>mktime(0,0,0,10,27,2023),'content'=>"-----BEGIN OPENSSH PRIVATE KEY-----\n[private key — not readable]\n-----END OPENSSH PRIVATE KEY-----"],
+    '/etc/ssh/ssh_host_rsa_key.pub' => ['type'=>'file','mtime'=>mktime(0,0,0,10,27,2023),'content'=>"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC... root@$H"],
+    '/etc/ssh/ssh_host_ed25519_key' => ['type'=>'file','mtime'=>mktime(0,0,0,10,27,2023),'content'=>"-----BEGIN OPENSSH PRIVATE KEY-----\n[private key — not readable]\n-----END OPENSSH PRIVATE KEY-----"],
+    '/etc/ssh/ssh_host_ed25519_key.pub' => ['type'=>'file','mtime'=>mktime(0,0,0,10,27,2023),'content'=>"ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI... root@$H"],
+
+    // ── /etc/httpd ────────────────────────────────────────────
+    '/etc/httpd/conf/httpd.conf'    => ['type'=>'file','mtime'=>mktime(4,33,0,2,13,2026),'content'=>
+"ServerRoot \"/etc/httpd\"\nListen 80\nListen 443\nServerName $H\nServerAdmin webmaster@$H\nDocumentRoot \"/var/www/html\"\nDirectoryIndex index.php index.html\nErrorLog \"/var/log/httpd/error_log\"\nCustomLog \"/var/log/httpd/access_log\" combined\nKeepAlive On\nMaxKeepAliveRequests 100\nKeepAliveTimeout 5\nIncludeOptional conf.d/*.conf"],
+    '/etc/httpd/conf.d/ssl.conf'    => ['type'=>'file','mtime'=>mktime(4,33,0,2,13,2026),'content'=>
+"<VirtualHost *:443>\n    ServerName $H\n    SSLEngine on\n    SSLCertificateFile /etc/letsencrypt/live/$H/fullchain.pem\n    SSLCertificateKeyFile /etc/letsencrypt/live/$H/privkey.pem\n    DocumentRoot /var/www/html\n    ErrorLog /var/log/httpd/ssl_error_log\n    CustomLog /var/log/httpd/ssl_access_log combined\n    CustomLog /var/log/httpd/ssl_request_log \"%t %h %{SSL_PROTOCOL}x %{SSL_CIPHER}x \\\"%r\\\" %b\"\n</VirtualHost>"],
+    '/etc/httpd/conf.d/welcome.conf'=> ['type'=>'file','mtime'=>mktime(4,33,0,2,13,2026),'content'=>"# This file is intentionally commented out."],
+    '/etc/httpd/conf.modules.d/00-base.conf' => ['type'=>'file','mtime'=>mktime(4,33,0,2,13,2026),'content'=>"LoadModule auth_basic_module modules/mod_auth_basic.so\nLoadModule authz_core_module modules/mod_authz_core.so\nLoadModule dir_module modules/mod_dir.so\nLoadModule env_module modules/mod_env.so\nLoadModule mime_module modules/mod_mime.so\nLoadModule rewrite_module modules/mod_rewrite.so"],
+
+    // ── /etc/nginx ────────────────────────────────────────────
+    '/etc/nginx/nginx.conf'         => ['type'=>'file','mtime'=>mktime(11,24,0,10,20,2024),'content'=>
+"user nginx;\nworker_processes auto;\nerror_log /var/log/nginx/error.log warn;\npid /run/nginx.pid;\n\nevents {\n    worker_connections 1024;\n}\n\nhttp {\n    include /etc/nginx/mime.types;\n    default_type application/octet-stream;\n    sendfile on;\n    keepalive_timeout 65;\n    include /etc/nginx/conf.d/*.conf;\n}"],
+
+    // ── /etc/my.cnf.d ─────────────────────────────────────────
+    '/etc/my.cnf.d/mariadb-server.cnf' => ['type'=>'file','mtime'=>mktime(0,0,0,2,14,2024),'content'=>
 "[mysqld]\nbind-address    = 127.0.0.1\nmax_connections = 200\ninnodb_buffer_pool_size = 4G\ninnodb_log_file_size    = 512M\nslow_query_log  = 1\nslow_query_log_file = /var/log/mariadb/slow.log\nlong_query_time = 2\n\n[mysqldump]\nquick\nmax_allowed_packet = 64M"],
 
-    '/etc/logrotate.d/httpd' => ['type'=>'file','content'=>
+    // ── /etc/logrotate.d ──────────────────────────────────────
+    '/etc/logrotate.d/httpd'        => ['type'=>'file','mtime'=>mktime(12,40,0,2,17,2026),'content'=>
 "/var/log/httpd/access_log /var/log/httpd/error_log /var/log/httpd/ssl_access_log /var/log/httpd/ssl_error_log /var/log/httpd/ssl_request_log {\n    daily\n    missingok\n    rotate 8\n    compress\n    delaycompress\n    notifempty\n    sharedscripts\n    postrotate\n        /bin/systemctl reload httpd > /dev/null 2>/dev/null || true\n    endscript\n}"],
-    '/etc/logrotate.d/mariadb' => ['type'=>'file','content'=>
+    '/etc/logrotate.d/mariadb'      => ['type'=>'file','mtime'=>mktime(12,40,0,2,17,2026),'content'=>
 "/var/log/mariadb/mariadb.log {\n    daily\n    rotate 7\n    compress\n    missingok\n    notifempty\n    create 640 mysql adm\n    postrotate\n        /bin/systemctl reload mariadb > /dev/null 2>/dev/null || true\n    endscript\n}"],
+    '/etc/logrotate.d/nginx'        => ['type'=>'file','mtime'=>mktime(12,40,0,2,17,2026),'content'=>
+"/var/log/nginx/*.log {\n    daily\n    missingok\n    rotate 52\n    compress\n    delaycompress\n    notifempty\n    sharedscripts\n    postrotate\n        nginx -s reopen\n    endscript\n}"],
+    '/etc/logrotate.d/syslog'       => ['type'=>'file','mtime'=>mktime(17,12,0,9,21,2023),'content'=>
+"/var/log/cron\n/var/log/maillog\n/var/log/messages\n/var/log/secure\n/var/log/spooler\n{\n    missingok\n    sharedscripts\n    postrotate\n        /bin/kill -HUP `cat /var/run/syslogd.pid 2>/dev/null` 2>/dev/null || true\n    endscript\n}"],
 
-    '/etc/cron.d/backup'      => ['type'=>'file','content'=>"0 2 * * * root /usr/local/bin/backup.sh >> /var/log/backup.log 2>&1"],
-    '/etc/cron.daily/logcheck' => ['type'=>'file','content'=>"#!/bin/bash\n/usr/sbin/logcheck"],
-    '/etc/cron.weekly/fstrim'  => ['type'=>'file','content'=>"#!/bin/bash\nfstrim -av"],
+    // ── /etc/cron.* ───────────────────────────────────────────
+    '/etc/cron.d/backup'            => ['type'=>'file','mtime'=>mktime(13,43,0,9,25,2023),'content'=>"0 2 * * * root /usr/local/bin/backup.sh >> /var/log/backup.log 2>&1"],
+    '/etc/cron.d/0hourly'           => ['type'=>'file','mtime'=>mktime(13,43,0,9,25,2023),'content'=>"SHELL=/bin/bash\nPATH=/sbin:/bin:/usr/sbin:/usr/bin\nMAILTO=root\n01 * * * * root run-parts /etc/cron.hourly"],
+    '/etc/cron.daily/logcheck'      => ['type'=>'file','mtime'=>mktime(0,0,0,4,11,2022),'content'=>"#!/bin/bash\n/usr/sbin/logcheck"],
+    '/etc/cron.daily/logrotate'     => ['type'=>'file','mtime'=>mktime(0,0,0,4,11,2022),'content'=>"#!/bin/sh\n/usr/sbin/logrotate /etc/logrotate.conf\nEXITVALUE=\$?\nif [ \$EXITVALUE != 0 ]; then\n    /usr/bin/logger -t logrotate \"ALERT exited abnormally with [\$EXITVALUE]\"\nfi\nexit 0"],
+    '/etc/cron.daily/man-db'        => ['type'=>'file','mtime'=>mktime(0,0,0,4,11,2022),'content'=>"#!/bin/bash\nmandb -q"],
+    '/etc/cron.weekly/fstrim'       => ['type'=>'file','mtime'=>mktime(0,0,0,4,11,2022),'content'=>"#!/bin/bash\nfstrim -av"],
 
-    '/etc/profile.d/aliases.sh' => ['type'=>'file','content'=>
+    // ── /etc/profile.d ────────────────────────────────────────
+    '/etc/profile.d/aliases.sh'     => ['type'=>'file','mtime'=>mktime(16,44,0,11,29,2024),'content'=>
 "alias ll='ls -la'\nalias la='ls -A'\nalias l='ls -CF'\nalias grep='grep --color=auto'\nalias df='df -h'\nalias free='free -h'"],
+    '/etc/profile.d/colorls.sh'     => ['type'=>'file','mtime'=>mktime(16,44,0,11,29,2024),'content'=>"# Color support for ls\nexport LS_COLORS='di=34:ln=35:so=32:pi=33:ex=31:bd=34;46:cd=34;43:su=30;41:sg=30;46:tw=30;42:ow=30;43'"],
+    '/etc/profile.d/lang.sh'        => ['type'=>'file','mtime'=>mktime(16,44,0,11,29,2024),'content'=>"export LANG=en_US.UTF-8\nexport LC_TIME=en_GB.UTF-8"],
 
-    '/etc/pki/tls/certs/server.crt' => ['type'=>'file','content'=>
-"-----BEGIN CERTIFICATE-----\nMIIDXTCCAkWgAwIBAgIJALmCFxSqatp5MA0GCSqGSIb3DQEBCwUAMEUxCzAJBgNV\n[certificate data]\n-----END CERTIFICATE-----"],
-    '/etc/pki/tls/private/server.key' => ['type'=>'file','content'=>
+    // ── /etc/pki ──────────────────────────────────────────────
+    '/etc/pki/tls/certs/server.crt' => ['type'=>'file','mtime'=>mktime(8,32,0,3,13,2026),'content'=>
+"-----BEGIN CERTIFICATE-----\nMIIDXTCCAkWgAwIBAgIJALmCFxSqatp5MA0GCSqGSIb3DQEBCwUAMEUxCzAJBgNV\n[certificate data — issued by Let's Encrypt]\n-----END CERTIFICATE-----"],
+    '/etc/pki/tls/private/server.key' => ['type'=>'file','mtime'=>mktime(8,32,0,3,13,2026),'content'=>
 "-----BEGIN RSA PRIVATE KEY-----\n[private key — not readable]\n-----END RSA PRIVATE KEY-----"],
+
+    // ── /etc/sysconfig ────────────────────────────────────────
+    '/etc/sysconfig/network'        => ['type'=>'file','mtime'=>mktime(0,0,0,10,27,2023),'content'=>"NETWORKING=yes\nHOSTNAME=$H"],
+    '/etc/sysconfig/clock'          => ['type'=>'file','mtime'=>mktime(0,0,0,10,27,2023),'content'=>"ZONE=Europe/Amsterdam\nUTC=true"],
 
     // ──────────────────────────────────────────────────────────
     //  /home
