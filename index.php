@@ -155,8 +155,8 @@ html, body {
     <div id="nano-shortcuts">
       <div class="nano-shortcut-row">
         <span class="nano-sc"><span class="nano-sc-key">^G</span>Help</span>
-        <span class="nano-sc"><span class="nano-sc-key">^O</span>Write Out</span>
-        <span class="nano-sc"><span class="nano-sc-key">^W</span>Where Is</span>
+        <span class="nano-sc"><span class="nano-sc-key">^S</span>Write Out</span>
+        <span class="nano-sc"><span class="nano-sc-key">^F</span>Where Is</span>
         <span class="nano-sc"><span class="nano-sc-key">^K</span>Cut</span>
         <span class="nano-sc"><span class="nano-sc-key">^U</span>Paste</span>
         <span class="nano-sc"><span class="nano-sc-key">^T</span>Execute</span>
@@ -203,6 +203,7 @@ function termCols() {
 // ── state ─────────────────────────────────────────────────
 var mode      = 'boot';   // boot | username | password | command
 var typed     = '';
+var cursorPos = 0;        // insertion point within typed (0 = before first char)
 var masked    = false;
 var loginUser = '';
 var cwd       = '/root';
@@ -225,8 +226,9 @@ function clearScr() {
 function setPrompt(text, isMasked) {
   curprompt.textContent = text;
   masked = !!isMasked;
-  typed  = '';
-  curtyped.textContent = '';
+  typed     = '';
+  cursorPos = 0;
+  renderLine();
   curline.style.display = 'flex';
   scr.scrollTop = scr.scrollHeight;
 }
@@ -240,12 +242,41 @@ function updateTitleAndPrompt() {
   var p = loginUser + '@' + sysHostname + ':' + shortCwd + '#';
   curprompt.textContent = p;
   ttitle.textContent    = loginUser + '@' + sysHostname + ': ' + shortCwd;
+  renderLine();
 }
 
 // ── keyboard ──────────────────────────────────────────────
-// preserve trailing spaces visually by replacing them with non-breaking spaces
-function renderTyped(str) {
-  return str.replace(/ $/, '\u00a0');
+
+// Render typed buffer into the three DOM spans:
+//   #curtyped  = text before cursor
+//   #curcursor = block that sits on the character at cursor (blinking)
+//   #curafter  = text after cursor
+// When masked (password), just show stars and keep cursor at end.
+function renderLine() {
+  var afterEl = document.getElementById('curafter');
+  if (!afterEl) {
+    afterEl = document.createElement('span');
+    afterEl.id = 'curafter';
+    afterEl.style.color = '#39ff14';
+    curcursor.parentNode.insertBefore(afterEl, curcursor.nextSibling);
+  }
+
+  if (masked) {
+    curtyped.textContent  = '*'.repeat(typed.length);
+    curcursor.textContent = ' ';
+    afterEl.textContent   = '';
+    return;
+  }
+
+  var pos    = Math.min(cursorPos, typed.length);
+  var before = typed.slice(0, pos);
+  var atCur  = typed.length > pos ? typed[pos] : ' ';   // char under cursor, or space at EOL
+  var after  = typed.length > pos ? typed.slice(pos + 1) : '';
+
+  // nbsp trick: flex collapses trailing ASCII space in text nodes
+  curtyped.textContent  = before.replace(/ $/, '\u00a0');
+  curcursor.textContent = atCur;
+  afterEl.textContent   = after;
 }
 
 function handleKey(key, ctrlKey, altKey, metaKey) {
@@ -253,45 +284,138 @@ function handleKey(key, ctrlKey, altKey, metaKey) {
   if (nanoActive) { nanoKey(key, ctrlKey); return; }
   if (topActive) return;
 
+  // ── Enter ──────────────────────────────────────────────
   if (key === 'Enter') {
-    var val = typed;
-    typed = '';
-    curtyped.textContent = '';
+    var val   = typed;
+    typed     = '';
+    cursorPos = 0;
+    renderLine();
     handleEnter(val);
     return;
   }
 
+  // ── Ctrl shortcuts ─────────────────────────────────────
+  if (ctrlKey) {
+    if (key === 'a' || key === 'A') { cursorPos = 0;            renderLine(); return; }  // Ctrl+A: start
+    if (key === 'e' || key === 'E') { cursorPos = typed.length; renderLine(); return; }  // Ctrl+E: end
+    if (key === 'u' || key === 'U') { typed = typed.slice(cursorPos); cursorPos = 0; renderLine(); return; } // Ctrl+U: kill to start
+    if (key === 'k' || key === 'K') { typed = typed.slice(0, cursorPos);              renderLine(); return; } // Ctrl+K: kill to end
+    if (key === 'w' || key === 'W') {  // Ctrl+W: delete word before cursor
+      var i = cursorPos;
+      while (i > 0 && typed[i-1] === ' ') i--;
+      while (i > 0 && typed[i-1] !== ' ') i--;
+      typed = typed.slice(0, i) + typed.slice(cursorPos);
+      cursorPos = i;
+      renderLine();
+      return;
+    }
+    return; // swallow other Ctrl combos
+  }
+
+  // ── Backspace ──────────────────────────────────────────
   if (key === 'Backspace') {
-    if (typed.length > 0) {
-      typed = typed.slice(0, -1);
-      curtyped.textContent = masked ? '*'.repeat(typed.length) : renderTyped(typed);
+    if (cursorPos > 0) {
+      typed = typed.slice(0, cursorPos - 1) + typed.slice(cursorPos);
+      cursorPos--;
+      renderLine();
     }
     return;
   }
 
-  if (key.length === 1 && !ctrlKey && !altKey && !metaKey) {
-    typed += key;
-    curtyped.textContent = masked ? '*'.repeat(typed.length) : renderTyped(typed);
-    scr.scrollTop = scr.scrollHeight;
+  // ── Delete ─────────────────────────────────────────────
+  if (key === 'Delete') {
+    if (cursorPos < typed.length) {
+      typed = typed.slice(0, cursorPos) + typed.slice(cursorPos + 1);
+      renderLine();
+    }
     return;
   }
+
+  // ── Arrow keys (left / right / up / down) ──────────────
+  if (key === 'ArrowLeft') {
+    if (cursorPos > 0) { cursorPos--; renderLine(); }
+    return;
+  }
+  if (key === 'ArrowRight') {
+    if (cursorPos < typed.length) { cursorPos++; renderLine(); }
+    return;
+  }
+  if (key === 'Home') { cursorPos = 0;            renderLine(); return; }
+  if (key === 'End')  { cursorPos = typed.length; renderLine(); return; }
 
   if (mode === 'command') {
     if (key === 'ArrowUp') {
-      if (histIdx < cmdLog.length - 1) { histIdx++; typed = cmdLog[histIdx]; curtyped.textContent = renderTyped(typed); }
-    } else if (key === 'ArrowDown') {
+      if (histIdx < cmdLog.length - 1) {
+        histIdx++;
+        typed     = cmdLog[histIdx];
+        cursorPos = typed.length;
+        renderLine();
+      }
+      return;
+    }
+    if (key === 'ArrowDown') {
       if (histIdx > 0) { histIdx--; typed = cmdLog[histIdx]; }
       else             { histIdx = -1; typed = ''; }
-      curtyped.textContent = renderTyped(typed);
+      cursorPos = typed.length;
+      renderLine();
+      return;
     }
+  }
+
+  // ── Printable character — insert at cursor ──────────────
+  if (key.length === 1 && !altKey && !metaKey) {
+    typed = typed.slice(0, cursorPos) + key + typed.slice(cursorPos);
+    cursorPos++;
+    renderLine();
+    scr.scrollTop = scr.scrollHeight;
+    return;
   }
 }
 
 // native keydown — always active (handles both standalone and focused-iframe)
 document.addEventListener('keydown', function(e) {
   if (mode === 'boot' || mode === 'dead') return;
+  // allow Ctrl+C and Ctrl+V to pass through to the browser so copy/paste works
+  if (e.ctrlKey && (e.key === 'c' || e.key === 'C' || e.key === 'v' || e.key === 'V')) return;
   e.preventDefault();
   handleKey(e.key, e.ctrlKey, e.altKey, e.metaKey);
+});
+
+// paste event — insert clipboard text into the current input or nano buffer
+document.addEventListener('paste', function(e) {
+  if (mode === 'boot' || mode === 'dead') return;
+  var text = (e.clipboardData || window.clipboardData).getData('text');
+  if (!text) return;
+  e.preventDefault();
+  if (nanoActive) {
+    // insert pasted text into nano at cursor position
+    var lines = text.split('\n');
+    var cur = nanoData.lines[nanoData.curRow];
+    var before = cur.slice(0, nanoData.curCol);
+    var after  = cur.slice(nanoData.curCol);
+    if (lines.length === 1) {
+      nanoData.lines[nanoData.curRow] = before + lines[0] + after;
+      nanoData.curCol += lines[0].length;
+    } else {
+      nanoData.lines[nanoData.curRow] = before + lines[0];
+      for (var i = 1; i < lines.length - 1; i++) {
+        nanoData.curRow++;
+        nanoData.lines.splice(nanoData.curRow, 0, lines[i]);
+      }
+      nanoData.curRow++;
+      nanoData.lines.splice(nanoData.curRow, 0, lines[lines.length-1] + after);
+      nanoData.curCol = lines[lines.length-1].length;
+    }
+    nanoData.modified = true;
+    nanoRender();
+  } else if (mode === 'command' || mode === 'username' || mode === 'password') {
+    // paste into the command line at cursor position (strip newlines — just take first line)
+    var firstLine = text.split('\n')[0];
+    typed = typed.slice(0, cursorPos) + firstLine + typed.slice(cursorPos);
+    cursorPos += firstLine.length;
+    renderLine();
+    scr.scrollTop = scr.scrollHeight;
+  }
 });
 
 // postMessage from parent iframe wrapper — only fires when iframe does NOT have focus
@@ -346,10 +470,13 @@ function doLoginSuccess() {
   print('', 'n');
   print('Last login: ' + new Date(Date.now() - 86400000).toString().slice(0,24) + ' from 192.168.1.42', 'd');
   print('', 'n');
-  mode   = 'command';
-  masked = false;
-  cwd    = '/root';
+  mode      = 'command';
+  masked    = false;
+  cwd       = '/root';
+  typed     = '';
+  cursorPos = 0;
   updateTitleAndPrompt();
+  renderLine();
   curline.style.display = 'flex';
 }
 
@@ -358,7 +485,7 @@ function runCmd(raw) {
   var trimmed = raw.trim();
   print(loginUser + '@' + sysHostname + ':' + cwd.replace('/root','~') + '# ' + trimmed, 'n');
 
-  if (!trimmed) { print('','n'); return; }
+  if (!trimmed) { print('','n'); updateTitleAndPrompt(); curline.style.display = 'flex'; return; }
 
   cmdLog.unshift(trimmed);
   histIdx = -1;
@@ -403,6 +530,7 @@ function runCmd(raw) {
 
     print('', 'n');
     updateTitleAndPrompt();
+    renderLine();
     curline.style.display = 'flex';
     scr.scrollTop = scr.scrollHeight;
   })
@@ -410,6 +538,7 @@ function runCmd(raw) {
     print('bash: connection error', 'e');
     print('', 'n');
     updateTitleAndPrompt();
+    renderLine();
     curline.style.display = 'flex';
   });
 }
@@ -886,13 +1015,24 @@ function nanoKey(key, ctrlKey) {
         }
         nanoRender();
         return;
-      case 'o':  // Write Out
+      case 's':  // Write Out (Ctrl+S — replaces Ctrl+O which opens browser file dialog)
         nanoMode = 'writename';
         nanoData.writeNameTyped = nanoData.filename;
         nanoData._exitAfterSave = false;
         nanoRender();
         return;
-      case 'w':  // Where Is (search)
+      case 'o':  // also accept Ctrl+O in case browser doesn't intercept (e.g. inside iframe)
+        nanoMode = 'writename';
+        nanoData.writeNameTyped = nanoData.filename;
+        nanoData._exitAfterSave = false;
+        nanoRender();
+        return;
+      case 'f':  // Where Is / Search (Ctrl+F — replaces Ctrl+W which closes the browser tab)
+        nanoMode = 'search';
+        nanoData.searchTyped = '';
+        nanoRender();
+        return;
+      case 'w':  // also accept Ctrl+W inside iframe where browser won't intercept it
         nanoMode = 'search';
         nanoData.searchTyped = '';
         nanoRender();
@@ -913,7 +1053,7 @@ function nanoKey(key, ctrlKey) {
         return;
       case 'g':  // Help — show brief help in status
         document.getElementById('nano-status').textContent =
-          '^X=Exit  ^O=Save  ^W=Search  ^K=Cut  ^U=Paste  ^G=Help';
+          '^X=Exit  ^S=Save  ^F=Search  ^K=Cut  ^U=Paste  ^C=Location';
         return;
       case 'c':  // Location
         document.getElementById('nano-status').textContent =
