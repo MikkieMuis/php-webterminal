@@ -135,8 +135,9 @@ switch ($cmd) {
     case 'id':
         out('uid=0(root) gid=0(root) groups=0(root),1(bin),2(daemon),3(sys),4(adm),6(disk),10(wheel)');
 
-    // ── env ──
+    // ── env / printenv ──
     case 'env':
+    case 'printenv':
         out("SHELL=/bin/bash\n"
           . "TERM=xterm-256color\n"
           . "USER=" . $user . "\n"
