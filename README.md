@@ -143,10 +143,14 @@ If the terminal is not responding to keyboard input, disable these extensions fo
 
 ## Similar projects
 
-These take a different approach (pure JavaScript, browser-only, no PHP backend) but are worth knowing about:
+These all take a different approach (pure JavaScript, browser-only, no PHP backend) but are worth knowing about:
 
+- [m4tt72/terminal](https://github.com/m4tt72/terminal) ★1.5k — The gold standard for terminal portfolio sites. Built with Svelte 4 + TypeScript. Highlights: multiple switchable themes, real weather via `wttr.in`, `todo` task manager, tab autocomplete, responsive on mobile. 53 releases, actively maintained.
+- [MarketingPipeline/Termino.js](https://github.com/MarketingPipeline/Termino.js) ★642 — A JavaScript library for embedding a terminal widget into any website. Supports HTML output (clickable links), multiple instances per page, custom key/mouse event hooks, and curses-style apps. Great if you want a drop-in component rather than a standalone page.
+- [DosX-dev/braux](https://github.com/DosX-dev/braux) ★97 — Unix-like web console system in pure JS/HTML/CSS with multiple color themes and scheme switching. Minimal and clean.
 - [jcubic/fake-linux-terminal](https://github.com/jcubic/fake-linux-terminal) — browser-only fake GNU/Linux environment using LightningFS and jQuery Terminal. More ambitious in scope, still a work in progress.
 - [edgorman/edgorman.github.io](https://github.com/edgorman/edgorman.github.io) — personal portfolio site that uses real GitHub repos as the filesystem content via git submodules. Clever idea.
+
 
 ---
 

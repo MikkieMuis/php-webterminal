@@ -1,6 +1,9 @@
 # Ignore real config (contains your actual hostname)
 config.php
 
+# AI session notes (local only, never pushed)
+.ai/
+
 # Common junk
 .DS_Store
 Thumbs.db
