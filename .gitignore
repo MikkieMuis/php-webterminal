@@ -1,6 +1,14 @@
 # Ignore real config (contains your actual hostname)
 config.php
 
+*.notes.md
+NOTES*.md
+TODO*.md
+SESSION*.md
+# Block all .md except README.md and CHANGELOG.md
+*.md
+!README.md
+!CHANGELOG.md
 
 # Common junk
 .DS_Store
