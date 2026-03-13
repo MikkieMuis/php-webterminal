@@ -17,7 +17,9 @@ Whether you want to show off your server-side skills, add a geeky touch to your 
 - Realistic boot sequence with configurable kernel version, CPU and disk info (never exposes real server data)
 - Login prompt — password must be longer than 8 characters
 - Session-based fake filesystem — `cd`, `mkdir`, `touch`, `rm` persist across commands
-- Arrow key command history
+- Full readline-style cursor editing — `←`/`→`, `Home`/`End`, `Backspace`, `Delete`, `Ctrl+A/E/U/K/W`
+- Arrow key command history (`↑`/`↓`)
+- Clipboard support — paste from browser with `Ctrl+V`, copy output with mouse selection or `Ctrl+Shift+C`
 - Embeddable via `<iframe>` or standalone
 - Zero dependencies — pure PHP + vanilla JS, no frameworks
 
@@ -33,6 +35,24 @@ Whether you want to show off your server-side skills, add a geeky touch to your 
 | Editors | `nano` |
 | Users | `whoami`, `sudo`, `last` |
 | Easter egg | `sudo rm -rf /` |
+
+---
+
+## Keyboard shortcuts
+
+| Shortcut | Action |
+|---|---|
+| `↑` / `↓` | Scroll through command history |
+| `←` / `→` | Move cursor within typed text |
+| `Home` / `End` | Jump to start / end of line |
+| `Backspace` / `Delete` | Delete char before / at cursor |
+| `Ctrl+A` / `Ctrl+E` | Jump to start / end of line |
+| `Ctrl+U` | Delete from cursor to start of line |
+| `Ctrl+K` | Delete from cursor to end of line |
+| `Ctrl+W` | Delete word before cursor |
+| `Ctrl+C` | Cancel current input line (shows `^C`) |
+| `Ctrl+V` | Paste clipboard text at cursor |
+| `Ctrl+Shift+C` | Copy selected output text, or typed line if nothing selected |
 
 ---
 
@@ -103,7 +123,7 @@ Edit `fs_data.php` to change what files and directories exist. Each entry is an 
 After changing `fs_data.php`, bump the `FS_VERSION` constant at the top of `terminal.php` to force all active browser sessions to reload the new filesystem:
 
 ```php
-define('FS_VERSION', '4');  // increment this whenever fs_data.php changes
+define('FS_VERSION', '5');  // increment this whenever fs_data.php changes
 ```
 
 ---

@@ -48,6 +48,8 @@ html, body {
   padding:14px 16px;
   background:#0a0a0a;
   font-size:14px;
+  user-select:text;
+  -webkit-user-select:text;
   line-height:1.6;
   color:#39ff14;
   cursor:text;
@@ -375,8 +377,41 @@ function handleKey(key, ctrlKey, altKey, metaKey) {
 // native keydown — always active (handles both standalone and focused-iframe)
 document.addEventListener('keydown', function(e) {
   if (mode === 'boot' || mode === 'dead') return;
-  // allow Ctrl+C and Ctrl+V to pass through to the browser so copy/paste works
-  if (e.ctrlKey && (e.key === 'c' || e.key === 'C' || e.key === 'v' || e.key === 'V')) return;
+
+  // Ctrl+Shift+C — copy selected text to clipboard, or typed line if nothing selected
+  if (e.ctrlKey && e.shiftKey && (e.key === 'c' || e.key === 'C')) {
+    e.preventDefault();
+    var sel = window.getSelection ? window.getSelection().toString() : '';
+    var toCopy = sel || typed;
+    if (toCopy && navigator.clipboard) {
+      navigator.clipboard.writeText(toCopy).catch(function(){});
+    }
+    return;
+  }
+
+  // Ctrl+C — cancel typed line (SIGINT), show ^C like a real terminal
+  if (e.ctrlKey && !e.shiftKey && (e.key === 'c' || e.key === 'C')) {
+    if (nanoActive) return;  // let nano handle it
+    e.preventDefault();
+    if (mode === 'command' || mode === 'username' || mode === 'password') {
+      var cancelled = typed;
+      typed     = '';
+      cursorPos = 0;
+      renderLine();
+      // print the prompt + typed text + ^C as a cancelled line
+      var promptText = curprompt.textContent;
+      print(promptText + ' ' + cancelled + '^C', 'n');
+      print('', 'n');
+      if (mode === 'command') updateTitleAndPrompt();
+      curline.style.display = 'flex';
+      scr.scrollTop = scr.scrollHeight;
+    }
+    return;
+  }
+
+  // Ctrl+V / Ctrl+Shift+V — let the browser paste event fire naturally
+  if (e.ctrlKey && (e.key === 'v' || e.key === 'V')) return;
+
   e.preventDefault();
   handleKey(e.key, e.ctrlKey, e.altKey, e.metaKey);
 });
@@ -425,7 +460,49 @@ window.addEventListener('message', function(e) {
   if (e.data && e.data.type === 'keydown') {
     // if this document has focus, the native keydown above already handled it
     if (document.hasFocus()) return;
+    // Ctrl+Shift+C forwarded from outer page — copy selection or typed line
+    if (e.data.ctrlKey && e.data.shiftKey && (e.data.key === 'c' || e.data.key === 'C')) {
+      var sel = window.getSelection ? window.getSelection().toString() : '';
+      var toCopy = sel || typed;
+      if (toCopy && navigator.clipboard) {
+        navigator.clipboard.writeText(toCopy).catch(function(){});
+      }
+      return;
+    }
     handleKey(e.data.key, e.data.ctrlKey, e.data.altKey, e.data.metaKey);
+  }
+  // paste forwarded from outer page
+  if (e.data && e.data.type === 'paste') {
+    if (mode === 'boot' || mode === 'dead') return;
+    var text = e.data.text;
+    if (!text) return;
+    if (nanoActive) {
+      var lines = text.split('\n');
+      var cur = nanoData.lines[nanoData.curRow];
+      var before = cur.slice(0, nanoData.curCol);
+      var after  = cur.slice(nanoData.curCol);
+      if (lines.length === 1) {
+        nanoData.lines[nanoData.curRow] = before + lines[0] + after;
+        nanoData.curCol += lines[0].length;
+      } else {
+        nanoData.lines[nanoData.curRow] = before + lines[0];
+        for (var pi = 1; pi < lines.length - 1; pi++) {
+          nanoData.curRow++;
+          nanoData.lines.splice(nanoData.curRow, 0, lines[pi]);
+        }
+        nanoData.curRow++;
+        nanoData.lines.splice(nanoData.curRow, 0, lines[lines.length-1] + after);
+        nanoData.curCol = lines[lines.length-1].length;
+      }
+      nanoData.modified = true;
+      nanoRender();
+    } else if (mode === 'command' || mode === 'username' || mode === 'password') {
+      var firstLine = text.split('\n')[0];
+      typed = typed.slice(0, cursorPos) + firstLine + typed.slice(cursorPos);
+      cursorPos += firstLine.length;
+      renderLine();
+      scr.scrollTop = scr.scrollHeight;
+    }
   }
 });
 
