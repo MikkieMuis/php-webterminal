@@ -1,6 +1,7 @@
 # Ignore real config (contains your actual hostname)
 config.php
 
+
 # Common junk
 .DS_Store
 Thumbs.db
