@@ -21,25 +21,9 @@ html, body {
   width:100%; height:100%;
   display:flex;
   flex-direction:column;
-  border:1px solid #1a5c1a;
-  box-shadow:0 0 30px rgba(57,255,20,0.12);
 }
 
-/* ── title bar ───────────────────────────────────────────── */
-#titlebar {
-  background:#1a1a1a;
-  padding:8px 14px;
-  display:flex;
-  align-items:center;
-  gap:8px;
-  border-bottom:1px solid #1a5c1a;
-  flex-shrink:0;
-}
-.dot { width:12px; height:12px; border-radius:50%; display:inline-block; }
-.r { background:#ff5f56; }
-.y { background:#ffbd2e; }
-.g { background:#27c93f; }
-#ttitle { color:#4a4a4a; font-size:13px; flex:1; text-align:center; }
+
 
 /* ── screen area ─────────────────────────────────────────── */
 #screen {
@@ -47,7 +31,7 @@ html, body {
   overflow-y:auto;
   padding:14px 16px;
   background:#0a0a0a;
-  font-size:14px;
+  font-size:15px;
   user-select:text;
   -webkit-user-select:text;
   line-height:1.6;
@@ -76,7 +60,7 @@ html, body {
   display:flex;
   align-items:center;
   font-family:'Courier New', Courier, monospace;
-  font-size:14px;
+  font-size:15px;
   color:#39ff14;
   margin-top:2px;
   gap:0.5ch;
@@ -139,12 +123,7 @@ html, body {
 </head>
 <body>
 <div id="terminal">
-  <div id="titlebar">
-    <span class="dot r"></span>
-    <span class="dot y"></span>
-    <span class="dot g"></span>
-    <span id="ttitle">root@localhost: ~</span>
-  </div>
+
   <div id="screen">
     <div id="curline"><span id="curprompt"></span><span id="curtyped"></span><span id="curcursor"></span></div>
   </div>
@@ -182,7 +161,7 @@ var curline   = document.getElementById('curline');
 var curprompt = document.getElementById('curprompt');
 var curtyped  = document.getElementById('curtyped');
 var curcursor = document.getElementById('curcursor');
-var ttitle    = document.getElementById('ttitle');
+
 
 // ── system info (populated before boot) ───────────────────
 var sysKernel   = '5.14.0-1-default';
@@ -193,7 +172,7 @@ var sysHostname = 'localhost';
 // ── terminal column count (measured from actual screen width) ─
 function termCols() {
   var testEl = document.createElement('span');
-  testEl.style.cssText = 'visibility:hidden;position:absolute;white-space:pre;font-family:"Courier New",Courier,monospace;font-size:14px;';
+  testEl.style.cssText = 'visibility:hidden;position:absolute;white-space:pre;font-family:"Courier New",Courier,monospace;font-size:15px;';
   testEl.textContent = 'X';
   document.body.appendChild(testEl);
   var charW = testEl.getBoundingClientRect().width;
@@ -243,7 +222,6 @@ function updateTitleAndPrompt() {
   var shortCwd = cwd.replace('/root', '~');
   var p = loginUser + '@' + sysHostname + ':' + shortCwd + '#';
   curprompt.textContent = p;
-  ttitle.textContent    = loginUser + '@' + sysHostname + ': ' + shortCwd;
   renderLine();
 }
 
@@ -1065,6 +1043,7 @@ function doNano(data) {
   nanoData.cutBuffer = '';
   nanoData.isnew    = data.isnew;
 
+  nanoActive = true;
   document.getElementById('nano-overlay').style.display = 'flex';
   hidePrompt();
   nanoRender();
