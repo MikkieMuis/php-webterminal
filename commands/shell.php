@@ -1,28 +1,26 @@
 <?php
-// ============================================================
 //  shell commands: echo, clear, exit, logout, history, help,
 //                  alias, last, sudo, man
 //  Receives: $cmd, $args, $argv, $user, $body  (from terminal.php scope)
-// ============================================================
 
 switch ($cmd) {
 
-    // ── echo ──
+    // echo
     case 'echo':
         out($args);
 
-    // ── clear ──
+    // clear
     case 'clear':
         echo json_encode(['output'=>'', 'clear'=>true]);
         exit;
 
-    // ── exit / logout ──
+    // exit / logout
     case 'exit':
     case 'logout':
         echo json_encode(['output'=>"logout\n\nConnection to " . CONF_HOSTNAME . " closed.", 'logout'=>true]);
         exit;
 
-    // ── history ──
+    // history
     case 'history':
         $base = [
             '    1  apt-get update',
@@ -38,7 +36,7 @@ switch ($cmd) {
         }
         out(implode("\n", $base));
 
-    // ── help ──
+    // help
     case 'help':
         out("GNU bash, version 5.1.8(1)-release (x86_64-redhat-linux-gnu)\n"
           . "These shell commands are defined internally.  Type `help' to see this list.\n"
@@ -87,7 +85,7 @@ switch ($cmd) {
           . " hash [-lr] [-p pathname] [-dt] [name ...]                                      while COMMANDS; do COMMANDS; done\n"
           . " help [-dms] [pattern ...]                                                       { COMMANDS ; }");
 
-    // ── alias ──
+    // alias
     case 'alias':
         if ($args === '') {
             out("alias egrep='egrep --color=auto'\n"
@@ -101,7 +99,7 @@ switch ($cmd) {
         }
         out('');
 
-    // ── last ──
+    // last
     case 'last':
         $prev  = date('D M j H:i', time() - 86400);
         $prev2 = date('D M j H:i', time() - 172800);
@@ -111,7 +109,7 @@ switch ($cmd) {
           . "deploy   pts/2        10.0.0.12        " . $prev2 . "  - " . date('H:i', time()-168000) . "  (00:48)\n"
           . "\nwtmp begins " . date('D M j', strtotime('-30 days')) . " 00:00");
 
-    // ── sudo ──
+    // sudo
     case 'sudo':
         if ($user === 'root') {
             if (preg_match('/rm\s.*-rf\s.*\/|rm\s.*\/\s.*-rf/', $args) || $args === 'rm -rf /') {
@@ -123,7 +121,7 @@ switch ($cmd) {
         echo json_encode(['output'=>'', 'sudo_prompt'=>true, 'sudo_cmd'=>$args]);
         exit;
 
-    // ── man ──
+    // man
     case 'man':
         if ($args === '') {
             out("What manual page do you want?\nFor example, try 'man ls'.");

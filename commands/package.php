@@ -1,16 +1,14 @@
 <?php
-// ============================================================
 //  package commands: dnf
 //  Receives: $cmd, $args, $argv, $user  (from terminal.php scope)
-// ============================================================
 
 switch ($cmd) {
 
-    // ── dnf ──
+    // dnf
     case 'dnf':
         $sub = isset($argv[0]) ? strtolower($argv[0]) : '';
 
-        // ── dnf (no subcommand) ──────────────────────────────
+        // dnf (no subcommand)
         if ($sub === '') {
             out("usage: dnf [options] COMMAND\n\n"
               . "List of commands:\n"
@@ -28,7 +26,7 @@ switch ($cmd) {
               . "  -h, --help    Show this help message");
         }
 
-        // ── dnf install <pkg ...> ────────────────────────────
+        // dnf install <pkg ...>
         if ($sub === 'install') {
             if ($user !== 'root') {
                 err('Error: This command has to be run with superuser privileges (under the root user on most systems).');
@@ -65,7 +63,7 @@ switch ($cmd) {
             exit;
         }
 
-        // ── dnf remove <pkg ...> ─────────────────────────────
+        // dnf remove <pkg ...>
         if ($sub === 'remove') {
             if ($user !== 'root') {
                 err('Error: This command has to be run with superuser privileges (under the root user on most systems).');
@@ -83,7 +81,7 @@ switch ($cmd) {
             exit;
         }
 
-        // ── dnf update / upgrade ─────────────────────────────
+        // dnf update / upgrade
         if ($sub === 'update' || $sub === 'upgrade') {
             if ($user !== 'root') {
                 err('Error: This command has to be run with superuser privileges (under the root user on most systems).');
@@ -106,7 +104,7 @@ switch ($cmd) {
             exit;
         }
 
-        // ── dnf list ─────────────────────────────────────────
+        // dnf list
         if ($sub === 'list') {
             $which = isset($argv[1]) ? strtolower($argv[1]) : '';
 
@@ -210,7 +208,7 @@ switch ($cmd) {
             out(implode("\n", $lines));
         }
 
-        // ── dnf search <term> ────────────────────────────────
+        // dnf search <term>
         if ($sub === 'search') {
             $term = isset($argv[1]) ? $argv[1] : '';
             if ($term === '') {
@@ -275,7 +273,7 @@ switch ($cmd) {
             out(implode("\n", $lines));
         }
 
-        // ── dnf info <pkg> ───────────────────────────────────
+        // dnf info <pkg>
         if ($sub === 'info') {
             $pkg = isset($argv[1]) ? $argv[1] : '';
             if ($pkg === '') {
@@ -329,7 +327,7 @@ switch ($cmd) {
             );
         }
 
-        // ── dnf history ──────────────────────────────────────
+        // dnf history
         if ($sub === 'history') {
             out("ID     | Command line                    | Date and time       | Action(s) | Altered\n"
               . "-------+--------------------------------+---------------------+-----------+--------\n"
@@ -344,7 +342,7 @@ switch ($cmd) {
               . "     1 | install (initial setup)        | 2026-03-08 08:00    | Install   |    412");
         }
 
-        // ── dnf check-update ─────────────────────────────────
+        // dnf check-update
         if ($sub === 'check-update') {
             out("Last metadata expiration check: 0:12:14 ago on " . date('D d M Y H:i:s') . " UTC.\n\n"
               . str_pad("bash.x86_64", 30)          . " 5.1.8-9.el9       baseos\n"
@@ -356,7 +354,7 @@ switch ($cmd) {
               . str_pad("tzdata.noarch", 30)        . " 2024a-1.el9       baseos");
         }
 
-        // ── dnf clean ────────────────────────────────────────
+        // dnf clean
         if ($sub === 'clean') {
             if ($user !== 'root') {
                 err('Error: This command has to be run with superuser privileges (under the root user on most systems).');

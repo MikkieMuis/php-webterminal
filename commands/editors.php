@@ -1,12 +1,10 @@
 <?php
-// ============================================================
 //  editor commands: nano, __nano_save
 //  Receives: $cmd, $args, $argv, $user, $body  (from terminal.php scope)
-// ============================================================
 
 switch ($cmd) {
 
-    // ── nano ──
+    // nano
     case 'nano':
         if ($args === '') {
             // no filename — open a new empty buffer (like real nano)
@@ -34,7 +32,7 @@ switch ($cmd) {
         ]);
         exit;
 
-    // ── __nano_save (internal — called by JS nano overlay) ──
+    // __nano_save (internal — called by JS nano overlay)
     case '__nano_save':
         $savePath    = isset($body['path'])    ? $body['path']    : '';
         $saveContent = isset($body['content']) ? $body['content'] : '';

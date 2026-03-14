@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Terminal</title>
 <style>
-/* ── reset ───────────────────────────────────────────────── */
+/* reset */
 * { margin:0; padding:0; box-sizing:border-box; }
 
-/* ── page fills whatever container embeds it ─────────────── */
+/* page fills whatever container embeds it */
 html, body {
   width:100%; height:100%;
   background:#0a0a0a;
@@ -16,7 +16,7 @@ html, body {
   overflow:hidden;
 }
 
-/* ── terminal frame ──────────────────────────────────────── */
+/* terminal frame */
 #terminal {
   width:100%; height:100%;
   display:flex;
@@ -25,7 +25,7 @@ html, body {
 
 
 
-/* ── screen area ─────────────────────────────────────────── */
+/* screen area */
 #screen {
   flex:1;
   overflow-y:auto;
@@ -42,7 +42,7 @@ html, body {
 #screen::-webkit-scrollbar-track { background:#0a0a0a; }
 #screen::-webkit-scrollbar-thumb { background:#1a5c1a; border-radius:3px; }
 
-/* ── output lines ────────────────────────────────────────── */
+/* output lines */
 .ln {
   display:block;
   white-space:pre-wrap;
@@ -55,7 +55,7 @@ html, body {
 .e { color:#ff4444; }
 .w { color:#ffaa00; }
 
-/* ── input line ──────────────────────────────────────────── */
+/* input line */
 #curline {
   display:flex;
   align-items:center;
@@ -75,7 +75,7 @@ html, body {
   animation:blink 1s infinite;
 }
 
-/* ── nano overlay ────────────────────────────────────────── */
+/* nano overlay */
 #nano-overlay {
   position:absolute; top:0; left:0; width:100%; height:100%;
   background:#0a0a0a; color:#39ff14;
@@ -155,7 +155,7 @@ html, body {
 </div>
 
 <script>
-// ── DOM refs ──────────────────────────────────────────────
+// DOM refs
 var scr       = document.getElementById('screen');
 var curline   = document.getElementById('curline');
 var curprompt = document.getElementById('curprompt');
@@ -163,13 +163,13 @@ var curtyped  = document.getElementById('curtyped');
 var curcursor = document.getElementById('curcursor');
 
 
-// ── system info (populated before boot) ───────────────────
+// system info (populated before boot)
 var sysKernel   = '5.14.0-1-default';
 var sysArch     = 'x86_64';
 var sysOS       = 'Linux';
 var sysHostname = 'localhost';
 
-// ── terminal column count (measured from actual screen width) ─
+// terminal column count (measured from actual screen width)
 function termCols() {
   var testEl = document.createElement('span');
   testEl.style.cssText = 'visibility:hidden;position:absolute;white-space:pre;font-family:"Courier New",Courier,monospace;font-size:15px;';
@@ -181,7 +181,7 @@ function termCols() {
   return charW > 0 ? Math.floor(screenW / charW) : 80;
 }
 
-// ── state ─────────────────────────────────────────────────
+// state
 var mode      = 'boot';   // boot | username | password | command
 var typed     = '';
 var cursorPos = 0;        // insertion point within typed (0 = before first char)
@@ -191,7 +191,7 @@ var cwd       = '/root';
 var cmdLog    = [];
 var histIdx   = -1;
 
-// ── output helpers ────────────────────────────────────────
+// output helpers
 function print(text, cls) {
   var s = document.createElement('span');
   s.className = 'ln ' + (cls || 'n');
@@ -225,7 +225,7 @@ function updateTitleAndPrompt() {
   renderLine();
 }
 
-// ── keyboard ──────────────────────────────────────────────
+// keyboard
 
 // Render typed buffer into the three DOM spans:
 //   #curtyped  = text before cursor
@@ -265,7 +265,7 @@ function handleKey(key, ctrlKey, altKey, metaKey) {
   if (pagerActive) { pagerKey(key); return; }
   if (topActive) return;
 
-  // ── Enter ──────────────────────────────────────────────
+  // Enter
   if (key === 'Enter') {
     var val   = typed;
     typed     = '';
@@ -275,7 +275,7 @@ function handleKey(key, ctrlKey, altKey, metaKey) {
     return;
   }
 
-  // ── Ctrl shortcuts ─────────────────────────────────────
+  // Ctrl shortcuts
   if (ctrlKey) {
     if (key === 'a' || key === 'A') { cursorPos = 0;            renderLine(); return; }  // Ctrl+A: start
     if (key === 'e' || key === 'E') { cursorPos = typed.length; renderLine(); return; }  // Ctrl+E: end
@@ -293,7 +293,7 @@ function handleKey(key, ctrlKey, altKey, metaKey) {
     return; // swallow other Ctrl combos
   }
 
-  // ── Backspace ──────────────────────────────────────────
+  // Backspace
   if (key === 'Backspace') {
     if (cursorPos > 0) {
       typed = typed.slice(0, cursorPos - 1) + typed.slice(cursorPos);
@@ -303,7 +303,7 @@ function handleKey(key, ctrlKey, altKey, metaKey) {
     return;
   }
 
-  // ── Delete ─────────────────────────────────────────────
+  // Delete
   if (key === 'Delete') {
     if (cursorPos < typed.length) {
       typed = typed.slice(0, cursorPos) + typed.slice(cursorPos + 1);
@@ -312,7 +312,7 @@ function handleKey(key, ctrlKey, altKey, metaKey) {
     return;
   }
 
-  // ── Arrow keys (left / right / up / down) ──────────────
+  // Arrow keys (left / right / up / down)
   if (key === 'ArrowLeft') {
     if (cursorPos > 0) { cursorPos--; renderLine(); }
     return;
@@ -343,7 +343,7 @@ function handleKey(key, ctrlKey, altKey, metaKey) {
     }
   }
 
-  // ── Printable character — insert at cursor ──────────────
+  // Printable character — insert at cursor
   if (key.length === 1 && !altKey && !metaKey) {
     typed = typed.slice(0, cursorPos) + key + typed.slice(cursorPos);
     cursorPos++;
@@ -486,7 +486,7 @@ window.addEventListener('message', function(e) {
   }
 });
 
-// ── enter handler ─────────────────────────────────────────
+// enter handler
 function handleEnter(val) {
   if (mode === 'username') {
     loginUser = val.trim() || 'user';
@@ -510,7 +510,7 @@ function handleEnter(val) {
   }
 }
 
-// ── login ─────────────────────────────────────────────────
+// login
 function startLogin() {
   clearScr();
   cmdLog  = [];
@@ -537,7 +537,7 @@ function doLoginSuccess() {
   curline.style.display = 'flex';
 }
 
-// ── run command via AJAX ──────────────────────────────────
+// run command via AJAX
 function runCmd(raw) {
   var trimmed = raw.trim();
   print(loginUser + '@' + sysHostname + ':' + cwd.replace('/root','~') + '# ' + trimmed, 'n');
@@ -604,11 +604,11 @@ function runCmd(raw) {
   });
 }
 
-// ── easter egg ────────────────────────────────────────────
+// easter egg
 function doRmRf() {
   hidePrompt();
   var files = [
-    // ── core binaries ──
+    // core binaries
     '/bin/bash','/bin/sh','/bin/ls','/bin/cp','/bin/mv','/bin/rm',
     '/bin/cat','/bin/chmod','/bin/chown','/bin/kill','/bin/ps',
     '/usr/bin/python3','/usr/bin/perl','/usr/bin/php',
@@ -616,13 +616,13 @@ function doRmRf() {
     '/usr/sbin/apache2','/usr/sbin/nginx','/usr/sbin/sshd',
     '/usr/sbin/cron','/usr/sbin/rsyslogd',
 
-    // ── boot & kernel ──
+    // boot & kernel
     '/boot/vmlinuz-' + sysKernel,
     '/boot/initrd.img-' + sysKernel,
     '/boot/grub/grub.cfg',
     '/boot/grub/i386-pc/core.img',
 
-    // ── system config ──
+    // system config
     '/etc/passwd','/etc/shadow','/etc/group','/etc/sudoers',
     '/etc/hosts','/etc/hostname','/etc/fstab','/etc/crontab',
     '/etc/ssh/sshd_config','/etc/ssh/ssh_host_rsa_key',
@@ -630,7 +630,7 @@ function doRmRf() {
     '/etc/apache2/apache2.conf','/etc/nginx/nginx.conf',
     '/etc/my.cnf','/etc/php.ini',
 
-    // ── disk 1 — web & app data (/dev/sda) ──
+    // disk 1 — web & app data (/dev/sda)
     '/var/www/html/index.php','/var/www/html/wp-config.php',
     '/var/www/html/wp-content/uploads/2025/01/backup.tar.gz',
     '/var/www/html/app/config/database.yml',
@@ -640,7 +640,7 @@ function doRmRf() {
     '/var/log/syslog','/var/log/kern.log',
     '/var/spool/cron/crontabs/root',
 
-    // ── disk 2 — database (/dev/sdb) ──
+    // disk 2 — database (/dev/sdb)
     '/mnt/db/mysql/ibdata1','/mnt/db/mysql/ib_logfile0',
     '/mnt/db/mysql/ib_logfile1',
     '/mnt/db/mysql/production/users.ibd',
@@ -652,7 +652,7 @@ function doRmRf() {
     '/mnt/db/postgres/global/pg_control',
     '/mnt/db/redis/dump.rdb',
 
-    // ── disk 3 — backups (/dev/sdc) ──
+    // disk 3 — backups (/dev/sdc)
     '/mnt/backup/daily/db-2026-03-09.sql.gz',
     '/mnt/backup/daily/db-2026-03-08.sql.gz',
     '/mnt/backup/daily/db-2026-03-07.sql.gz',
@@ -661,7 +661,7 @@ function doRmRf() {
     '/mnt/backup/config/etc-2026-03-09.tar.gz',
     '/mnt/backup/offsite/.credentials',
 
-    // ── disk 4 — user data & home (/dev/sdd) ──
+    // disk 4 — user data & home (/dev/sdd)
     '/home/deploy/.ssh/authorized_keys',
     '/home/deploy/.ssh/id_rsa',
     '/home/deploy/.bash_history',
@@ -669,7 +669,7 @@ function doRmRf() {
     '/root/.bash_history','/root/.aws/credentials',
     '/root/.docker/config.json',
 
-    // ── systemd & init ──
+    // systemd & init
     '/lib/systemd/systemd',
     '/lib/systemd/system/apache2.service',
     '/lib/systemd/system/mysql.service',
@@ -706,7 +706,7 @@ function doRmRf() {
   next();
 }
 
-// ── sudo password prompt ──────────────────────────────────
+// sudo password prompt
 function doSudoPrompt(sudoCmd) {
   // temporarily switch to a masked password prompt
   var prevMode = mode;
@@ -761,7 +761,7 @@ function doSudoPrompt(sudoCmd) {
   };
 }
 
-// ── ping animation ────────────────────────────────────────
+// ping animation
 function doPing(data) {
   print(data.header, 'n');
   var i = 0;
@@ -782,7 +782,7 @@ function doPing(data) {
   nextPacket();
 }
 
-// ── top overlay ───────────────────────────────────────────
+// top overlay
 var topInterval = null;
 var topEl = null;
 var topActive = false;
@@ -859,7 +859,7 @@ function doTop(data) {
   if (window.self === window.top) document.addEventListener('keydown', topKeyNative);
 }
 
-// ── wget animation ────────────────────────────────────────
+// wget animation
 function doWget(data) {
   var date = new Date().toString().slice(0,24);
   print('--' + date + '--  ' + data.url, 'n');
@@ -900,7 +900,7 @@ function doWget(data) {
   nextBar();
 }
 
-// ── curl animation ────────────────────────────────────────
+// curl animation
 function doCurl(data) {
   if (data.silent && !data.file) {
     // silent + no -o: print fake body
@@ -948,7 +948,7 @@ function doCurl(data) {
   nextBar();
 }
 
-// ── dnf animation ─────────────────────────────────────────
+// dnf animation
 function doDnf(data) {
   if (data.dnfcmd === 'install') {
     var pkgs  = data.pkgs;
@@ -1107,12 +1107,12 @@ function doDnf(data) {
   }
 }
 
-// ── nano editor ───────────────────────────────────────────
+// nano editor
 var nanoActive = false;
 var nanoData   = { path:'', filename:'', lines:[], curRow:0, curCol:0, modified:false, cutBuffer:'' };
 var nanoMode   = 'edit';   // edit | confirm_exit | search | writename
 
-// ── pager (more / less) ───────────────────────────────────
+// pager (more / less)
 var pagerActive = false;
 var pagerLines  = [];
 var pagerTop    = 0;
@@ -1253,7 +1253,7 @@ function escHtml(str) {
 function nanoKey(key, ctrlKey) {
   if (!nanoActive) return;
 
-  // ── confirm exit mode ──
+  // confirm exit mode
   if (nanoMode === 'confirm_exit') {
     if (key === 'y' || key === 'Y') {
       nanoMode = 'writename';
@@ -1269,7 +1269,7 @@ function nanoKey(key, ctrlKey) {
     return;
   }
 
-  // ── write name mode (Ctrl+O or confirm save) ──
+  // write name mode (Ctrl+O or confirm save)
   if (nanoMode === 'writename') {
     if (key === 'Enter') {
       nanoSave(nanoData.writeNameTyped);
@@ -1286,7 +1286,7 @@ function nanoKey(key, ctrlKey) {
     return;
   }
 
-  // ── search mode ──
+  // search mode
   if (nanoMode === 'search') {
     if (key === 'Enter') {
       nanoDoSearch(nanoData.searchTyped);
@@ -1305,7 +1305,7 @@ function nanoKey(key, ctrlKey) {
     return;
   }
 
-  // ── normal edit mode ──
+  // normal edit mode
   if (ctrlKey) {
     switch (key.toLowerCase()) {
       case 'x':  // Exit
@@ -1504,7 +1504,7 @@ function nanoClose(saved, lines) {
   scr.scrollTop = scr.scrollHeight;
 }
 
-// ── boot sequence ─────────────────────────────────────────
+// boot sequence
 function boot() {
   hidePrompt();
   mode = 'boot';

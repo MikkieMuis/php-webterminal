@@ -1,12 +1,10 @@
 <?php
-// ============================================================
 //  network commands: ifconfig, ip, ping, wget, curl
 //  Receives: $cmd, $args, $argv, $user, $body  (from terminal.php scope)
-// ============================================================
 
 switch ($cmd) {
 
-    // ── ifconfig ──
+    // ifconfig
     case 'ifconfig':
         out("eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500\n"
           . "        inet 192.168.1.10  netmask 255.255.255.0  broadcast 192.168.1.255\n"
@@ -18,7 +16,7 @@ switch ($cmd) {
           . "        inet 127.0.0.1  netmask 255.0.0.0\n"
           . "        loop  txqueuelen 1000  (Local Loopback)");
 
-    // ── ip ──
+    // ip
     case 'ip':
         if (strpos($args, 'a') !== false) {
             out("1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN\n"
@@ -30,7 +28,7 @@ switch ($cmd) {
         }
         out('Usage: ip [ OPTIONS ] OBJECT { COMMAND | help }');
 
-    // ── ping ──
+    // ping
     case 'ping':
         if ($args === '') err('ping: usage error: Destination address required');
         $pingHost  = '';
@@ -83,7 +81,7 @@ switch ($cmd) {
         ]);
         exit;
 
-    // ── wget ──
+    // wget
     case 'wget':
         if ($args === '') err('wget: missing URL');
         $wUrl = '';
@@ -111,7 +109,7 @@ switch ($cmd) {
         ]);
         exit;
 
-    // ── curl ──
+    // curl
     case 'curl':
         if ($args === '') err('curl: try \'curl --help\' for more information');
         $cUrl    = '';

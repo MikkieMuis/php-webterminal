@@ -1,12 +1,10 @@
 <?php
-// ============================================================
 //  filesystem commands: ls, cd, mkdir, touch, rm, cat, wc, more, less
 //  Receives: $cmd, $args, $argv, $user, $body  (from terminal.php scope)
-// ============================================================
 
 switch ($cmd) {
 
-    // ── ls ──
+    // ls
     case 'ls':
         // parse flags — collect all chars from flag args (e.g. -ltr → l,t,r)
         $flags = '';
@@ -84,7 +82,7 @@ switch ($cmd) {
         }
         out(implode("\n", $lines));
 
-    // ── cd ──
+    // cd
     case 'cd':
         $target = ($args === '' || $args === '~') ? '/root' : res_path($args);
         if (!isset($_SESSION['fs'][$target])) {
@@ -97,7 +95,7 @@ switch ($cmd) {
         echo json_encode(['output'=>'', 'cwd'=> $target]);
         exit;
 
-    // ── mkdir ──
+    // mkdir
     case 'mkdir':
         if ($args === '') err('mkdir: missing operand');
         $target = res_path($args);
@@ -109,7 +107,7 @@ switch ($cmd) {
         $_SESSION['fs'][$target] = ['type'=>'dir', 'mtime'=>time()];
         out('');
 
-    // ── touch ──
+    // touch
     case 'touch':
         if ($args === '') err('touch: missing file operand');
         $target = res_path($args);
@@ -122,7 +120,7 @@ switch ($cmd) {
         }
         out('');
 
-    // ── rm ──
+    // rm
     case 'rm':
         if (strpos($args, '-rf') !== false || strpos($args, '-r') !== false) {
             $path = trim(preg_replace('/-r\S*\s*/', '', $args));
@@ -149,7 +147,7 @@ switch ($cmd) {
         }
         out('');
 
-    // ── cat ──
+    // cat
     case 'cat':
         if ($args === '') err('cat: missing operand');
         $target = res_path($args);
@@ -157,7 +155,7 @@ switch ($cmd) {
         if ($_SESSION['fs'][$target]['type'] === 'dir') err('cat: ' . $args . ': Is a directory');
         out($_SESSION['fs'][$target]['content']);
 
-    // ── wc ──
+    // wc
     case 'wc':
         // parse flags and filename
         $flags   = '';
@@ -193,7 +191,7 @@ switch ($cmd) {
             out(implode(' ', $parts) . ' ' . $name);
         }
 
-    // ── cp ──
+    // cp
     case 'cp':
         // Usage: cp [-r] SOURCE DEST
         if (count($argv) < 2) err('cp: missing file operand');
@@ -234,7 +232,7 @@ switch ($cmd) {
         }
         out('');
 
-    // ── mv ──
+    // mv
     case 'mv':
         // Usage: mv SOURCE DEST
         if (count($argv) < 2) err('mv: missing file operand');
@@ -273,7 +271,7 @@ switch ($cmd) {
         foreach ($toAdd    as $k => $v) $_SESSION['fs'][$k] = $v;
         out('');
 
-    // ── grep ──
+    // grep
     case 'grep':
         // Usage: grep [OPTIONS] PATTERN [FILE...]
         // Supported flags: -i (ignore case), -r (recursive), -n (line numbers),
@@ -404,7 +402,7 @@ switch ($cmd) {
 
         out(implode("\n", $outputLines));
 
-    // ── more / less ──
+    // more / less
     case 'more':
     case 'less':
         if ($args === '') err($cmd . ': missing operand — try \'' . $cmd . ' <file>\'');
