@@ -537,6 +537,46 @@ function doLoginSuccess() {
   curline.style.display = 'flex';
 }
 
+// shared response dispatcher — used by runCmd and doSudoPrompt
+function handleResponse(data) {
+  if (data.clear) {
+    clearScr();
+  } else if (data.rmrf) {
+    doRmRf(); return;
+  } else if (data.logout) {
+    print(data.output, 'n');
+    print('', 'n');
+    setTimeout(startLogin, 800);
+    return;
+  } else if (data.ping) {
+    doPing(data); return;
+  } else if (data.top) {
+    doTop(data); return;
+  } else if (data.wget) {
+    doWget(data); return;
+  } else if (data.curl) {
+    doCurl(data); return;
+  } else if (data.dnf) {
+    doDnf(data); return;
+  } else if (data.nano) {
+    doNano(data); return;
+  } else if (data.pager !== undefined) {
+    doPager(data); return;
+  } else if (data.sudo_prompt) {
+    doSudoPrompt(data.sudo_cmd); return;
+  } else if (data.output !== undefined && data.output !== '') {
+    print(data.output, data.error ? 'e' : 'n');
+  }
+
+  if (data.cwd) cwd = data.cwd;
+
+  print('', 'n');
+  updateTitleAndPrompt();
+  renderLine();
+  curline.style.display = 'flex';
+  scr.scrollTop = scr.scrollHeight;
+}
+
 // run command via AJAX
 function runCmd(raw) {
   var trimmed = raw.trim();
@@ -556,44 +596,7 @@ function runCmd(raw) {
   })
   .then(function(r){ return r.json(); })
   .then(function(data) {
-    if (data.clear) {
-      clearScr();
-    } else if (data.rmrf) {
-      doRmRf(); return;
-    } else if (data.logout) {
-      print(data.output, 'n');
-      print('', 'n');
-      setTimeout(startLogin, 800);
-      return;
-    } else if (data.ping) {
-      doPing(data); return;
-    } else if (data.top) {
-      doTop(data); return;
-    } else if (data.wget) {
-      doWget(data); return;
-    } else if (data.curl) {
-      doCurl(data); return;
-    } else if (data.dnf) {
-      doDnf(data); return;
-    } else if (data.nano) {
-      doNano(data); return;
-    } else if (data.pager !== undefined) {
-      doPager(data); return;
-    } else if (data.sudo_prompt) {
-      doSudoPrompt(data.sudo_cmd); return;
-    } else if (data.output !== undefined && data.output !== '') {
-      print(data.output, data.error ? 'e' : 'n');
-    }
-
-    if (data.cwd) {
-      cwd = data.cwd;
-    }
-
-    print('', 'n');
-    updateTitleAndPrompt();
-    renderLine();
-    curline.style.display = 'flex';
-    scr.scrollTop = scr.scrollHeight;
+    handleResponse(data);
   })
   .catch(function() {
     print('bash: connection error', 'e');
@@ -731,17 +734,7 @@ function doSudoPrompt(sudoCmd) {
       })
       .then(function(r){ return r.json(); })
       .then(function(data) {
-        if (data.rmrf) {
-          doRmRf(); return;
-        }
-        if (data.output !== undefined && data.output !== '') {
-          print(data.output, data.error ? 'e' : 'n');
-        }
-        if (data.cwd) cwd = data.cwd;
-        print('', 'n');
-        updateTitleAndPrompt();
-        curline.style.display = 'flex';
-        scr.scrollTop = scr.scrollHeight;
+        handleResponse(data);
       })
       .catch(function() {
         print('sudo: connection error', 'e');
