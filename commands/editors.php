@@ -49,7 +49,8 @@ switch ($cmd) {
             'content' => $saveContent,
             'mtime'   => time(),
         ];
-        $lines = substr_count($saveContent, "\n") + (strlen($saveContent) > 0 ? 1 : 0);
+        $lines = substr_count($saveContent, "\n");
+        if (strlen($saveContent) > 0 && substr($saveContent, -1) !== "\n") $lines++;
         echo json_encode(['output' => '', 'saved' => true, 'lines' => $lines]);
         exit;
 }
