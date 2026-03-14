@@ -1,32 +1,30 @@
 <?php
-// ============================================================
 //  system commands: whoami, pwd, hostname, uname, uptime, date,
 //                   df, free, ps, top, id, env, which
 //  Receives: $cmd, $args, $argv, $user, $body  (from terminal.php scope)
-// ============================================================
 
 switch ($cmd) {
 
-    // ── whoami ──
+    // whoami
     case 'whoami':
         out($user);
 
-    // ── pwd ──
+    // pwd
     case 'pwd':
         out($_SESSION['cwd']);
 
-    // ── hostname ──
+    // hostname
     case 'hostname':
         out(CONF_HOSTNAME);
 
-    // ── uname ──
+    // uname
     case 'uname':
         if (strpos($args, '-a') !== false) {
             out('Linux ' . CONF_HOSTNAME . ' ' . SYS_KERNEL . ' #1 SMP ' . SYS_ARCH . ' ' . SYS_ARCH . ' ' . SYS_ARCH . ' GNU/Linux');
         }
         out('Linux');
 
-    // ── uptime ──
+    // uptime
     case 'uptime':
         $secs  = time() - $_SESSION['boot'];
         $days  = floor($secs / 86400);
@@ -38,11 +36,11 @@ switch ($cmd) {
         out(sprintf(' %s up %d days, %d:%02d,  1 user,  load average: %s',
             date('H:i:s'), $days, $hours, $mins, $load));
 
-    // ── date ──
+    // date
     case 'date':
         out(date('D M j H:i:s T Y'));
 
-    // ── df ──
+    // df
     case 'df':
         $free  = CONF_DISK_FREE;
         $total = CONF_DISK_TOTAL;
@@ -77,7 +75,7 @@ switch ($cmd) {
             );
         }
 
-    // ── free ──
+    // free
     case 'free':
         if (strpos($args, '-h') !== false) {
             out("               total        used        free      shared  buff/cache   available\n"
@@ -89,7 +87,7 @@ switch ($cmd) {
               . "Swap:        2097152           0     2097152");
         }
 
-    // ── ps ──
+    // ps
     case 'ps':
         if (strpos($args, 'aux') !== false) {
             out("USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND\n"
@@ -103,7 +101,7 @@ switch ($cmd) {
         }
         out("  PID TTY          TIME CMD\n 2048 pts/0    00:00:00 bash");
 
-    // ── top ──
+    // top
     case 'top':
         $load   = [CONF_LOAD_1, CONF_LOAD_5, CONF_LOAD_15];
         $upSecs = time() - $_SESSION['boot'];
@@ -131,11 +129,11 @@ switch ($cmd) {
         ]);
         exit;
 
-    // ── id ──
+    // id
     case 'id':
         out('uid=0(root) gid=0(root) groups=0(root),1(bin),2(daemon),3(sys),4(adm),6(disk),10(wheel)');
 
-    // ── env / printenv ──
+    // env / printenv
     case 'env':
     case 'printenv':
         out("SHELL=/bin/bash\n"
@@ -153,7 +151,7 @@ switch ($cmd) {
           . "DISPLAY=:0\n"
           . "_=/usr/bin/env");
 
-    // ── which ──
+    // which
     case 'which':
         if ($args === '') err('which: missing argument');
         $bins = [

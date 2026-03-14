@@ -1,8 +1,6 @@
 <?php
-// ============================================================
 //  php-webterminal — command handler
 //  POST { cmd: "ls -la", user: "root" }  →  JSON { output: "..." }
-// ============================================================
 
 require_once __DIR__ . '/config.php';
 
@@ -18,12 +16,12 @@ session_start();
 header('Content-Type: application/json');
 header('X-Content-Type-Options: nosniff');
 
-// ── system info (from config — never use shell_exec/os-release) ───────────
+// system info (from config — never use shell_exec/os-release)
 define('SYS_KERNEL', CONF_KERNEL);
 define('SYS_ARCH',   CONF_ARCH);
 define('SYS_OS',     CONF_OS);
 
-// ── sysinfo endpoint (GET ?sysinfo) ───────────────────────
+// sysinfo endpoint (GET ?sysinfo)
 if (isset($_GET['sysinfo'])) {
     echo json_encode([
         'kernel'   => SYS_KERNEL,
@@ -34,7 +32,7 @@ if (isset($_GET['sysinfo'])) {
     exit;
 }
 
-// ── initialise session filesystem ──────────────────────────
+// initialise session filesystem
 // Bump this version string whenever fs_data.php changes to force a session reset.
 define('FS_VERSION', '7');
 
@@ -50,7 +48,7 @@ if (!isset($_SESSION['cwd']))    $_SESSION['cwd']    = '/root';
 if (!isset($_SESSION['cmdlog'])) $_SESSION['cmdlog'] = [];
 if (!isset($_SESSION['boot']))   $_SESSION['boot']   = time();
 
-// ── helpers ────────────────────────────────────────────────
+// helpers
 function out($text) {
     echo json_encode(['output' => $text]);
     exit;
@@ -117,7 +115,7 @@ function ls_dir($path, $long, $cols = 80) {
     return implode("\n", $lines);
 }
 
-// ── read input ─────────────────────────────────────────────
+// read input
 $raw_body = file_get_contents('php://input', false, null, 0, 4096);  // cap at 4 KB
 $body = json_decode($raw_body, true);
 $raw  = isset($body['cmd'])  ? substr(trim($body['cmd']),  0, 1024) : '';
@@ -138,10 +136,10 @@ $cmd   = strtolower($parts[0]);
 $args  = implode(' ', array_slice($parts, 1));
 $argv  = array_slice($parts, 1);   // individual args as array
 
-// ── alias expansion ─────────────────────────────────────────
+// alias expansion
 if ($cmd === 'll') { $cmd = 'ls'; array_unshift($argv, '-la'); $args = implode(' ', $argv); }
 
-// ── command dispatch ────────────────────────────────────────
+// command dispatch
 switch ($cmd) {
     case 'ls': case 'cd': case 'mkdir': case 'touch': case 'rm': case 'cat':
     case 'wc': case 'more': case 'less': case 'grep': case 'cp': case 'mv':
