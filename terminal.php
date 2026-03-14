@@ -141,7 +141,7 @@ $argv  = array_slice($parts, 1);   // individual args as array
 // ── command dispatch ────────────────────────────────────────
 switch ($cmd) {
     case 'ls': case 'cd': case 'mkdir': case 'touch': case 'rm': case 'cat':
-    case 'wc': case 'more': case 'less':
+    case 'wc': case 'more': case 'less': case 'grep':
         require __DIR__ . '/commands/filesystem.php';
         break;
 
