@@ -34,6 +34,7 @@ Whether you want to show off your server-side skills, add a geeky touch to your 
 | Network | `ping`, `ifconfig`, `ip`, `wget`, `curl` |
 | Shell | `echo`, `history`, `alias`, `clear`, `exit`, `logout`, `help`, `man` |
 | Editors | `nano` |
+| Packages | `dnf` |
 | Users | `whoami`, `sudo`, `last` |
 | Easter egg | `sudo rm -rf /` |
 
@@ -42,6 +43,8 @@ Whether you want to show off your server-side skills, add a geeky touch to your 
 `cp` supports `-r`/`-R` for recursive directory copy. `mv` renames files and moves them between directories.
 
 `more` and `less` support paging through any file in the fake filesystem. `less` additionally supports backward navigation (`b`, `↑`, `g`/`G`). Press `q` or `Ctrl+C` to exit either pager.
+
+`dnf` supports `install`, `remove`, `update`/`upgrade` (animated), `list [installed|available]`, `search`, `info`, `history`, `check-update`, and `clean all`. `install`, `remove`, `update`, `upgrade`, and `clean` require root.
 
 ---
 

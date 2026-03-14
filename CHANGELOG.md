@@ -2,6 +2,22 @@
 
 All notable changes to php-webterminal will be documented here.
 
+## [1.6.0] - 2026-03-14
+
+### Added
+- `dnf` — AlmaLinux 9 package manager with 10 subcommands:
+  - `dnf install <pkg...>` — animated per-package download + install progress; requires root
+  - `dnf remove <pkg...>` — animated removal sequence; requires root
+  - `dnf update` / `dnf upgrade` — animated upgrade run across 7 packages; requires root
+  - `dnf list [installed|available]` — realistic installed/available package list
+  - `dnf search <term>` — searches ~37 packages by name and description
+  - `dnf info <pkg>` — detailed package metadata (version, size, repo, summary)
+  - `dnf history` — fake transaction history with 9 entries
+  - `dnf check-update` — lists 7 packages with updates available
+  - `dnf clean all` — fake cache cleanup; requires root
+  - `dnf` (no args) — usage hint
+- `which dnf`, `which yum`, `which rpm` — added to binary map
+
 ## [1.5.0] - 2026-03-14
 
 ### Added
