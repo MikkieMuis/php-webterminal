@@ -193,6 +193,137 @@ switch ($cmd) {
             out(implode(' ', $parts) . ' ' . $name);
         }
 
+    // ── grep ──
+    case 'grep':
+        // Usage: grep [OPTIONS] PATTERN [FILE...]
+        // Supported flags: -i (ignore case), -r (recursive), -n (line numbers),
+        //                  -v (invert), -c (count), -l (filenames only), -E (extended regex)
+        if (empty($argv)) err("grep: missing operand\nUsage: grep [OPTION...] PATTERN [FILE...]");
+
+        // parse flags and collect non-flag args (pattern + files)
+        $flags       = '';
+        $nonFlags    = [];
+        $skipNext    = false;
+        foreach ($argv as $a) {
+            if ($skipNext) { $skipNext = false; continue; }
+            if ($a[0] === '-' && strlen($a) > 1) { $flags .= ltrim($a, '-'); }
+            else { $nonFlags[] = $a; }
+        }
+        $ignoreCase = (strpos($flags, 'i') !== false);
+        $recursive  = (strpos($flags, 'r') !== false || strpos($flags, 'R') !== false);
+        $lineNums   = (strpos($flags, 'n') !== false);
+        $invert     = (strpos($flags, 'v') !== false);
+        $countOnly  = (strpos($flags, 'c') !== false);
+        $listFiles  = (strpos($flags, 'l') !== false);
+
+        if (empty($nonFlags)) err("grep: missing pattern\nUsage: grep [OPTION...] PATTERN [FILE...]");
+
+        $pattern = array_shift($nonFlags);  // first non-flag arg is the pattern
+        $targets = $nonFlags;               // remaining are file/dir paths
+
+        // validate regex — escape if it looks like a plain string (no regex special chars)
+        // We support both plain strings and basic ERE patterns.
+        // Build the PCRE pattern
+        $pcre = '/' . str_replace('/', '\/', $pattern) . '/';
+        if ($ignoreCase) $pcre .= 'i';
+        // quick validity check
+        if (@preg_match($pcre, '') === false) {
+            // pattern is invalid regex — treat as literal string
+            $pcre = '/' . str_replace('/', '\/', preg_quote($pattern, '/')) . '/';
+            if ($ignoreCase) $pcre .= 'i';
+        }
+
+        // collect files to search
+        // if no files given and not recursive → error (we don't support stdin)
+        if (empty($targets)) {
+            if ($recursive) {
+                $targets = ['/'];  // grep -r with no path defaults to current dir
+                $targets = [$_SESSION['cwd']];
+            } else {
+                err('grep: no file operand — reading from stdin is not supported in this terminal');
+            }
+        }
+
+        // expand targets: resolve paths; if -r, collect all files under dir
+        function grep_collect_files(array $targets, bool $recursive): array {
+            $files = [];
+            foreach ($targets as $t) {
+                $p = res_path($t);
+                if (!isset($_SESSION['fs'][$p])) continue;
+                if ($_SESSION['fs'][$p]['type'] === 'file') {
+                    $files[] = $p;
+                } elseif ($_SESSION['fs'][$p]['type'] === 'dir') {
+                    if ($recursive) {
+                        $prefix = rtrim($p, '/');
+                        foreach ($_SESSION['fs'] as $fp => $fn) {
+                            if ($fn['type'] === 'file' && strpos($fp, $prefix . '/') === 0) {
+                                $files[] = $fp;
+                            }
+                        }
+                    }
+                    // non-recursive dir: grep will say "Is a directory" — handled below
+                }
+            }
+            return $files;
+        }
+
+        // check for non-recursive directory targets
+        foreach ($targets as $t) {
+            $p = res_path($t);
+            if (isset($_SESSION['fs'][$p]) && $_SESSION['fs'][$p]['type'] === 'dir' && !$recursive) {
+                err('grep: ' . $t . ': Is a directory');
+            }
+            if (!isset($_SESSION['fs'][$p])) {
+                err('grep: ' . $t . ': No such file or directory');
+            }
+        }
+
+        $files       = grep_collect_files($targets, $recursive);
+        $multiFile   = count($files) > 1 || $recursive;
+        $outputLines = [];
+        $totalCount  = 0;
+
+        foreach ($files as $fp) {
+            $content  = $_SESSION['fs'][$fp]['content'] ?? '';
+            $rawLines = explode("\n", $content);
+            // strip trailing empty entry from files ending with \n
+            if (end($rawLines) === '') array_pop($rawLines);
+
+            $matchCount = 0;
+            $fileHits   = [];
+
+            foreach ($rawLines as $i => $line) {
+                $matched = (preg_match($pcre, $line) === 1);
+                if ($invert) $matched = !$matched;
+                if (!$matched) continue;
+                $matchCount++;
+                if (!$countOnly && !$listFiles) {
+                    $prefix = '';
+                    if ($multiFile)  $prefix .= $fp . ':';
+                    if ($lineNums)   $prefix .= ($i + 1) . ':';
+                    $fileHits[] = $prefix . $line;
+                }
+            }
+
+            if ($countOnly) {
+                $outputLines[] = ($multiFile ? $fp . ':' : '') . $matchCount;
+                $totalCount += $matchCount;
+            } elseif ($listFiles) {
+                if ($matchCount > 0) $outputLines[] = $fp;
+            } else {
+                foreach ($fileHits as $h) $outputLines[] = $h;
+                $totalCount += $matchCount;
+            }
+        }
+
+        if ($totalCount === 0 && !$countOnly && !$listFiles) {
+            // grep returns exit 1 (no match) — we signal this with error=true but no message
+            echo json_encode(['output' => '', 'error' => true]);
+            exit;
+        }
+
+        out(implode("\n", $outputLines));
+
     // ── more / less ──
     case 'more':
     case 'less':
