@@ -167,6 +167,10 @@ switch ($cmd) {
         require __DIR__ . '/commands/editors.php';
         break;
 
+    case 'dnf':
+        require __DIR__ . '/commands/package.php';
+        break;
+
     default:
         err('bash: ' . $cmd . ': command not found');
 }

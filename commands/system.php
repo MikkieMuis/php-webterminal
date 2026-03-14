@@ -181,6 +181,7 @@ switch ($cmd) {
             'useradd'=>'/usr/sbin/useradd','usermod'=>'/usr/sbin/usermod',
             'crontab'=>'/usr/bin/crontab','systemctl'=>'/usr/bin/systemctl',
             'journalctl'=>'/usr/bin/journalctl','man'=>'/usr/bin/man',
+            'dnf'=>'/usr/bin/dnf','yum'=>'/usr/bin/yum','rpm'=>'/usr/bin/rpm',
         ];
         $results = [];
         foreach (explode(' ', $args) as $w) {

@@ -573,6 +573,8 @@ function runCmd(raw) {
       doWget(data); return;
     } else if (data.curl) {
       doCurl(data); return;
+    } else if (data.dnf) {
+      doDnf(data); return;
     } else if (data.nano) {
       doNano(data); return;
     } else if (data.pager !== undefined) {
@@ -944,6 +946,165 @@ function doCurl(data) {
     scr.scrollTop = scr.scrollHeight;
   }
   nextBar();
+}
+
+// ── dnf animation ─────────────────────────────────────────
+function doDnf(data) {
+  if (data.dnfcmd === 'install') {
+    var pkgs  = data.pkgs;
+    var steps = data.steps;
+    var totalSize = steps.reduce(function(acc, s){ return acc + s.size; }, 0);
+    var totalSizeFmt = totalSize >= 1024 ? (totalSize/1024).toFixed(1) + ' MB' : totalSize + ' kB';
+
+    // dependency + transaction check header
+    print('Last metadata expiration check: 0:12:14 ago on ' + new Date().toString().slice(0,24) + '.', 'n');
+    print('Dependencies resolved.', 'n');
+    print('', 'n');
+    print('=' .repeat(70), 'n');
+    print(' Package' + ' '.repeat(22) + 'Arch   Version                   Repository   Size', 'n');
+    print('=' .repeat(70), 'n');
+    print('Installing:', 'n');
+    steps.forEach(function(s) {
+      print(' ' + s.pkg.padEnd(28).slice(0,28) + ' x86_64 ' + s.ver.padEnd(26).slice(0,26) + ' ' + s.repo + '  ' + s.sizeFmt, 'n');
+    });
+    print('', 'n');
+    print('Transaction Summary', 'n');
+    print('=' .repeat(70), 'n');
+    print('Install  ' + pkgs.length + ' Package' + (pkgs.length !== 1 ? 's' : ''), 'n');
+    print('', 'n');
+    print('Total download size: ' + totalSizeFmt, 'n');
+    print('Installed size: ' + totalSizeFmt, 'n');
+
+    // Animate each package download then install
+    var i = 0;
+    function nextPkg() {
+      if (i >= steps.length) {
+        // all done
+        print('', 'n');
+        print('Installed:', 'n');
+        steps.forEach(function(s) {
+          print('  ' + s.pkg + '-' + s.ver + '.x86_64', 'n');
+        });
+        print('', 'n');
+        print('Complete!', 'n');
+        print('', 'n');
+        updateTitleAndPrompt();
+        curline.style.display = 'flex';
+        scr.scrollTop = scr.scrollHeight;
+        return;
+      }
+      var s = steps[i];
+      i++;
+      // downloading
+      var dlSteps = 10; var dlStep = 0;
+      function dlTick() {
+        dlStep++;
+        var pct = Math.round((dlStep/dlSteps)*100);
+        var last = scr.querySelector('.ln.dnfprogress');
+        if (last) last.remove();
+        var bar = '='.repeat(Math.round(pct/5)) + (pct<100?'>':'') + ' '.repeat(Math.max(0,19-Math.round(pct/5)));
+        var el = document.createElement('span');
+        el.className = 'ln n dnfprogress';
+        el.textContent = s.pkg.slice(0,18).padEnd(18) + ' [' + bar + '] ' + String(pct).padStart(3) + '%';
+        scr.insertBefore(el, curline);
+        scr.scrollTop = scr.scrollHeight;
+        if (dlStep < dlSteps) { setTimeout(dlTick, 60); }
+        else {
+          // remove progress bar, print done line
+          var fin = scr.querySelector('.ln.dnfprogress');
+          if (fin) fin.remove();
+          print('(' + i + '/' + steps.length + '): ' + s.pkg.padEnd(30).slice(0,30) + ' ' + s.sizeFmt.padStart(8) + ' B/s | ' + s.sizeFmt.padStart(8) + ' ' + s.sizeFmt, 'n');
+          setTimeout(nextPkg, 150);
+        }
+      }
+      dlTick();
+    }
+    print('', 'n');
+    print('Downloading Packages:', 'n');
+    nextPkg();
+    return;
+  }
+
+  if (data.dnfcmd === 'remove') {
+    var pkgs = data.pkgs;
+    print('Dependencies resolved.', 'n');
+    print('', 'n');
+    print('=' .repeat(70), 'n');
+    print(' Package' + ' '.repeat(22) + 'Arch       Version              Repository     Size', 'n');
+    print('=' .repeat(70), 'n');
+    print('Removing:', 'n');
+    pkgs.forEach(function(p) {
+      print(' ' + p.padEnd(28).slice(0,28) + ' x86_64    (installed)', 'n');
+    });
+    print('', 'n');
+    print('Transaction Summary', 'n');
+    print('=' .repeat(70), 'n');
+    print('Remove  ' + pkgs.length + ' Package' + (pkgs.length !== 1 ? 's' : ''), 'n');
+    print('', 'n');
+
+    var i = 0;
+    function nextRemove() {
+      if (i >= pkgs.length) {
+        print('', 'n');
+        print('Removed:', 'n');
+        pkgs.forEach(function(p) { print('  ' + p + '.x86_64', 'n'); });
+        print('', 'n');
+        print('Complete!', 'n');
+        print('', 'n');
+        updateTitleAndPrompt();
+        curline.style.display = 'flex';
+        scr.scrollTop = scr.scrollHeight;
+        return;
+      }
+      var pkg = pkgs[i]; i++;
+      print('  Erasing     : ' + pkg, 'n');
+      setTimeout(nextRemove, 300);
+    }
+    print('Running transaction', 'n');
+    setTimeout(nextRemove, 400);
+    return;
+  }
+
+  if (data.dnfcmd === 'upgrade') {
+    var pkgs = data.pkgs;
+    print('Last metadata expiration check: 0:12:14 ago on ' + new Date().toString().slice(0,24) + '.', 'n');
+    print('Dependencies resolved.', 'n');
+    print('', 'n');
+    print('=' .repeat(70), 'n');
+    print(' Package' + ' '.repeat(22) + 'Arch   Version (old → new)            Repository', 'n');
+    print('=' .repeat(70), 'n');
+    print('Upgrading:', 'n');
+    pkgs.forEach(function(p) {
+      print(' ' + p.name.padEnd(28).slice(0,28) + ' x86_64 ' + (p.old + ' → ' + p.new).slice(0,28).padEnd(28) + ' baseos', 'n');
+    });
+    print('', 'n');
+    print('Transaction Summary', 'n');
+    print('=' .repeat(70), 'n');
+    print('Upgrade  ' + pkgs.length + ' Packages', 'n');
+    print('', 'n');
+    print('Downloading Packages:', 'n');
+
+    var i = 0;
+    function nextUpgrade() {
+      if (i >= pkgs.length) {
+        print('', 'n');
+        print('Upgraded:', 'n');
+        pkgs.forEach(function(p) { print('  ' + p.name + '-' + p.new + '.x86_64', 'n'); });
+        print('', 'n');
+        print('Complete!', 'n');
+        print('', 'n');
+        updateTitleAndPrompt();
+        curline.style.display = 'flex';
+        scr.scrollTop = scr.scrollHeight;
+        return;
+      }
+      var p = pkgs[i]; i++;
+      print('(' + i + '/' + pkgs.length + '): ' + p.name.padEnd(30).slice(0,30) + ' ' + p.size.padStart(8), 'n');
+      setTimeout(nextUpgrade, 200);
+    }
+    setTimeout(nextUpgrade, 300);
+    return;
+  }
 }
 
 // ── nano editor ───────────────────────────────────────────
