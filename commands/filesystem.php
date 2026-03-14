@@ -193,6 +193,86 @@ switch ($cmd) {
             out(implode(' ', $parts) . ' ' . $name);
         }
 
+    // ── cp ──
+    case 'cp':
+        // Usage: cp [-r] SOURCE DEST
+        if (count($argv) < 2) err('cp: missing file operand');
+        $flags  = '';
+        $cpargs = [];
+        foreach ($argv as $a) {
+            if ($a[0] === '-') { $flags .= ltrim($a, '-'); }
+            else { $cpargs[] = $a; }
+        }
+        if (count($cpargs) < 2) err('cp: missing destination file operand after \'' . $cpargs[0] . '\'');
+        $recursive = (strpos($flags, 'r') !== false || strpos($flags, 'R') !== false);
+        $src  = res_path($cpargs[0]);
+        $dest = res_path($cpargs[1]);
+        if (!isset($_SESSION['fs'][$src])) err('cp: cannot stat \'' . $cpargs[0] . '\': No such file or directory');
+        $srcType = $_SESSION['fs'][$src]['type'];
+        if ($srcType === 'dir' && !$recursive) err('cp: omitting directory \'' . $cpargs[0] . '\' — use -r');
+        // if dest is an existing directory, copy into it
+        if (isset($_SESSION['fs'][$dest]) && $_SESSION['fs'][$dest]['type'] === 'dir') {
+            $dest = rtrim($dest, '/') . '/' . basename($src);
+        }
+        $destParent = dirname($dest);
+        if (!isset($_SESSION['fs'][$destParent]) || $_SESSION['fs'][$destParent]['type'] !== 'dir') {
+            err('cp: cannot create \'' . $cpargs[1] . '\': No such file or directory');
+        }
+        if ($srcType === 'file') {
+            $_SESSION['fs'][$dest] = array_merge($_SESSION['fs'][$src], ['mtime' => time()]);
+        } else {
+            // recursive copy of directory tree
+            $srcPrefix  = rtrim($src, '/');
+            $destPrefix = rtrim($dest, '/');
+            $_SESSION['fs'][$dest] = ['type' => 'dir', 'mtime' => time()];
+            foreach ($_SESSION['fs'] as $p => $node) {
+                if (strpos($p, $srcPrefix . '/') === 0) {
+                    $rel  = substr($p, strlen($srcPrefix));
+                    $_SESSION['fs'][$destPrefix . $rel] = array_merge($node, ['mtime' => time()]);
+                }
+            }
+        }
+        out('');
+
+    // ── mv ──
+    case 'mv':
+        // Usage: mv SOURCE DEST
+        if (count($argv) < 2) err('mv: missing file operand');
+        $mvargs = [];
+        foreach ($argv as $a) {
+            if ($a[0] !== '-') $mvargs[] = $a;
+        }
+        if (count($mvargs) < 2) err('mv: missing destination file operand after \'' . $mvargs[0] . '\'');
+        $src  = res_path($mvargs[0]);
+        $dest = res_path($mvargs[1]);
+        if (!isset($_SESSION['fs'][$src])) err('mv: cannot stat \'' . $mvargs[0] . '\': No such file or directory');
+        // if dest is an existing directory, move into it
+        if (isset($_SESSION['fs'][$dest]) && $_SESSION['fs'][$dest]['type'] === 'dir') {
+            $dest = rtrim($dest, '/') . '/' . basename($src);
+        }
+        $destParent = dirname($dest);
+        if (!isset($_SESSION['fs'][$destParent]) || $_SESSION['fs'][$destParent]['type'] !== 'dir') {
+            err('mv: cannot move \'' . $mvargs[0] . '\' to \'' . $mvargs[1] . '\': No such file or directory');
+        }
+        // move: copy all matching keys to new prefix, then remove old ones
+        $srcPrefix  = rtrim($src, '/');
+        $destPrefix = rtrim($dest, '/');
+        $toAdd = [];
+        $toRemove = [];
+        foreach ($_SESSION['fs'] as $p => $node) {
+            if ($p === $src) {
+                $toAdd[$dest]    = array_merge($node, ['mtime' => time()]);
+                $toRemove[]      = $p;
+            } elseif (strpos($p, $srcPrefix . '/') === 0) {
+                $rel             = substr($p, strlen($srcPrefix));
+                $toAdd[$destPrefix . $rel] = array_merge($node, ['mtime' => time()]);
+                $toRemove[]      = $p;
+            }
+        }
+        foreach ($toRemove as $k) unset($_SESSION['fs'][$k]);
+        foreach ($toAdd    as $k => $v) $_SESSION['fs'][$k] = $v;
+        out('');
+
     // ── grep ──
     case 'grep':
         // Usage: grep [OPTIONS] PATTERN [FILE...]
