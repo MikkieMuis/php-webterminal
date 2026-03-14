@@ -28,7 +28,7 @@ Whether you want to show off your server-side skills, add a geeky touch to your 
 | Category | Commands |
 |---|---|
 | Navigation | `ls`, `cd`, `pwd` |
-| Files | `cat`, `touch`, `mkdir`, `rm`, `wc` |
+| Files | `cat`, `touch`, `mkdir`, `rm`, `cp`, `mv`, `wc`, `grep` |
 | Pagers | `more`, `less` |
 | System | `uname`, `uptime`, `hostname`, `date`, `df`, `free`, `ps`, `top`, `id`, `env`, `printenv`, `which` |
 | Network | `ping`, `ifconfig`, `ip`, `wget`, `curl` |
@@ -36,6 +36,10 @@ Whether you want to show off your server-side skills, add a geeky touch to your 
 | Editors | `nano` |
 | Users | `whoami`, `sudo`, `last` |
 | Easter egg | `sudo rm -rf /` |
+
+`grep` supports `-i` (ignore case), `-n` (line numbers), `-v` (invert), `-c` (count), `-l` (filenames only), and `-r` (recursive).
+
+`cp` supports `-r`/`-R` for recursive directory copy. `mv` renames files and moves them between directories.
 
 `more` and `less` support paging through any file in the fake filesystem. `less` additionally supports backward navigation (`b`, `↑`, `g`/`G`). Press `q` or `Ctrl+C` to exit either pager.
 
