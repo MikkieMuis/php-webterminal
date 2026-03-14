@@ -138,6 +138,9 @@ $cmd   = strtolower($parts[0]);
 $args  = implode(' ', array_slice($parts, 1));
 $argv  = array_slice($parts, 1);   // individual args as array
 
+// ── alias expansion ─────────────────────────────────────────
+if ($cmd === 'll') { $cmd = 'ls'; array_unshift($argv, '-la'); $args = implode(' ', $argv); }
+
 // ── command dispatch ────────────────────────────────────────
 switch ($cmd) {
     case 'ls': case 'cd': case 'mkdir': case 'touch': case 'rm': case 'cat':
