@@ -2,6 +2,21 @@
 
 All notable changes to php-webterminal will be documented here.
 
+## [2.0.0] - 2026-03-15
+
+### Added
+- `php` — PHP CLI command
+  - `php -v` / `php --version` — version string with Zend Engine and OPcache lines
+  - `php -i` — phpinfo output (Server API, config file path, extension_dir, key INI values)
+  - `php -m` — list loaded PHP and Zend modules
+  - `php -r 'code'` — evaluate expressions: arithmetic and `echo`
+  - `php` with no args — helpful usage hint instead of hanging
+  - Invalid flags produce a realistic error message
+- Man page for `php`
+- Fake filesystem additions: `/var/lib/php/session`, `/var/lib/php/wsdlcache`,
+  `/var/lib/php/opcache`, `/usr/lib64/php`, `/usr/lib64/php/modules`
+  (previously referenced in `php.ini` and `www.conf` but missing as traversable dirs)
+
 ## [1.9.0] - 2026-03-15
 
 ### Added

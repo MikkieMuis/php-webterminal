@@ -1,7 +1,7 @@
 <?php
 //  system commands: whoami, pwd, hostname, uname, uptime, date,
 //                   df, free, ps, top, id, env, which, fastfetch, neofetch,
-//                   systemctl
+//                   systemctl, php
 //  Receives: $cmd, $args, $argv, $user, $body  (from terminal.php scope)
 
 switch ($cmd) {
@@ -397,6 +397,59 @@ switch ($cmd) {
         }
 
         err('systemctl: Unknown operation \'' . $subcmd . '\'.');
+        break;
+    }
+
+    // php
+    case 'php': {
+        $flag = isset($argv[0]) ? $argv[0] : '';
+
+        // php --version / php -v
+        if ($flag === '-v' || $flag === '--version') {
+            out("PHP 8.2.28 (cli) (built: Feb  4 2026 12:00:00) (NTS)\nCopyright (c) The PHP Group\nZend Engine v4.2.28, Copyright (c) Zend Technologies\n    with Zend OPcache v8.2.28, Copyright (c), by Zend Technologies");
+        }
+
+        // php -r "code"
+        if ($flag === '-r') {
+            $code = isset($argv[1]) ? implode(' ', array_slice($argv, 1)) : '';
+            // strip surrounding quotes
+            $code = trim($code, '"\'');
+
+            // basic arithmetic: echo 1+1; or echo 2*3;
+            if (preg_match('/^echo\s+(\d+)\s*([+\-*\/])\s*(\d+)\s*;?$/', $code, $m)) {
+                $a = (float)$m[1]; $op = $m[2]; $b = (float)$m[3];
+                $res = $op==='+' ? $a+$b : ($op==='-' ? $a-$b : ($op==='*' ? $a*$b : ($b!=0 ? $a/$b : null)));
+                if ($res === null) err('php: Division by zero');
+                out(rtrim(rtrim(number_format($res, 10), '0'), '.'));
+            }
+            // echo "string";
+            if (preg_match('/^echo\s+["\'](.+)["\'];?$/', $code, $m)) {
+                out($m[1]);
+            }
+            // phpinfo();
+            if (preg_match('/^phpinfo\s*\(\s*\)\s*;?$/', $code)) {
+                out("phpinfo()\nPHP Version => 8.2.28\n\nSystem => Linux " . CONF_HOSTNAME . " " . SYS_KERNEL . " #1 SMP " . SYS_ARCH . " GNU/Linux\nBuild Date => Feb  4 2026 12:00:00\nConfigure Command => './configure' '--build=x86_64-redhat-linux-gnu'\nServer API => Command Line Interface\nVirtual Directory Support => disabled\nConfiguration File (php.ini) Path => /etc/php.ini\nLoaded Configuration File => /etc/php.ini\nPHP API => 20220829\nPHP Extension => 20220829\nZend Extension => 420220829\nZend Extension Build => API420220829,NTS\nPHP Extension Build => API20220829,NTS\nDebug Build => no\nThread Safety => disabled\nZend Signal Handling => enabled\nZend Memory Manager => enabled\nZend Multibyte Support => provided by mbstring\nIPv6 Support => enabled\nDTrace Support => disabled");
+            }
+            // unrecognised -r expression
+            err('');
+        }
+
+        // php -i (phpinfo as text)
+        if ($flag === '-i') {
+            out("phpinfo()\nPHP Version => 8.2.28\n\nSystem => Linux " . CONF_HOSTNAME . " " . SYS_KERNEL . " #1 SMP " . SYS_ARCH . " GNU/Linux\nBuild Date => Feb  4 2026 12:00:00\nServer API => Command Line Interface\nConfiguration File (php.ini) Path => /etc/php.ini\nLoaded Configuration File => /etc/php.ini\nextension_dir => /usr/lib64/php/modules\n\ndate.timezone => Europe/Amsterdam\nmemory_limit => 256M\nmax_execution_time => 30\nupload_max_filesize => 64M\npost_max_size => 64M\n\nopcache.enable => 1\nopcache.memory_consumption => 128\n\nCore\nPHP Version => 8.2.28\n\nbcmath\ncalendar\nctype\ncurl\ndate\ndom\nexif\nfileinfo\nfilter\ngd\ngettext\nhash\niconv\njson\nlibxml\nmbstring\nmysqlnd\nopenssl\npcre\nPDO\npdo_mysql\npdo_sqlite\nphar\nposix\nReflection\nsession\nSimpleXML\nsodium\nSPL\nsqlite3\nstandard\ntokenizer\nxml\nxmlreader\nxmlwriter\nxsl\nzip\nZend OPcache");
+        }
+
+        // php -m (list modules)
+        if ($flag === '-m') {
+            out("[PHP Modules]\nbcmath\ncalendar\nctype\ncurl\ndate\ndom\nexif\nfileinfo\nfilter\ngd\ngettext\nhash\niconv\njson\nlibxml\nmbstring\nmysqlnd\nopenssl\npcre\nPDO\npdo_mysql\npdo_sqlite\nphar\nposix\nReflection\nsession\nSimpleXML\nsodium\nSPL\nsqlite3\nstandard\ntokenizer\nxml\nxmlreader\nxmlwriter\nxsl\nzip\n\n[Zend Modules]\nZend OPcache");
+        }
+
+        // php with no args or unrecognised flag
+        if ($flag === '') {
+            err("Interactive mode is not supported in this terminal.\nUse: php -r 'code'  or  php -v  or  php -i");
+        }
+
+        err("php: invalid option -- '" . ltrim($flag, '-') . "'\nUsage: php [options] [-r code] [--] [args...]\n       php [options] [-] [args...]\nUse --help to get this help.");
         break;
     }
 }

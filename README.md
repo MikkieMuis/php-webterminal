@@ -30,7 +30,7 @@ Whether you want to show off your server-side skills, add a geeky touch to your 
 | Navigation | `ls`, `ll`, `cd`, `pwd` |
 | Files | `cat`, `touch`, `mkdir`, `rm`, `cp`, `mv`, `wc`, `grep`, `head`, `tail` |
 | Pagers | `more`, `less` |
-| System | `uname`, `uptime`, `hostname`, `date`, `df`, `free`, `ps`, `top`, `id`, `env`, `printenv`, `which`, `whoami`, `fastfetch`, `neofetch`, `systemctl` |
+| System | `uname`, `uptime`, `hostname`, `date`, `df`, `free`, `ps`, `top`, `id`, `env`, `printenv`, `which`, `whoami`, `fastfetch`, `neofetch`, `systemctl`, `php` |
 | Network | `ping`, `ifconfig`, `ip`, `wget`, `curl` |
 | Shell | `echo`, `history`, `alias`, `clear`, `exit`, `logout`, `help`, `man`, `sudo`, `last` |
 | Editors | `nano` |
@@ -55,6 +55,8 @@ Whether you want to show off your server-side skills, add a geeky touch to your 
 `dnf` supports `install`, `remove`, `update`/`upgrade` (animated), `list [installed|available]`, `search`, `info`, `history`, `check-update`, and `clean all`. `install`, `remove`, `update`, `upgrade`, and `clean` require root.
 
 `systemctl` supports `status`, `start`, `stop`, `restart`, `enable`, `disable`, `is-active`, and `list-units` for eight fake services (`httpd`, `mariadb`, `php-fpm`, `mysqld`, `sshd`, `firewalld`, `crond`, `nginx`). The `.service` suffix is stripped automatically.
+
+`php` supports `-v` / `--version` (version string), `-i` (phpinfo), `-m` (module list), and `-r 'code'` (evaluate arithmetic and echo expressions).
 
 ---
 

@@ -418,6 +418,10 @@ function fs_get_data() {
     '/var/cache'                => ['type'=>'dir'],
     '/var/lib'                  => ['type'=>'dir'],
     '/var/lib/mysql'            => ['type'=>'dir'],
+    '/var/lib/php'              => ['type'=>'dir'],
+    '/var/lib/php/session'      => ['type'=>'dir'],
+    '/var/lib/php/wsdlcache'    => ['type'=>'dir'],
+    '/var/lib/php/opcache'      => ['type'=>'dir'],
 
     // ── /var/log/httpd — matches real server layout ──
     '/var/log/httpd/access_log'               => ['type'=>'file','mtime'=>mktime(13,52,0,3,12,2026),'content'=>
@@ -558,6 +562,9 @@ function fs_get_data() {
     '/usr/lib'              => ['type'=>'dir'],
     '/usr/lib/systemd'      => ['type'=>'dir'],
     '/usr/lib/systemd/system' => ['type'=>'dir'],
+    '/usr/lib64'            => ['type'=>'dir'],
+    '/usr/lib64/php'        => ['type'=>'dir'],
+    '/usr/lib64/php/modules' => ['type'=>'dir'],
 
     '/usr/local/bin/backup.sh'         => ['type'=>'file','content'=>
 "#!/bin/bash\n# Nightly backup script\nset -e\nDATE=\$(date +%Y-%m-%d)\nBACKUP_DIR=/mnt/backup/daily\nMYSQL_USER=root\nMYSQL_PASS=\$(cat /root/.mysql_secret)\n\necho \"[\$(date)] Starting nightly backup\"\n\n# Dump MySQL\nmysqldump -u\$MYSQL_USER -p\$MYSQL_PASS --all-databases | gzip > \$BACKUP_DIR/db-\$DATE.sql.gz\necho \"[\$(date)] MySQL dump complete\"\n\n# Sync web files\nrsync -avz --delete /var/www/ backup-server:/mnt/backup/www/\necho \"[\$(date)] Web files synced\"\n\n# Remove backups older than 14 days\nfind \$BACKUP_DIR -name '*.sql.gz' -mtime +14 -delete\necho \"[\$(date)] Old backups pruned\"\necho \"[\$(date)] Backup complete\""],
