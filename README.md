@@ -27,16 +27,14 @@ Whether you want to show off your server-side skills, add a geeky touch to your 
 
 | Category | Commands |
 |---|---|
-| Navigation | `ls`, `cd`, `pwd` |
+| Navigation | `ls`, `ll`, `cd`, `pwd` |
 | Files | `cat`, `touch`, `mkdir`, `rm`, `cp`, `mv`, `wc`, `grep`, `head`, `tail` |
 | Pagers | `more`, `less` |
-| System | `uname`, `uptime`, `hostname`, `date`, `df`, `free`, `ps`, `top`, `id`, `env`, `printenv`, `which` |
+| System | `uname`, `uptime`, `hostname`, `date`, `df`, `free`, `ps`, `top`, `id`, `env`, `printenv`, `which`, `whoami`, `fastfetch`, `neofetch` |
 | Network | `ping`, `ifconfig`, `ip`, `wget`, `curl` |
-| Shell | `echo`, `history`, `alias`, `clear`, `exit`, `logout`, `help`, `man` |
+| Shell | `echo`, `history`, `alias`, `clear`, `exit`, `logout`, `help`, `man`, `sudo`, `last` |
 | Editors | `nano` |
 | Packages | `dnf` |
-| Users | `whoami`, `sudo`, `last` |
-| Easter egg | `sudo rm -rf /` |
 
 `grep` supports `-i` (ignore case), `-n` (line numbers), `-v` (invert), `-c` (count), `-l` (filenames only), and `-r` (recursive).
 
@@ -47,6 +45,12 @@ Whether you want to show off your server-side skills, add a geeky touch to your 
 `tail` outputs the last N lines (or bytes with `-c`) of a file. Default is 10 lines. Supports `-n`, `-c`, `-f` (simulated follow), `-q`, `-v`, `+N` offset syntax, and multiple files.
 
 `more` and `less` support paging through any file in the fake filesystem. `less` additionally supports backward navigation (`b`, `↑`, `g`/`G`). Press `q` or `Ctrl+C` to exit either pager.
+
+`ll` is an alias for `ls -la`.
+
+`sudo` allows non-root users to run commands as root after a password prompt. `sudo rm -rf /` triggers a kernel panic easter egg.
+
+`fastfetch` and `neofetch` display system information alongside the AlmaLinux ASCII logo.
 
 `dnf` supports `install`, `remove`, `update`/`upgrade` (animated), `list [installed|available]`, `search`, `info`, `history`, `check-update`, and `clean all`. `install`, `remove`, `update`, `upgrade`, and `clean` require root.
 
