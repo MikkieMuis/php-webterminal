@@ -30,7 +30,7 @@ Whether you want to show off your server-side skills, add a geeky touch to your 
 | Navigation | `ls`, `ll`, `cd`, `pwd` |
 | Files | `cat`, `touch`, `mkdir`, `rm`, `cp`, `mv`, `wc`, `grep`, `head`, `tail` |
 | Pagers | `more`, `less` |
-| System | `uname`, `uptime`, `hostname`, `date`, `df`, `free`, `ps`, `top`, `id`, `env`, `printenv`, `which`, `whoami`, `fastfetch`, `neofetch` |
+| System | `uname`, `uptime`, `hostname`, `date`, `df`, `free`, `ps`, `top`, `id`, `env`, `printenv`, `which`, `whoami`, `fastfetch`, `neofetch`, `systemctl` |
 | Network | `ping`, `ifconfig`, `ip`, `wget`, `curl` |
 | Shell | `echo`, `history`, `alias`, `clear`, `exit`, `logout`, `help`, `man`, `sudo`, `last` |
 | Editors | `nano` |
@@ -53,6 +53,8 @@ Whether you want to show off your server-side skills, add a geeky touch to your 
 `fastfetch` and `neofetch` display system information alongside the AlmaLinux ASCII logo.
 
 `dnf` supports `install`, `remove`, `update`/`upgrade` (animated), `list [installed|available]`, `search`, `info`, `history`, `check-update`, and `clean all`. `install`, `remove`, `update`, `upgrade`, and `clean` require root.
+
+`systemctl` supports `status`, `start`, `stop`, `restart`, `enable`, `disable`, `is-active`, and `list-units` for eight fake services (`httpd`, `mariadb`, `php-fpm`, `mysqld`, `sshd`, `firewalld`, `crond`, `nginx`). The `.service` suffix is stripped automatically.
 
 ---
 

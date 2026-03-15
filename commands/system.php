@@ -1,6 +1,7 @@
 <?php
 //  system commands: whoami, pwd, hostname, uname, uptime, date,
-//                   df, free, ps, top, id, env, which, fastfetch, neofetch
+//                   df, free, ps, top, id, env, which, fastfetch, neofetch,
+//                   systemctl
 //  Receives: $cmd, $args, $argv, $user, $body  (from terminal.php scope)
 
 switch ($cmd) {
@@ -282,4 +283,120 @@ switch ($cmd) {
         $out[] = str_pad('', $logoWidth) . '  ' . $blocks;
         $out[] = str_pad('', $logoWidth) . '  ' . $blocks;
         out(implode("\n", $out));
+
+    // systemctl
+    case 'systemctl': {
+        $subcmd  = isset($argv[0]) ? strtolower($argv[0]) : '';
+        $service = isset($argv[1]) ? strtolower($argv[1]) : '';
+
+        // Strip .service suffix if provided (systemctl status httpd.service → httpd)
+        $service = preg_replace('/\.service$/', '', $service);
+
+        // Known services and their display names / ports / pids
+        $services = [
+            'httpd'    => ['label' => 'httpd.service',    'desc' => 'The Apache HTTP Server',                    'pid' => 1187, 'port' => '0.0.0.0:80'],
+            'mariadb'  => ['label' => 'mariadb.service',  'desc' => 'MariaDB 10.5 database server',              'pid' => 1243, 'port' => '127.0.0.1:3306'],
+            'php-fpm'  => ['label' => 'php-fpm.service',  'desc' => 'The PHP FastCGI Process Manager',           'pid' => 1301, 'port' => '127.0.0.1:9000'],
+            'mysqld'   => ['label' => 'mariadb.service',  'desc' => 'MariaDB 10.5 database server',              'pid' => 1243, 'port' => '127.0.0.1:3306'],
+            'nginx'    => ['label' => 'nginx.service',    'desc' => 'The nginx HTTP and reverse proxy server',   'pid' => 0,    'port' => ''],
+            'sshd'     => ['label' => 'sshd.service',     'desc' => 'OpenSSH server daemon',                     'pid' => 978,  'port' => '0.0.0.0:22'],
+            'firewalld'=> ['label' => 'firewalld.service','desc' => 'firewalld - dynamic firewall daemon',       'pid' => 812,  'port' => ''],
+            'crond'    => ['label' => 'crond.service',    'desc' => 'Command Scheduler',                         'pid' => 1089, 'port' => ''],
+        ];
+
+        // Services that are stopped by default
+        $stopped = ['nginx'];
+
+        // no subcommand
+        if ($subcmd === '') {
+            out("Usage: systemctl [OPTIONS...] COMMAND ...\n\nQuery or send control commands to the system manager.\n\nUnit Commands:\n  start NAME...             Start (activate) one or more units\n  stop NAME...              Stop (deactivate) one or more units\n  restart NAME...           Start or restart one or more units\n  status [NAME...|PID...]   Show runtime status of one or more units\n  enable NAME...            Enable one or more unit files\n  disable NAME...           Disable one or more unit files\n  is-active PATTERN...      Check whether units are active\n  list-units [PATTERN...]   List loaded units\n\nSee 'man systemctl' for details.");
+        }
+
+        // list-units
+        if ($subcmd === 'list-units') {
+            $lines = [
+                '  UNIT                    LOAD   ACTIVE SUB     DESCRIPTION',
+                '  crond.service           loaded active running Command Scheduler',
+                '  firewalld.service       loaded active running firewalld - dynamic firewall daemon',
+                '  httpd.service           loaded active running The Apache HTTP Server',
+                '  mariadb.service         loaded active running MariaDB 10.5 database server',
+                '  php-fpm.service         loaded active running The PHP FastCGI Process Manager',
+                '  sshd.service            loaded active running OpenSSH server daemon',
+                '  nginx.service           loaded active exited  The nginx HTTP and reverse proxy server',
+                '',
+                'LOAD   = Reflects whether the unit definition was properly loaded.',
+                'ACTIVE = The high-level unit activation state.',
+                'SUB    = The low-level unit activation state.',
+                '',
+                '7 loaded units listed.',
+            ];
+            out(implode("\n", $lines));
+        }
+
+        // subcommands that require a service name
+        if (in_array($subcmd, ['start','stop','restart','status','enable','disable','is-active'])) {
+            if ($service === '') {
+                err('systemctl: ' . $subcmd . ': no service specified');
+            }
+
+            if (!isset($services[$service])) {
+                err('Failed to ' . $subcmd . ' ' . $service . '.service: Unit ' . $service . '.service not found.');
+            }
+
+            $svc    = $services[$service];
+            $isStopped = in_array($service, $stopped);
+
+            if ($subcmd === 'status') {
+                $active  = $isStopped ? 'inactive (dead)' : 'active (running)';
+                $dotchar = $isStopped ? 'x' : '*';
+                $since   = date('D Y-m-d H:i:s T', time() - rand(3600, 86400));
+                $lines   = [
+                    $dotchar . ' ' . $svc['label'] . ' - ' . $svc['desc'],
+                    '   Loaded: loaded (/usr/lib/systemd/system/' . $svc['label'] . '; enabled; vendor preset: disabled)',
+                    '   Active: ' . $active . ' since ' . $since,
+                ];
+                if (!$isStopped) {
+                    $lines[] = '  Process: ' . $svc['pid'] . ' ExecStart=/usr/sbin/' . $service . ' (code=exited, status=0/SUCCESS)';
+                    $lines[] = ' Main PID: ' . $svc['pid'] . ' (' . $service . ')';
+                    $lines[] = '    Tasks: ' . rand(2,8) . ' (limit: 23480)';
+                    $lines[] = '   Memory: ' . rand(10,80) . '.' . rand(0,9) . 'M';
+                    $lines[] = '   CGroup: /system.slice/' . $svc['label'];
+                    $lines[] = '           `-' . $svc['pid'] . ' /usr/sbin/' . $service . ' -DFOREGROUND';
+                }
+                out(implode("\n", $lines));
+            }
+
+            if ($subcmd === 'start') {
+                if ($isStopped) {
+                    // Remove from stopped list (cosmetic — session state not tracked per service here)
+                    out('');
+                }
+                out(''); // already running — systemctl start is silent on success
+            }
+
+            if ($subcmd === 'stop') {
+                out(''); // silent on success
+            }
+
+            if ($subcmd === 'restart') {
+                out(''); // silent on success
+            }
+
+            if ($subcmd === 'enable') {
+                out('Created symlink /etc/systemd/system/multi-user.target.wants/' . $svc['label'] . ' → /usr/lib/systemd/system/' . $svc['label'] . '.');
+            }
+
+            if ($subcmd === 'disable') {
+                out('Removed /etc/systemd/system/multi-user.target.wants/' . $svc['label'] . '.');
+            }
+
+            if ($subcmd === 'is-active') {
+                if ($isStopped) err('inactive');
+                out('active');
+            }
+        }
+
+        err('systemctl: Unknown operation \'' . $subcmd . '\'.');
+        break;
+    }
 }
