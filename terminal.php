@@ -34,7 +34,7 @@ if (isset($_GET['sysinfo'])) {
 
 // initialise session filesystem
 // Bump this version string whenever fs_data.php changes to force a session reset.
-define('FS_VERSION', '7');
+define('FS_VERSION', '8');
 
 if (!isset($_SESSION['fs']) || ($_SESSION['fs_version'] ?? '') !== FS_VERSION) {
     require_once __DIR__ . '/fs_data.php';

@@ -18,9 +18,9 @@ function fs_get_data() {
 
     return [
 
-    // ──────────────────────────────────────────────────────────
+
     //  TOP-LEVEL DIRECTORIES
-    // ──────────────────────────────────────────────────────────
+
     '/'          => ['type'=>'dir'],
     '/bin'       => ['type'=>'dir'],
     '/boot'      => ['type'=>'dir'],
@@ -42,9 +42,9 @@ function fs_get_data() {
     '/usr'       => ['type'=>'dir'],
     '/var'       => ['type'=>'dir'],
 
-    // ──────────────────────────────────────────────────────────
+
     //  /boot
-    // ──────────────────────────────────────────────────────────
+
     '/boot/grub'                        => ['type'=>'dir'],
     '/boot/grub/grub.cfg'               => ['type'=>'file','content'=>
 "set default=0\nset timeout=5\n\nmenuentry 'AlmaLinux 9.7' {\n    linux /boot/vmlinuz-$K root=/dev/sda1 ro quiet\n    initrd /boot/initramfs-$K.img\n}"],
@@ -53,11 +53,11 @@ function fs_get_data() {
     '/boot/System.map-' . $K            => ['type'=>'file','content'=>'[kernel symbol table]'],
     '/boot/config-' . $K                => ['type'=>'file','content'=>"# Linux kernel config\nCONFIG_SMP=y\nCONFIG_X86_64=y\nCONFIG_MODULES=y\nCONFIG_NETFILTER=y"],
 
-    // ──────────────────────────────────────────────────────────
-    //  /etc  — full AlmaLinux 9 layout (matches real server)
-    // ──────────────────────────────────────────────────────────
 
-    // ── subdirectories ────────────────────────────────────────
+    //  /etc  — full AlmaLinux 9 layout (matches real server)
+
+
+    // subdirectories
     '/etc/alsa'             => ['type'=>'dir','mtime'=>mktime(0,0,0,2,14,2024)],
     '/etc/alternatives'     => ['type'=>'dir','mtime'=>mktime(18,38,0,1,28,2026)],
     '/etc/audit'            => ['type'=>'dir','mtime'=>mktime(13,48,0,9,21,2023)],
@@ -138,7 +138,7 @@ function fs_get_data() {
     '/etc/yum'              => ['type'=>'dir','mtime'=>mktime(18,38,0,1,28,2026)],
     '/etc/yum.repos.d'      => ['type'=>'dir','mtime'=>mktime(18,38,0,1,28,2026)],
 
-    // ── files ─────────────────────────────────────────────────
+    // files
     '/etc/adjtime'          => ['type'=>'file','mtime'=>mktime(0,0,0,10,27,2023),'content'=>"0.000000 0 0.000000\n0\nUTC"],
     '/etc/aliases'          => ['type'=>'file','mtime'=>mktime(0,0,0,6,23,2020),'content'=>"# /etc/aliases\nmailer-daemon: postmaster\npostmaster: root\nnobody: root\nhostmaster: root\nusenet: root\nnews: root\nwebmaster: root\nwww: root\nftp: root\nabuse: root\nsecurity: root\nroot: admin@$H"],
     '/etc/almalinux-release'=> ['type'=>'file','mtime'=>mktime(11,15,0,11,11,2024),'content'=>"AlmaLinux release 9.7 (Seafoam Ocelot)"],
@@ -246,7 +246,7 @@ function fs_get_data() {
     '/etc/virc'             => ['type'=>'file','mtime'=>mktime(0,24,0,11,12,2024),'content'=>"set nocompatible\nset backspace=indent,eol,start"],
     '/etc/wgetrc'           => ['type'=>'file','mtime'=>mktime(0,0,0,9,3,2024),'content'=>"# /etc/wgetrc\nverbose = off\ntimestamping = on\nquiet = off"],
 
-    // ── symlinks (shown as files with -> in content) ───────────
+    // symlinks (shown as files with -> in content)
     '/etc/grub2.cfg'        => ['type'=>'file','mtime'=>mktime(11,41,0,11,11,2024),'content'=>'-> ../boot/grub2/grub.cfg'],
     '/etc/grub2-efi.cfg'    => ['type'=>'file','mtime'=>mktime(11,41,0,11,11,2024),'content'=>'-> ../boot/grub2/grub.cfg'],
     '/etc/localtime'        => ['type'=>'file','mtime'=>mktime(0,0,0,2,14,2024),'content'=>'-> ../usr/share/zoneinfo/Europe/Amsterdam'],
@@ -257,7 +257,7 @@ function fs_get_data() {
     '/etc/system-release'   => ['type'=>'file','mtime'=>mktime(11,15,0,11,11,2024),'content'=>'-> almalinux-release'],
     '/etc/yum.conf'         => ['type'=>'file','mtime'=>mktime(13,27,0,9,22,2023),'content'=>'-> dnf/dnf.conf'],
 
-    // ── /etc/ssh ──────────────────────────────────────────────
+    // /etc/ssh
     '/etc/ssh/sshd_config'      => ['type'=>'file','mtime'=>mktime(2,52,0,12,18,2024),'content'=>
 "Port 22\nAddressFamily any\nListenAddress 0.0.0.0\nPermitRootLogin prohibit-password\nPubkeyAuthentication yes\nPasswordAuthentication no\nPermitEmptyPasswords no\nChallengeResponseAuthentication no\nUsePAM yes\nX11Forwarding no\nPrintMotd yes\nAcceptEnv LANG LC_*\nSubsystem sftp /usr/lib/openssh/sftp-server\nAllowUsers root deploy\nMaxAuthTries 3\nClientAliveInterval 300\nClientAliveCountMax 2\nBanner /etc/issue.net"],
     '/etc/ssh/ssh_config'       => ['type'=>'file','mtime'=>mktime(0,0,0,2,14,2024),'content'=>"Host *\n    GSSAPIAuthentication yes\n    SendEnv LANG LC_*\n    HashKnownHosts yes"],
@@ -266,7 +266,7 @@ function fs_get_data() {
     '/etc/ssh/ssh_host_ed25519_key' => ['type'=>'file','mtime'=>mktime(0,0,0,10,27,2023),'content'=>"-----BEGIN OPENSSH PRIVATE KEY-----\n[private key — not readable]\n-----END OPENSSH PRIVATE KEY-----"],
     '/etc/ssh/ssh_host_ed25519_key.pub' => ['type'=>'file','mtime'=>mktime(0,0,0,10,27,2023),'content'=>"ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI... root@$H"],
 
-    // ── /etc/httpd ────────────────────────────────────────────
+    // /etc/httpd
     '/etc/httpd/conf/httpd.conf'    => ['type'=>'file','mtime'=>mktime(4,33,0,2,13,2026),'content'=>
 "ServerRoot \"/etc/httpd\"\nListen 80\nServerName $H\nServerAdmin webmaster@$H\nDocumentRoot \"/var/www/html\"\n\nInclude conf.modules.d/*.conf\n\nUser apache\nGroup apache\n\n<Directory />\n    AllowOverride none\n    Require all denied\n</Directory>\n\n<Directory \"/var/www/html\">\n    AllowOverride All\n    Require all granted\n</Directory>\n\nDirectoryIndex index.php index.html\n\n<Files \".ht*\">\n    Require all denied\n</Files>\n\nErrorLog \"/var/log/httpd/error_log\"\nLogLevel warn\nCustomLog \"/var/log/httpd/access_log\" combined\nKeepAlive On\nMaxKeepAliveRequests 100\nKeepAliveTimeout 5\n\nIncludeOptional conf.d/*.conf"],
     '/etc/httpd/conf/magic'         => ['type'=>'file','mtime'=>mktime(0,0,0,10,2,2024),'content'=>
@@ -297,15 +297,15 @@ function fs_get_data() {
     '/etc/httpd/conf.modules.d/10-h2.conf'   => ['type'=>'file','mtime'=>mktime(15,41,0,9,21,2025),'content'=>"LoadModule http2_module modules/mod_http2.so"],
     '/etc/httpd/conf.modules.d/10-proxy_h2.conf' => ['type'=>'file','mtime'=>mktime(15,41,0,9,21,2025),'content'=>"LoadModule proxy_http2_module modules/mod_proxy_http2.so"],
 
-    // ── /etc/nginx ────────────────────────────────────────────
+    // /etc/nginx
     '/etc/nginx/nginx.conf'         => ['type'=>'file','mtime'=>mktime(11,24,0,10,20,2024),'content'=>
 "user nginx;\nworker_processes auto;\nerror_log /var/log/nginx/error.log warn;\npid /run/nginx.pid;\n\nevents {\n    worker_connections 1024;\n}\n\nhttp {\n    include /etc/nginx/mime.types;\n    default_type application/octet-stream;\n    sendfile on;\n    keepalive_timeout 65;\n    include /etc/nginx/conf.d/*.conf;\n}"],
 
-    // ── /etc/my.cnf.d ─────────────────────────────────────────
+    // /etc/my.cnf.d
     '/etc/my.cnf.d/mariadb-server.cnf' => ['type'=>'file','mtime'=>mktime(0,0,0,2,14,2024),'content'=>
 "[mysqld]\nbind-address    = 127.0.0.1\nmax_connections = 200\ninnodb_buffer_pool_size = 4G\ninnodb_log_file_size    = 512M\nslow_query_log  = 1\nslow_query_log_file = /var/log/mariadb/slow.log\nlong_query_time = 2\n\n[mysqldump]\nquick\nmax_allowed_packet = 64M"],
 
-    // ── /etc/logrotate.d ──────────────────────────────────────
+    // /etc/logrotate.d
     '/etc/logrotate.d/httpd'        => ['type'=>'file','mtime'=>mktime(12,40,0,2,17,2026),'content'=>
 "/var/log/httpd/access_log /var/log/httpd/error_log /var/log/httpd/ssl_access_log /var/log/httpd/ssl_error_log /var/log/httpd/ssl_request_log {\n    daily\n    missingok\n    rotate 8\n    compress\n    delaycompress\n    notifempty\n    sharedscripts\n    postrotate\n        /bin/systemctl reload httpd > /dev/null 2>/dev/null || true\n    endscript\n}"],
     '/etc/logrotate.d/mariadb'      => ['type'=>'file','mtime'=>mktime(12,40,0,2,17,2026),'content'=>
@@ -315,7 +315,7 @@ function fs_get_data() {
     '/etc/logrotate.d/syslog'       => ['type'=>'file','mtime'=>mktime(17,12,0,9,21,2023),'content'=>
 "/var/log/cron\n/var/log/maillog\n/var/log/messages\n/var/log/secure\n/var/log/spooler\n{\n    missingok\n    sharedscripts\n    postrotate\n        /bin/kill -HUP `cat /var/run/syslogd.pid 2>/dev/null` 2>/dev/null || true\n    endscript\n}"],
 
-    // ── /etc/cron.* ───────────────────────────────────────────
+    // /etc/cron.*
     '/etc/cron.d/0hourly'           => ['type'=>'file','mtime'=>mktime(13,43,0,9,25,2023),'content'=>"SHELL=/bin/bash\nPATH=/sbin:/bin:/usr/sbin:/usr/bin\nMAILTO=root\n01 * * * * root run-parts /etc/cron.hourly"],
     '/etc/cron.d/backup'            => ['type'=>'file','mtime'=>mktime(0,2,0,1,15,2026),'content'=>"SHELL=/bin/bash\nPATH=/sbin:/bin:/usr/sbin:/usr/bin\nMAILTO=root\n# Nightly backup at 02:00\n0 2 * * * root /usr/local/bin/backup.sh >> /var/log/backup.log 2>&1"],
     '/etc/cron.d/health-check'      => ['type'=>'file','mtime'=>mktime(0,0,0,1,15,2026),'content'=>"SHELL=/bin/bash\nPATH=/sbin:/bin:/usr/sbin:/usr/bin\nMAILTO=root\n# Health check every 5 minutes\n*/5 * * * * root /usr/local/bin/health-check.sh"],
@@ -330,25 +330,25 @@ function fs_get_data() {
     '/etc/cron.weekly/fstrim'       => ['type'=>'file','mtime'=>mktime(0,0,0,4,11,2022),'content'=>"#!/bin/bash\n# Discard unused blocks on mounted filesystems\n/usr/sbin/fstrim -av"],
     '/etc/cron.weekly/certbot-renew' => ['type'=>'file','mtime'=>mktime(0,0,0,3,1,2026),'content'=>"#!/bin/bash\n# Renew SSL certificates if due\n/usr/bin/certbot renew --quiet --deploy-hook \"systemctl reload httpd\""],
 
-    // ── /etc/profile.d ────────────────────────────────────────
+    // /etc/profile.d
     '/etc/profile.d/aliases.sh'     => ['type'=>'file','mtime'=>mktime(16,44,0,11,29,2024),'content'=>
 "alias ll='ls -la'\nalias la='ls -A'\nalias l='ls -CF'\nalias grep='grep --color=auto'\nalias df='df -h'\nalias free='free -h'"],
     '/etc/profile.d/colorls.sh'     => ['type'=>'file','mtime'=>mktime(16,44,0,11,29,2024),'content'=>"# Color support for ls\nexport LS_COLORS='di=34:ln=35:so=32:pi=33:ex=31:bd=34;46:cd=34;43:su=30;41:sg=30;46:tw=30;42:ow=30;43'"],
     '/etc/profile.d/lang.sh'        => ['type'=>'file','mtime'=>mktime(16,44,0,11,29,2024),'content'=>"export LANG=en_US.UTF-8\nexport LC_TIME=en_GB.UTF-8"],
 
-    // ── /etc/pki ──────────────────────────────────────────────
+    // /etc/pki
     '/etc/pki/tls/certs/server.crt' => ['type'=>'file','mtime'=>mktime(8,32,0,3,13,2026),'content'=>
 "-----BEGIN CERTIFICATE-----\nMIIDXTCCAkWgAwIBAgIJALmCFxSqatp5MA0GCSqGSIb3DQEBCwUAMEUxCzAJBgNV\n[certificate data — issued by Let's Encrypt]\n-----END CERTIFICATE-----"],
     '/etc/pki/tls/private/server.key' => ['type'=>'file','mtime'=>mktime(8,32,0,3,13,2026),'content'=>
 "-----BEGIN RSA PRIVATE KEY-----\n[private key — not readable]\n-----END RSA PRIVATE KEY-----"],
 
-    // ── /etc/sysconfig ────────────────────────────────────────
+    // /etc/sysconfig
     '/etc/sysconfig/network'        => ['type'=>'file','mtime'=>mktime(0,0,0,10,27,2023),'content'=>"NETWORKING=yes\nHOSTNAME=$H"],
     '/etc/sysconfig/clock'          => ['type'=>'file','mtime'=>mktime(0,0,0,10,27,2023),'content'=>"ZONE=Europe/Amsterdam\nUTC=true"],
 
-    // ──────────────────────────────────────────────────────────
+
     //  /home
-    // ──────────────────────────────────────────────────────────
+
     '/home/deploy'              => ['type'=>'dir'],
     '/home/deploy/.ssh'         => ['type'=>'dir'],
     '/home/deploy/.ssh/authorized_keys' => ['type'=>'file','content'=>
@@ -356,17 +356,17 @@ function fs_get_data() {
     '/home/deploy/.ssh/id_rsa'          => ['type'=>'file','content'=>'-----BEGIN OPENSSH PRIVATE KEY-----\n[private key]\n-----END OPENSSH PRIVATE KEY-----'],
     '/home/deploy/.ssh/id_rsa.pub'      => ['type'=>'file','content'=>'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC3v8... deploy@server'],
     '/home/deploy/.bashrc'      => ['type'=>'file','content'=>
-"# .bashrc\nexport PS1='\\u@\\h:\\w\\$ '\nexport PATH=\$PATH:/home/deploy/.local/bin\nexport EDITOR=vim\nalias ll='ls -la'\nalias deploy='cd /var/www && git pull && sudo systemctl restart apache2'"],
+"# .bashrc\nexport PS1='\\u@\\h:\\w\\$ '\nexport PATH=\$PATH:/home/deploy/.local/bin\nexport EDITOR=vim\nalias ll='ls -la'\nalias deploy='cd /var/www && git pull && sudo systemctl restart httpd'"],
     '/home/deploy/.bash_history' => ['type'=>'file','content'=>
 "git pull origin main\nsudo systemctl restart httpd\ntail -f /var/log/httpd/error_log\nmysql -u root -p\ndf -h\nfree -h\nps aux | grep httpd\nssh backup-server\nrsync -avz /var/www/ backup-server:/mnt/backup/www/"],
     '/home/deploy/.profile'     => ['type'=>'file','content'=>
 "# .profile\nif [ -n \"\$BASH_VERSION\" ]; then\n    if [ -f \"\$HOME/.bashrc\" ]; then\n        . \"\$HOME/.bashrc\"\n    fi\nfi"],
     '/home/deploy/deploy.sh'    => ['type'=>'file','content'=>
-"#!/bin/bash\n# Deployment script\nset -e\ncd /var/www/html\necho \"[$(date)] Starting deployment...\"\ngit fetch origin\ngit reset --hard origin/main\ncomposer install --no-dev --optimize-autoloader\nphp artisan migrate --force\nphp artisan cache:clear\nphp artisan config:cache\nsudo systemctl reload apache2\necho \"[$(date)] Deployment complete.\""],
+"#!/bin/bash\n# Deployment script\nset -e\ncd /var/www/html\necho \"[$(date)] Starting deployment...\"\ngit fetch origin\ngit reset --hard origin/main\ncomposer install --no-dev --optimize-autoloader\nphp artisan migrate --force\nphp artisan cache:clear\nphp artisan config:cache\nsudo systemctl reload httpd\necho \"[$(date)] Deployment complete.\""],
 
-    // ──────────────────────────────────────────────────────────
+
     //  /root
-    // ──────────────────────────────────────────────────────────
+
     '/root/.ssh'                => ['type'=>'dir'],
     '/root/.aws'                => ['type'=>'dir'],
     '/root/.config'             => ['type'=>'dir'],
@@ -374,7 +374,7 @@ function fs_get_data() {
     '/root/.bashrc'             => ['type'=>'file','content'=>
 "# .bashrc\nexport PS1='\\u@\\h:\\w# '\nexport EDITOR=vim\nexport HISTSIZE=10000\nexport HISTFILESIZE=20000\nexport HISTTIMEFORMAT=\"%F %T \"\nalias ll='ls -la'\nalias la='ls -A'\nalias grep='grep --color=auto'\nalias df='df -h'\nalias free='free -h'\nalias ports='netstat -tulanp'\nalias myip='curl -s ifconfig.me'"],
     '/root/.bash_history'       => ['type'=>'file','content'=>
-"apt-get update\napt-get upgrade -y\ndf -h\nfree -h\nps aux\ntail -f /var/log/httpd/error_log\nmysql -u root -p\nsystemctl status httpd\nsystemctl restart httpd\ncertbot renew\ncrontab -l\nls -la /var/www/html\ncat /var/log/secure | grep Failed\nnetstat -tulanp\niptables -L -v\nuname -a\nuptime"],
+"dnf update -y\ndf -h\nfree -h\nps aux\ntail -f /var/log/httpd/error_log\nmysql -u root -p\nsystemctl status httpd\nsystemctl restart httpd\ncertbot renew\ncrontab -l\nls -la /var/www/html\ncat /var/log/secure | grep Failed\nss -tulanp\nfirewall-cmd --list-all\nuname -a\nuptime"],
     '/root/.bash_profile'       => ['type'=>'file','content'=>
 "# .bash_profile\nif [ -f ~/.bashrc ]; then\n    . ~/.bashrc\nfi"],
     '/root/.vimrc'              => ['type'=>'file','content'=>
@@ -390,12 +390,12 @@ function fs_get_data() {
     '/root/notes.txt'            => ['type'=>'file','content'=>
 "Server maintenance notes\n========================\n\nLast updated: March 2026\n\n- MariaDB slow query log enabled, check weekly (/var/log/mariadb/slow.log)\n- SSL cert expires 2026-09-14, renew with: certbot renew\n- Backup job runs nightly at 02:00, check /var/log/backup.log\n- Deploy user has passwordless sudo for httpd + php-fpm restarts only\n- Firewall: only 22, 80, 443 open externally\n- /mnt/db is on separate SSD, do NOT fill above 80%\n- See /usr/local/bin/ for all maintenance scripts"],
     '/root/server-setup.sh'      => ['type'=>'file','content'=>
-"#!/bin/bash\n# Initial server setup script\n# Run once as root\n\nset -e\n\napt-get update && apt-get upgrade -y\napt-get install -y apache2 mysql-server php8.2 php8.2-mysql \\\n    php8.2-curl php8.2-gd php8.2-mbstring php8.2-xml \\\n    certbot python3-certbot-apache fail2ban ufw git composer\n\n# Firewall\nufw allow 22/tcp\nufw allow 80/tcp\nufw allow 443/tcp\nufw --force enable\n\n# MySQL hardening\nmysql_secure_installation\n\n# Create deploy user\nuseradd -m -s /bin/bash deploy\nmkdir -p /home/deploy/.ssh\nchmod 700 /home/deploy/.ssh\n\necho \"Setup complete.\""],
+"#!/bin/bash\n# Initial server setup script\n# Run once as root\n# AlmaLinux 9.x\n\nset -e\n\ndnf update -y\ndnf install -y httpd mariadb-server php8.2 php8.2-mysqlnd \\\n    php8.2-curl php8.2-gd php8.2-mbstring php8.2-xml \\\n    certbot python3-certbot-apache fail2ban git composer\n\n# Firewall\nfirewall-cmd --permanent --add-service=ssh\nfirewall-cmd --permanent --add-service=http\nfirewall-cmd --permanent --add-service=https\nfirewall-cmd --reload\n\n# MariaDB hardening\nmysql_secure_installation\n\n# Create deploy user\nuseradd -m -s /bin/bash deploy\nmkdir -p /home/deploy/.ssh\nchmod 700 /home/deploy/.ssh\n\necho \"Setup complete.\""],
 
-    // ──────────────────────────────────────────────────────────
+
     //  /var
-    // ──────────────────────────────────────────────────────────
-    // ── /var subdirs ──
+
+    // /var subdirs
     '/var/log'                  => ['type'=>'dir'],
     '/var/log/anaconda'         => ['type'=>'dir'],
     '/var/log/audit'            => ['type'=>'dir'],
@@ -423,7 +423,7 @@ function fs_get_data() {
     '/var/lib/php/wsdlcache'    => ['type'=>'dir'],
     '/var/lib/php/opcache'      => ['type'=>'dir'],
 
-    // ── /var/log/httpd — matches real server layout ──
+    // /var/log/httpd — matches real server layout
     '/var/log/httpd/access_log'               => ['type'=>'file','mtime'=>mktime(13,52,0,3,12,2026),'content'=>
 "192.168.1.42 - - [12/Mar/2026:08:14:22 +0100] \"GET / HTTP/1.1\" 200 4823 \"-\" \"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36\"\n192.168.1.42 - - [12/Mar/2026:08:14:23 +0100] \"GET /css/style.css HTTP/1.1\" 200 1842 \"https://$H/\" \"Mozilla/5.0\"\n185.220.101.45 - - [12/Mar/2026:09:02:11 +0100] \"GET /wp-admin/ HTTP/1.1\" 404 512 \"-\" \"python-requests/2.28\"\n185.220.101.45 - - [12/Mar/2026:09:02:12 +0100] \"POST /xmlrpc.php HTTP/1.1\" 404 512\n10.0.0.5 - deploy [12/Mar/2026:10:31:07 +0100] \"GET /api/status HTTP/1.1\" 200 128\n93.184.216.34 - - [12/Mar/2026:11:15:44 +0100] \"GET /index.php HTTP/1.1\" 200 9241\n192.168.1.42 - - [12/Mar/2026:13:22:09 +0100] \"POST /api/login HTTP/1.1\" 200 312\n45.33.32.156 - - [12/Mar/2026:13:01:33 +0100] \"GET /etc/passwd HTTP/1.1\" 404 512\n45.33.32.156 - - [12/Mar/2026:13:01:34 +0100] \"GET /.env HTTP/1.1\" 404 512"],
     '/var/log/httpd/access_log-20260215'      => ['type'=>'file','mtime'=>mktime(23,58,0,2,14,2026),'content'=>'[rotated access log — Feb 8-14 2026]'],
@@ -466,7 +466,7 @@ function fs_get_data() {
     '/var/log/httpd/wget_log-20260301'        => ['type'=>'file','mtime'=>mktime(18,17,0,2,28,2026),'content'=>'[rotated wget log]'],
     '/var/log/httpd/wget_log-20260308'        => ['type'=>'file','mtime'=>mktime(19,29,0,3,7,2026), 'content'=>'[rotated wget log]'],
 
-    // ── /var/log — top-level log files matching real server ──
+    // /var/log — top-level log files matching real server
     '/var/log/btmp'             => ['type'=>'file','mtime'=>mktime(13,53,0,3,12,2026),'content'=>'[binary — failed login attempts]'],
     '/var/log/btmp-20260301'    => ['type'=>'file','mtime'=>mktime(23,51,0,2,28,2026),'content'=>'[binary — rotated failed logins]'],
     '/var/log/cron'             => ['type'=>'file','mtime'=>mktime(13,53,0,3,12,2026),'content'=>
@@ -529,7 +529,7 @@ function fs_get_data() {
     '/var/log/wtmp-20260211'    => ['type'=>'file','mtime'=>mktime(22,37,0,2,10,2026),'content'=>'[binary — rotated wtmp]'],
     '/var/log/xferlog'          => ['type'=>'file','mtime'=>mktime(0,0,0,3,6,2024),'content'=>''],
 
-    // ── /var/log/mariadb ──
+    // /var/log/mariadb
     '/var/log/mariadb/mariadb.log' => ['type'=>'file','mtime'=>mktime(0,0,0,3,12,2026),'content'=>
 "2026-03-12  0:00:01 0 [Note] /usr/sbin/mariadbd: ready for connections.\n2026-03-12  0:00:01 0 [Note] mysqld: Startup complete\n2026-03-12 14:22:09 42 [Warning] Access denied for user 'root'@'45.33.32.156'"],
 
@@ -549,9 +549,9 @@ function fs_get_data() {
     '/var/spool/cron/crontabs/root' => ['type'=>'file','content'=>
 "# Root crontab\n0 2 * * * /usr/local/bin/backup.sh >> /var/log/backup.log 2>&1\n*/5 * * * * /usr/local/bin/health-check.sh\n0 3 * * 0 /usr/local/bin/weekly-report.sh\n@reboot /usr/local/bin/on-boot.sh"],
 
-    // ──────────────────────────────────────────────────────────
+
     //  /usr
-    // ──────────────────────────────────────────────────────────
+
     '/usr/local'            => ['type'=>'dir'],
     '/usr/local/bin'        => ['type'=>'dir'],
     '/usr/local/sbin'       => ['type'=>'dir'],
@@ -582,16 +582,16 @@ function fs_get_data() {
     '/usr/lib/systemd/system/php-fpm.service' => ['type'=>'file','content'=>
 "[Unit]\nDescription=PHP FastCGI Process Manager\nAfter=network.target\n\n[Service]\nType=notify\nExecStart=/usr/sbin/php-fpm --nodaemonize\nExecReload=/bin/kill -USR2 \$MAINPID\n\n[Install]\nWantedBy=multi-user.target"],
 
-    // ──────────────────────────────────────────────────────────
+
     //  /tmp
-    // ──────────────────────────────────────────────────────────
+
     '/tmp/php-upload-xK3m9p'   => ['type'=>'file','content'=>'[temporary PHP upload file]'],
     '/tmp/sess_a8f3c2d1e4b7'   => ['type'=>'file','content'=>'[PHP session data]'],
     '/tmp/.ICE-unix'            => ['type'=>'dir'],
 
-    // ──────────────────────────────────────────────────────────
+
     //  /proc (read-only, a few key entries)
-    // ──────────────────────────────────────────────────────────
+
     '/proc/version'     => ['type'=>'file','content'=>"Linux version $K (gcc version 11.4.1) #1 SMP"],
     '/proc/cpuinfo'     => ['type'=>'file','content'=>
 "processor	: 0\nvendor_id	: GenuineIntel\ncpu family	: 6\nmodel name	: Intel(R) Xeon(R) E5-2670 @ 2.60GHz\ncpu MHz		: 2600.000\ncache size	: 20480 KB\ncpu cores	: 8\n\nprocessor	: 1\nmodel name	: Intel(R) Xeon(R) E5-2670 @ 2.60GHz\ncpu cores	: 8"],
@@ -600,9 +600,9 @@ function fs_get_data() {
     '/proc/uptime'      => ['type'=>'file','content'=>'86401.12 341204.88'],
     '/proc/loadavg'     => ['type'=>'file','content'=>'0.36 0.52 0.40 2/412 2091'],
 
-    // ──────────────────────────────────────────────────────────
+
     //  /mnt — storage volumes
-    // ──────────────────────────────────────────────────────────
+
     '/mnt/db'               => ['type'=>'dir'],
     '/mnt/db/mysql'         => ['type'=>'dir'],
     '/mnt/db/mysql/production' => ['type'=>'dir'],
