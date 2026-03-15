@@ -48,7 +48,7 @@ Whether you want to show off your server-side skills, add a geeky touch to your 
 
 `ll` is an alias for `ls -la`.
 
-`sudo` allows non-root users to run commands as root after a password prompt. `sudo rm -rf /` triggers a kernel panic easter egg.
+`sudo` allows non-root users to run commands as root after a password prompt. `su` switches the active user.
 
 `fastfetch` and `neofetch` display system information alongside the AlmaLinux ASCII logo.
 
