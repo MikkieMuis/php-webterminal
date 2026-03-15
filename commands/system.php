@@ -1,6 +1,6 @@
 <?php
 //  system commands: whoami, pwd, hostname, uname, uptime, date,
-//                   df, free, ps, top, id, env, which
+//                   df, free, ps, top, id, env, which, fastfetch, neofetch
 //  Receives: $cmd, $args, $argv, $user, $body  (from terminal.php scope)
 
 switch ($cmd) {
@@ -180,6 +180,7 @@ switch ($cmd) {
             'crontab'=>'/usr/bin/crontab','systemctl'=>'/usr/bin/systemctl',
             'journalctl'=>'/usr/bin/journalctl','man'=>'/usr/bin/man',
             'dnf'=>'/usr/bin/dnf','yum'=>'/usr/bin/yum','rpm'=>'/usr/bin/rpm',
+            'fastfetch'=>'/usr/bin/fastfetch','neofetch'=>'/usr/bin/neofetch',
         ];
         $results = [];
         foreach (explode(' ', $args) as $w) {
@@ -189,4 +190,96 @@ switch ($cmd) {
             else { err('/usr/bin/which: no ' . $w . ' in (/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin)'); }
         }
         out(implode("\n", $results));
+
+    // fastfetch / neofetch
+    case 'fastfetch':
+    case 'neofetch':
+        $upSecs  = time() - $_SESSION['boot'];
+        $upDays  = floor($upSecs / 86400);
+        $upHours = floor(($upSecs % 86400) / 3600);
+        $upMins  = floor(($upSecs % 3600) / 60);
+        $upStr   = '';
+        if ($upDays  > 0) $upStr .= $upDays  . ' day'  . ($upDays  !== 1 ? 's' : '') . ', ';
+        if ($upHours > 0) $upStr .= $upHours . ' hour' . ($upHours !== 1 ? 's' : '') . ', ';
+        $upStr .= $upMins . ' min' . ($upMins !== 1 ? 's' : '');
+
+        // Disk — from config, formatted as GiB
+        $diskTotal = CONF_DISK_TOTAL;
+        $diskUsed  = CONF_DISK_USED;
+        $diskPct   = round(($diskUsed / $diskTotal) * 100);
+        $fmtGiB = function($b) { return number_format($b / 1073741824, 2) . ' GiB'; };
+
+        // All fake — never derived from real server
+        $memUsed  = '3.17 GiB';
+        $memTotal = '15.51 GiB';
+        $memPct   = '20%';
+        $pkgCount = '1121 (rpm)';
+        $shell    = 'bash 5.1.8';
+        $terminal = 'tmux 3.2a';
+        $cpu      = 'Intel(R) Xeon(R) E5-2670 v3 (24) @ 2.300 GHz';
+        $gpu      = 'ASPEED Technology, Inc. ASPEED Graphics Family';
+        $display  = '1024x768 @ 60 Hz [Built-in]';
+        $localip  = '192.168.1.10/24';
+        $locale   = 'en_US.UTF-8';
+
+        // Real fastfetch AlmaLinux logo — 19 lines, 36 chars wide
+        $logo = [
+            "         'c:.                   ",
+            "        lkkkx, ..       ..   ,cc,",
+            "        okkkk:ckkx'  .lxkkx.okkkkd",
+            "        .:llcokkx'  :kkkxkko:xkkd, ",
+            "      .xkkkkdood:  ;kx,  .lkxlll;  ",
+            "       xkkx.       xk'     xkkkkk:  ",
+            "       'xkx.       xd      .....,.  ",
+            "      .. :xkl'     :c      ..''..   ",
+            "    .dkx'  .:ldl:'. '  ':lollldkkxo;",
+            "  .''lkkko'                     ckkkx.",
+            "'xkkkd:kkd.       ..  ;'        :kkxo.",
+            ",xkkkd;kk'      ,d;    ld.   ':dkd::cc,",
+            " .,,.;xkko'.';lxo.      dx,  :kkk'xkkkkc",
+            "     'dkkkkkxo:.        ;kx  .kkk:;xkkd. ",
+            "       .....   .;dk:.   lkk.  :;,          ",
+            "             :kkkkkkkdoxkkx               ",
+            "              ,c,,;;;:xkkd.               ",
+            "                ;kkkkl.                   ",
+            "                 ,od;                     ",
+        ];
+
+        // Info block
+        $header = $user . '@' . CONF_HOSTNAME;
+        $sep    = str_repeat('-', strlen($header));
+        $info = [
+            $header,
+            $sep,
+            'OS:         ' . CONF_OS . ' x86_64',
+            'Kernel:     Linux ' . CONF_KERNEL,
+            'Uptime:     ' . $upStr,
+            'Packages:   ' . $pkgCount,
+            'Shell:      ' . $shell,
+            'Display:    ' . $display,
+            'Terminal:   ' . $terminal,
+            'CPU:        ' . $cpu,
+            'GPU:        ' . $gpu,
+            'Memory:     ' . $memUsed . ' / ' . $memTotal . ' (' . $memPct . ')',
+            'Disk (/):   ' . $fmtGiB($diskUsed) . ' / ' . $fmtGiB($diskTotal) . ' (' . $diskPct . '%) - xfs',
+            'Local IP:   ' . $localip,
+            'Locale:     ' . $locale,
+        ];
+
+        // Combine: logo left, info right
+        // Logo lines vary in length — pad each to the longest
+        $logoWidth = max(array_map('strlen', $logo));
+        $totalLines = max(count($logo), count($info));
+        $out = [];
+        for ($i = 0; $i < $totalLines; $i++) {
+            $l = isset($logo[$i]) ? $logo[$i] : '';
+            $r = isset($info[$i]) ? $info[$i] : '';
+            $out[] = str_pad($l, $logoWidth) . '  ' . $r;
+        }
+        // Colour palette strip (two rows: normal then bright, using block chars)
+        $blocks  = str_repeat('   ', 8);   // 8 colour blocks, 3 spaces each
+        $out[] = '';
+        $out[] = str_pad('', $logoWidth) . '  ' . $blocks;
+        $out[] = str_pad('', $logoWidth) . '  ' . $blocks;
+        out(implode("\n", $out));
 }

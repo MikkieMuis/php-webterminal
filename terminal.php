@@ -143,12 +143,14 @@ if ($cmd === 'll') { $cmd = 'ls'; array_unshift($argv, '-la'); $args = implode('
 switch ($cmd) {
     case 'ls': case 'cd': case 'mkdir': case 'touch': case 'rm': case 'cat':
     case 'wc': case 'more': case 'less': case 'grep': case 'cp': case 'mv':
+    case 'head': case 'tail':
         require __DIR__ . '/commands/filesystem.php';
         break;
 
     case 'whoami': case 'pwd': case 'hostname': case 'uname': case 'uptime':
     case 'date': case 'df': case 'free': case 'ps': case 'top':
     case 'id': case 'env': case 'printenv': case 'which':
+    case 'fastfetch': case 'neofetch':
         require __DIR__ . '/commands/system.php';
         break;
 

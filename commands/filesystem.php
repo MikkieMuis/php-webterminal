@@ -1,5 +1,5 @@
 <?php
-//  filesystem commands: ls, cd, mkdir, touch, rm, cat, wc, more, less
+//  filesystem commands: ls, cd, mkdir, touch, rm, cat, wc, more, less, head, tail
 //  Receives: $cmd, $args, $argv, $user, $body  (from terminal.php scope)
 
 switch ($cmd) {
@@ -401,6 +401,149 @@ switch ($cmd) {
         }
 
         out(implode("\n", $outputLines));
+
+    // head
+    case 'head':
+        // Usage: head [-n N] [-c N] [-q] [-v] FILE [FILE...]
+        // -n N   : output first N lines (default 10)
+        // -c N   : output first N bytes instead of lines
+        // -q     : never print file headers
+        // -v     : always print file headers
+        {
+            $n         = 10;        // default lines
+            $bytes     = -1;        // -1 = use lines
+            $quiet     = false;     // -q
+            $verbose   = false;     // -v
+            $headfiles = [];
+            $skipNext  = false;
+            foreach ($argv as $idx => $a) {
+                if ($skipNext) { $skipNext = false; continue; }
+                if ($a[0] === '-' && strlen($a) > 1) {
+                    $flag = ltrim($a, '-');
+                    if ($flag === 'n' || $flag === 'c') {
+                        // next arg is the number
+                        $nextIdx = array_search($a, $argv) + 1;
+                        if (isset($argv[$nextIdx]) && is_numeric($argv[$nextIdx])) {
+                            if ($flag === 'n') $n     = (int)$argv[$nextIdx];
+                            else               $bytes = (int)$argv[$nextIdx];
+                            $skipNext = true;
+                        }
+                    } elseif (preg_match('/^n(\d+)$/', $flag, $m)) {
+                        $n = (int)$m[1];
+                    } elseif (preg_match('/^c(\d+)$/', $flag, $m)) {
+                        $bytes = (int)$m[1];
+                    } elseif (strpos($flag, 'q') !== false) { $quiet   = true; }
+                    elseif (strpos($flag, 'v') !== false) { $verbose = true; }
+                    elseif (is_numeric($flag))             { $n = (int)$flag; }
+                } else {
+                    $headfiles[] = $a;
+                }
+            }
+            if (empty($headfiles)) err('head: missing operand');
+            $multiFile = count($headfiles) > 1;
+            $outParts  = [];
+            foreach ($headfiles as $hf) {
+                $target = res_path($hf);
+                if (!isset($_SESSION['fs'][$target])) { err('head: cannot open \'' . $hf . '\' for reading: No such file or directory'); }
+                if ($_SESSION['fs'][$target]['type'] === 'dir') { err('head: error reading \'' . $hf . '\': Is a directory'); }
+                $content = $_SESSION['fs'][$target]['content'] ?? '';
+                if ($bytes >= 0) {
+                    $result = substr($content, 0, $bytes);
+                } else {
+                    $lines  = explode("\n", $content);
+                    $result = implode("\n", array_slice($lines, 0, $n));
+                }
+                $showHeader = ($multiFile && !$quiet) || $verbose;
+                if ($showHeader) {
+                    if (!empty($outParts)) $outParts[] = '';
+                    $outParts[] = '==> ' . $hf . ' <==';
+                }
+                $outParts[] = $result;
+            }
+            out(implode("\n", $outParts));
+        }
+
+    // tail
+    case 'tail':
+        // Usage: tail [-n N] [-c N] [-f] [-q] [-v] FILE [FILE...]
+        // -n N   : output last N lines (default 10); +N = from line N onwards
+        // -c N   : output last N bytes instead of lines; +N = from byte N onwards
+        // -f     : simulated follow (shows last 10 lines + note)
+        // -q     : never print file headers
+        // -v     : always print file headers
+        {
+            $n         = 10;
+            $bytes     = -1;
+            $follow    = false;
+            $fromStart = false;   // when N is prefixed with +
+            $quiet     = false;
+            $verbose   = false;
+            $tailfiles = [];
+            $skipNext  = false;
+            foreach ($argv as $idx => $a) {
+                if ($skipNext) { $skipNext = false; continue; }
+                if ($a[0] === '-' && strlen($a) > 1) {
+                    $flag = ltrim($a, '-');
+                    if ($flag === 'n' || $flag === 'c') {
+                        $nextIdx = array_search($a, $argv) + 1;
+                        if (isset($argv[$nextIdx])) {
+                            $val = $argv[$nextIdx];
+                            if ($val[0] === '+') { $fromStart = true; $val = substr($val, 1); }
+                            if (is_numeric($val)) {
+                                if ($flag === 'n') $n     = (int)$val;
+                                else               $bytes = (int)$val;
+                            }
+                            $skipNext = true;
+                        }
+                    } elseif (preg_match('/^n\+(\d+)$/', $flag, $m)) {
+                        $n = (int)$m[1]; $fromStart = true;
+                    } elseif (preg_match('/^n(\d+)$/', $flag, $m)) {
+                        $n = (int)$m[1];
+                    } elseif (preg_match('/^c\+(\d+)$/', $flag, $m)) {
+                        $bytes = (int)$m[1]; $fromStart = true;
+                    } elseif (preg_match('/^c(\d+)$/', $flag, $m)) {
+                        $bytes = (int)$m[1];
+                    } elseif (strpos($flag, 'f') !== false) { $follow  = true; }
+                    elseif (strpos($flag, 'q') !== false) { $quiet   = true; }
+                    elseif (strpos($flag, 'v') !== false) { $verbose = true; }
+                    elseif (is_numeric($flag))             { $n = (int)$flag; }
+                } else {
+                    $tailfiles[] = $a;
+                }
+            }
+            if (empty($tailfiles)) err('tail: missing operand');
+            $multiFile = count($tailfiles) > 1;
+            $outParts  = [];
+            foreach ($tailfiles as $tf) {
+                $target = res_path($tf);
+                if (!isset($_SESSION['fs'][$target])) { err('tail: cannot open \'' . $tf . '\' for reading: No such file or directory'); }
+                if ($_SESSION['fs'][$target]['type'] === 'dir') { err('tail: error reading \'' . $tf . '\': Is a directory'); }
+                $content = $_SESSION['fs'][$target]['content'] ?? '';
+                if ($bytes >= 0) {
+                    $result = $fromStart
+                        ? substr($content, $bytes - 1)
+                        : substr($content, -$bytes);
+                } else {
+                    $lines = explode("\n", $content);
+                    // strip trailing empty element from files ending with \n
+                    if (end($lines) === '') array_pop($lines);
+                    $result = $fromStart
+                        ? implode("\n", array_slice($lines, $n - 1))
+                        : implode("\n", array_slice($lines, -$n));
+                }
+                $showHeader = ($multiFile && !$quiet) || $verbose;
+                if ($showHeader) {
+                    if (!empty($outParts)) $outParts[] = '';
+                    $outParts[] = '==> ' . $tf . ' <==';
+                }
+                $outParts[] = $result;
+                if ($follow) {
+                    $outParts[] = '';
+                    $outParts[] = '(tail -f: static filesystem — showing last ' . $n . ' lines)';
+                }
+            }
+            out(implode("\n", $outParts));
+        }
 
     // more / less
     case 'more':

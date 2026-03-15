@@ -28,7 +28,7 @@ Whether you want to show off your server-side skills, add a geeky touch to your 
 | Category | Commands |
 |---|---|
 | Navigation | `ls`, `cd`, `pwd` |
-| Files | `cat`, `touch`, `mkdir`, `rm`, `cp`, `mv`, `wc`, `grep` |
+| Files | `cat`, `touch`, `mkdir`, `rm`, `cp`, `mv`, `wc`, `grep`, `head`, `tail` |
 | Pagers | `more`, `less` |
 | System | `uname`, `uptime`, `hostname`, `date`, `df`, `free`, `ps`, `top`, `id`, `env`, `printenv`, `which` |
 | Network | `ping`, `ifconfig`, `ip`, `wget`, `curl` |
@@ -41,6 +41,10 @@ Whether you want to show off your server-side skills, add a geeky touch to your 
 `grep` supports `-i` (ignore case), `-n` (line numbers), `-v` (invert), `-c` (count), `-l` (filenames only), and `-r` (recursive).
 
 `cp` supports `-r`/`-R` for recursive directory copy. `mv` renames files and moves them between directories.
+
+`head` outputs the first N lines (or bytes with `-c`) of a file. Default is 10 lines. Supports `-n`, `-c`, `-q`, `-v`, and multiple files.
+
+`tail` outputs the last N lines (or bytes with `-c`) of a file. Default is 10 lines. Supports `-n`, `-c`, `-f` (simulated follow), `-q`, `-v`, `+N` offset syntax, and multiple files.
 
 `more` and `less` support paging through any file in the fake filesystem. `less` additionally supports backward navigation (`b`, `↑`, `g`/`G`). Press `q` or `Ctrl+C` to exit either pager.
 

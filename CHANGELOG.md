@@ -2,6 +2,32 @@
 
 All notable changes to php-webterminal will be documented here.
 
+## [1.8.0] - 2026-03-15
+
+### Added
+- `head` — output the first N lines (or bytes) of one or more files
+  - `-n N` / `-nN` — first N lines (default 10)
+  - `-c N` / `-cN` — first N bytes
+  - `-q` — suppress file headers when reading multiple files
+  - `-v` — always show file headers
+  - Multiple file support with `==> filename <==` headers
+- `tail` — output the last N lines (or bytes) of one or more files
+  - `-n N` / `-nN` — last N lines (default 10)
+  - `-c N` / `-cN` — last N bytes
+  - `-n +N` / `-c +N` — output from line/byte N onwards
+  - `-f` — simulated follow mode (shows last N lines with a static-FS notice)
+  - `-q` — suppress file headers; `-v` — always show headers
+  - Multiple file support with `==> filename <==` headers
+- Man pages for `head` and `tail`
+
+## [1.7.0] - 2026-03-14
+
+### Added
+- `fastfetch` / `neofetch` — system info display with AlmaLinux ASCII logo; shows OS,
+  host, kernel, uptime, packages, shell, resolution, CPU, memory, disk, load average
+- Man pages for `fastfetch` and `neofetch`
+- `which fastfetch`, `which neofetch` — added to binary map
+
 ## [1.6.0] - 2026-03-14
 
 ### Added
