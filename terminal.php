@@ -34,7 +34,7 @@ if (isset($_GET['sysinfo'])) {
 
 // initialise session filesystem
 // Bump this version string whenever fs_data.php changes to force a session reset.
-define('FS_VERSION', '8');
+define('FS_VERSION', '9');
 
 if (!isset($_SESSION['fs']) || ($_SESSION['fs_version'] ?? '') !== FS_VERSION) {
     require_once __DIR__ . '/fs_data.php';
@@ -141,10 +141,14 @@ if ($cmd === 'll') { $cmd = 'ls'; array_unshift($argv, '-la'); $args = implode('
 
 // command dispatch
 switch ($cmd) {
-    case 'ls': case 'cd': case 'mkdir': case 'touch': case 'rm': case 'cat':
+    case 'ls': case 'cd': case 'mkdir': case 'rmdir': case 'touch': case 'rm': case 'cat':
     case 'wc': case 'more': case 'less': case 'grep': case 'cp': case 'mv':
-    case 'head': case 'tail':
+    case 'head': case 'tail': case 'du': case 'chmod': case 'chown': case 'diff':
         require __DIR__ . '/commands/filesystem.php';
+        break;
+
+    case 'zip': case 'unzip': case 'tar':
+        require __DIR__ . '/commands/archive.php';
         break;
 
     case 'whoami': case 'pwd': case 'hostname': case 'uname': case 'uptime':
@@ -160,6 +164,7 @@ switch ($cmd) {
 
     case 'echo': case 'clear': case 'exit': case 'logout': case 'history':
     case 'help': case 'alias': case 'last': case 'sudo': case 'man':
+    case 'passwd': case 'base64': case 'bc':
         require __DIR__ . '/commands/shell.php';
         break;
 

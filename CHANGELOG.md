@@ -2,6 +2,52 @@
 
 All notable changes to php-webterminal will be documented here.
 
+## [2.3.0] - 2026-03-16
+
+### Changed
+- Refactored: `zip`, `unzip`, `tar` extracted from `commands/filesystem.php` into new `commands/archive.php`
+- Refactored: man page data extracted from `commands/shell.php` into new `commands/man_pages.php`
+- Refactored: nano editor JS extracted from `index.php` into `js/nano.js` (315 lines)
+- Refactored: pager (more/less) JS extracted from `index.php` into `js/pager.js` (80 lines)
+
+## [2.2.0] - 2026-03-16
+
+### Added
+- `rmdir` — remove empty directories; errors if directory has children or does not exist
+- `du` — disk usage; supports `-s` (summarise) and `-h` (human-readable sizes)
+- `chmod` — cosmetic permission change; accepts standard mode + file args, outputs nothing
+- `chown` — cosmetic ownership change; accepts standard user:group + file args, outputs nothing
+- `diff` — compare two files line by line; supports `-u` (unified format with `---`/`+++`/`@@` headers) and `-i` (ignore case)
+- `passwd` — fake password change prompt; always reports success
+- `base64` — encode or decode strings; `-d` / `--decode` to decode; input via `<<<`
+- `bc` — arithmetic evaluator; supports `+`, `-`, `*`, `/`, `^`, `%`, parentheses; input via `<<<`
+- `help` rewritten with grouped output (FILESYSTEM / SYSTEM / NETWORK / SHELL & MISC)
+- `/etc/motd` now has realistic AlmaLinux welcome content; displayed automatically after login
+- Man pages for `rmdir`, `du`, `diff`, `passwd`, `base64`, `bc`
+- `rmdir`, `du`, `diff`, `unzip`, `base64`, `bc` added to `which` bins
+
+### Changed
+- `FS_VERSION` bumped to `9`
+
+## [2.1.0] - 2026-03-16
+
+### Added
+- `zip` — create ZIP archives from files and directories
+  - `zip archive.zip file1 file2` — pack multiple files; prints `adding:` lines with deflate %
+  - `zip -r archive.zip dir/` — recursive directory archiving
+  - Archive content stored as a JSON manifest in the session filesystem
+- `unzip` — extract or list ZIP archives
+  - `unzip archive.zip` — extract all entries; prints `inflating:` / `creating:` lines
+  - `unzip -l archive.zip` — list contents without extracting (length, date, name)
+  - `unzip archive.zip -d /path/` — extract to a specific directory
+- `tar` — create and extract tar archives
+  - `-c` create, `-x` extract, `-t` list; `-z` gzip, `-j` bzip2; `-v` verbose; `-f` file
+  - `tar -czf archive.tar.gz dir/` — create gzip archive
+  - `tar -xzf archive.tar.gz` — extract; `-v` prints each entry name
+  - `tar -tzf archive.tar.gz` — list contents; `-v` includes permissions and size
+  - bzip2 format (`.tar.bz2`) via `-j`; format stored in manifest
+- Man pages for `zip`, `unzip`, `tar`
+
 ## [2.0.0] - 2026-03-15
 
 ### Added

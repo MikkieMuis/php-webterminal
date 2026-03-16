@@ -28,11 +28,11 @@ Whether you want to show off your server-side skills, add a geeky touch to your 
 | Category | Commands |
 |---|---|
 | Navigation | `ls`, `ll`, `cd`, `pwd` |
-| Files | `cat`, `touch`, `mkdir`, `rm`, `cp`, `mv`, `wc`, `grep`, `head`, `tail` |
+| Files | `cat`, `touch`, `mkdir`, `rmdir`, `rm`, `cp`, `mv`, `wc`, `grep`, `head`, `tail`, `diff`, `du`, `chmod`, `chown`, `zip`, `unzip`, `tar` |
 | Pagers | `more`, `less` |
 | System | `uname`, `uptime`, `hostname`, `date`, `df`, `free`, `ps`, `top`, `id`, `env`, `printenv`, `which`, `whoami`, `fastfetch`, `neofetch`, `systemctl`, `php` |
 | Network | `ping`, `ifconfig`, `ip`, `wget`, `curl` |
-| Shell | `echo`, `history`, `alias`, `clear`, `exit`, `logout`, `help`, `man`, `sudo`, `last` |
+| Shell | `echo`, `history`, `alias`, `clear`, `exit`, `logout`, `help`, `man`, `sudo`, `last`, `passwd`, `base64`, `bc` |
 | Editors | `nano` |
 | Packages | `dnf` |
 
@@ -48,7 +48,9 @@ Whether you want to show off your server-side skills, add a geeky touch to your 
 
 `ll` is an alias for `ls -la`.
 
-`sudo` allows non-root users to run commands as root after a password prompt. `su` switches the active user.
+`sudo` allows non-root users to run commands as root after a password prompt.
+
+`zip` creates ZIP archives from files and directories. `zip -r` recurses into directories. `unzip` extracts archives, lists contents with `-l`, and can extract to a target directory with `-d`. `tar` creates and extracts `.tar.gz` (with `-z`) and `.tar.bz2` (with `-j`) archives; `-c` create, `-x` extract, `-t` list, `-v` verbose.
 
 `fastfetch` and `neofetch` display system information alongside the AlmaLinux ASCII logo.
 
@@ -57,6 +59,10 @@ Whether you want to show off your server-side skills, add a geeky touch to your 
 `systemctl` supports `status`, `start`, `stop`, `restart`, `enable`, `disable`, `is-active`, and `list-units` for eight fake services (`httpd`, `mariadb`, `php-fpm`, `mysqld`, `sshd`, `firewalld`, `crond`, `nginx`). The `.service` suffix is stripped automatically.
 
 `php` supports `-v` / `--version` (version string), `-i` (phpinfo), `-m` (module list), and `-r 'code'` (evaluate arithmetic and echo expressions).
+
+`rmdir` removes empty directories (errors if the directory has contents). `du` reports disk usage; supports `-s` (summarise) and `-h` (human-readable). `chmod` and `chown` are cosmetic — they accept the standard arguments and succeed silently. `diff` compares two files line by line; supports `-u` (unified format) and `-i` (ignore case).
+
+`passwd` simulates a password change prompt and always reports success. `base64` encodes or decodes a string (`-d` / `--decode`); pass input via `<<<`. `bc` evaluates arithmetic expressions (`+`, `-`, `*`, `/`, `^`, `%`, parentheses); pass the expression via `<<<`.
 
 ---
 

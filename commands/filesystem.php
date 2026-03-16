@@ -1,5 +1,7 @@
 <?php
-//  filesystem commands: ls, cd, mkdir, touch, rm, cat, wc, more, less, head, tail
+//  filesystem commands: ls, cd, mkdir, rmdir, touch, rm, cat, wc, cp, mv, grep,
+//                       head, tail, du, chmod, chown, diff, more, less
+//  Archive commands (zip, unzip, tar) live in commands/archive.php
 //  Receives: $cmd, $args, $argv, $user, $body  (from terminal.php scope)
 
 switch ($cmd) {
@@ -544,6 +546,194 @@ switch ($cmd) {
             }
             out(implode("\n", $outParts));
         }
+
+    // rmdir
+    case 'rmdir':
+        if ($args === '') err('rmdir: missing operand');
+        $target = res_path($args);
+        if (!isset($_SESSION['fs'][$target])) err('rmdir: failed to remove \'' . $args . '\': No such file or directory');
+        if ($_SESSION['fs'][$target]['type'] !== 'dir') err('rmdir: failed to remove \'' . $args . '\': Not a directory');
+        // check empty: any key that starts with target/ is a child
+        $prefix = rtrim($target, '/') . '/';
+        foreach (array_keys($_SESSION['fs']) as $k) {
+            if (strpos($k, $prefix) === 0) err('rmdir: failed to remove \'' . $args . '\': Directory not empty');
+        }
+        unset($_SESSION['fs'][$target]);
+        out('');
+
+    // du
+    case 'du': {
+        // Usage: du [-s] [-h] [PATH...]
+        $showHuman = (strpos($args, 'h') !== false);
+        $summarise = (strpos($args, 's') !== false);
+        $paths = [];
+        foreach ($argv as $a) {
+            if ($a[0] !== '-') $paths[] = $a;
+        }
+        if (empty($paths)) $paths = [$_SESSION['cwd']];
+
+        $fmtSize = function(int $bytes) use ($showHuman): string {
+            if (!$showHuman) {
+                // output in 1K-blocks (like du default)
+                return (string)max(4, (int)ceil($bytes / 1024) * 4);
+            }
+            if ($bytes >= 1073741824) return number_format($bytes/1073741824, 1) . 'G';
+            if ($bytes >= 1048576)    return number_format($bytes/1048576,    1) . 'M';
+            if ($bytes >= 1024)       return number_format($bytes/1024,       1) . 'K';
+            return $bytes . 'B';
+        };
+
+        $lines = [];
+        foreach ($paths as $rawPath) {
+            $base = res_path($rawPath);
+            if (!isset($_SESSION['fs'][$base])) {
+                err('du: cannot access \'' . $rawPath . '\': No such file or directory');
+            }
+            // walk all nodes under $base
+            $prefix = rtrim($base, '/');
+            $dirTotals = [$base => 0];
+            foreach ($_SESSION['fs'] as $p => $node) {
+                if ($p !== $base && strpos($p, $prefix . '/') !== 0) continue;
+                if ($node['type'] === 'file') {
+                    $sz = strlen($node['content'] ?? '');
+                    // add to every ancestor dir total
+                    $cur = dirname($p);
+                    while (true) {
+                        if (!isset($dirTotals[$cur])) $dirTotals[$cur] = 0;
+                        $dirTotals[$cur] += $sz;
+                        if ($cur === $base || $cur === '/' || $cur === '') break;
+                        $cur = dirname($cur);
+                    }
+                } elseif ($node['type'] === 'dir') {
+                    if (!isset($dirTotals[$p])) $dirTotals[$p] = 0;
+                }
+            }
+            if ($summarise) {
+                $total = $dirTotals[$base] ?? 0;
+                $lines[] = $fmtSize($total) . "\t" . $rawPath;
+            } else {
+                // output deepest dirs first, then parent
+                $sorted = array_keys($dirTotals);
+                rsort($sorted);
+                foreach ($sorted as $d) {
+                    $rel = ($d === $base) ? $rawPath : $rawPath . substr($d, strlen($prefix));
+                    $lines[] = $fmtSize($dirTotals[$d]) . "\t" . $rel;
+                }
+            }
+        }
+        out(implode("\n", $lines));
+    }
+
+    // chmod / chown — cosmetic: accept args, echo nothing
+    case 'chmod':
+        if (count($argv) < 2) err('chmod: missing operand');
+        out('');
+
+    case 'chown':
+        if (count($argv) < 2) err('chown: missing operand');
+        out('');
+
+    // diff
+    case 'diff': {
+        // Usage: diff [-u] [-i] FILE1 FILE2
+        $flags    = '';
+        $diffargs = [];
+        foreach ($argv as $a) {
+            if ($a[0] === '-') { $flags .= ltrim($a, '-'); }
+            else { $diffargs[] = $a; }
+        }
+        if (count($diffargs) < 2) err("diff: missing operand\nUsage: diff [OPTION]... FILES");
+        $unified  = (strpos($flags, 'u') !== false);
+        $ignCase  = (strpos($flags, 'i') !== false);
+
+        $f1 = res_path($diffargs[0]);
+        $f2 = res_path($diffargs[1]);
+        if (!isset($_SESSION['fs'][$f1])) err('diff: ' . $diffargs[0] . ': No such file or directory');
+        if (!isset($_SESSION['fs'][$f2])) err('diff: ' . $diffargs[1] . ': No such file or directory');
+        if ($_SESSION['fs'][$f1]['type'] === 'dir') err('diff: ' . $diffargs[0] . ': Is a directory');
+        if ($_SESSION['fs'][$f2]['type'] === 'dir') err('diff: ' . $diffargs[1] . ': Is a directory');
+
+        $c1 = $_SESSION['fs'][$f1]['content'] ?? '';
+        $c2 = $_SESSION['fs'][$f2]['content'] ?? '';
+        if ($ignCase) { $c1 = strtolower($c1); $c2 = strtolower($c2); }
+
+        if ($c1 === $c2) { out(''); }   // identical — no output
+
+        $lines1 = explode("\n", $c1);
+        $lines2 = explode("\n", $c2);
+        // strip trailing empty from files ending \n
+        if (end($lines1) === '') array_pop($lines1);
+        if (end($lines2) === '') array_pop($lines2);
+
+        // simple LCS-based diff
+        $n1 = count($lines1);
+        $n2 = count($lines2);
+
+        // Build edit script using Myers-style forward scan (basic implementation)
+        // For simplicity: produce unified or normal diff via tracking changed ranges
+        $hunks = [];
+        $i = 0; $j = 0;
+        while ($i < $n1 || $j < $n2) {
+            if ($i < $n1 && $j < $n2 && $lines1[$i] === $lines2[$j]) {
+                $i++; $j++; continue;
+            }
+            // find the extents of this changed block
+            $i0 = $i; $j0 = $j;
+            // advance until we find a common line or exhaust both
+            while ($i < $n1 || $j < $n2) {
+                $found = false;
+                for ($di = 0; $di <= min(5, $n1-$i); $di++) {
+                    for ($dj = 0; $dj <= min(5, $n2-$j); $dj++) {
+                        if ($di===0 && $dj===0) continue;
+                        if (($i+$di < $n1 || $di===0) && ($j+$dj < $n2 || $dj===0)) {
+                            $li = ($i+$di < $n1) ? $lines1[$i+$di] : null;
+                            $lj = ($j+$dj < $n2) ? $lines2[$j+$dj] : null;
+                            if ($li !== null && $lj !== null && $li === $lj) {
+                                $i += $di; $j += $dj; $found = true; break 2;
+                            }
+                        }
+                    }
+                }
+                if (!$found) {
+                    if ($i < $n1) $i++;
+                    if ($j < $n2) $j++;
+                }
+            }
+            $hunks[] = ['i0'=>$i0,'i1'=>$i,'j0'=>$j0,'j1'=>$j];
+        }
+
+        if (empty($hunks)) { out(''); }
+
+        $out = [];
+        if ($unified) {
+            $mt1 = isset($_SESSION['fs'][$f1]['mtime']) ? date('Y-m-d H:i:s', $_SESSION['fs'][$f1]['mtime']) : '1970-01-01 00:00:00';
+            $mt2 = isset($_SESSION['fs'][$f2]['mtime']) ? date('Y-m-d H:i:s', $_SESSION['fs'][$f2]['mtime']) : '1970-01-01 00:00:00';
+            $out[] = '--- ' . $diffargs[0] . "\t" . $mt1;
+            $out[] = '+++ ' . $diffargs[1] . "\t" . $mt2;
+            $ctx = 3;
+            foreach ($hunks as $h) {
+                $a1 = max(0, $h['i0']-$ctx); $a2 = min($n1, $h['i1']+$ctx);
+                $b1 = max(0, $h['j0']-$ctx); $b2 = min($n2, $h['j1']+$ctx);
+                $out[] = '@@ -' . ($a1+1) . ',' . ($a2-$a1) . ' +' . ($b1+1) . ',' . ($b2-$b1) . ' @@';
+                for ($k=$a1; $k<$h['i0']; $k++) $out[] = ' ' . $lines1[$k];
+                for ($k=$h['i0']; $k<$h['i1']; $k++) $out[] = '-' . $lines1[$k];
+                for ($k=$h['j0']; $k<$h['j1']; $k++) $out[] = '+' . $lines2[$k];
+                for ($k=$h['i1']; $k<$a2; $k++) $out[] = ' ' . $lines1[$k];
+            }
+        } else {
+            foreach ($hunks as $h) {
+                $r1 = ($h['i0']+1) . (($h['i1']-$h['i0']>1) ? ',' . $h['i1'] : '');
+                $r2 = ($h['j0']+1) . (($h['j1']-$h['j0']>1) ? ',' . $h['j1'] : '');
+                if ($h['i0'] === $h['i1'])      { $out[] = $h['i0'] . 'a' . $r2; }
+                elseif ($h['j0'] === $h['j1'])  { $out[] = $r1 . 'd' . $h['j0']; }
+                else                            { $out[] = $r1 . 'c' . $r2; }
+                for ($k=$h['i0']; $k<$h['i1']; $k++) $out[] = '< ' . $lines1[$k];
+                if ($h['i0'] !== $h['i1'] && $h['j0'] !== $h['j1']) $out[] = '---';
+                for ($k=$h['j0']; $k<$h['j1']; $k++) $out[] = '> ' . $lines2[$k];
+            }
+        }
+        out(implode("\n", $out));
+    }
 
     // more / less
     case 'more':

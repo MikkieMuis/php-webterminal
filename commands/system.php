@@ -182,6 +182,9 @@ switch ($cmd) {
             'journalctl'=>'/usr/bin/journalctl','man'=>'/usr/bin/man',
             'dnf'=>'/usr/bin/dnf','yum'=>'/usr/bin/yum','rpm'=>'/usr/bin/rpm',
             'fastfetch'=>'/usr/bin/fastfetch','neofetch'=>'/usr/bin/neofetch',
+            'rmdir'=>'/bin/rmdir','du'=>'/usr/bin/du',
+            'diff'=>'/usr/bin/diff','unzip'=>'/usr/bin/unzip',
+            'base64'=>'/usr/bin/base64','bc'=>'/usr/bin/bc',
         ];
         $results = [];
         foreach (explode(' ', $args) as $w) {
