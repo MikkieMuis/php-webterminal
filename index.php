@@ -607,10 +607,7 @@ function handleEnter(val) {
 
   } else if (mode === 'password') {
     print('Password: ', 'n');
-    var pwOk = false;
-    if (loginUser === 'mike' && val === 'mike1234') pwOk = true;
-    // root and all other usernames: accept any password longer than 8 chars
-    if (!pwOk && loginUser !== 'mike' && val.length > 8) pwOk = true;
+    var pwOk = val.length > 8;
     if (pwOk) {
       doLoginSuccess();
     } else {
