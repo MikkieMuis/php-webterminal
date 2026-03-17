@@ -12,6 +12,47 @@ Whether you want to show off your server-side skills, add a geeky touch to your 
 
 ---
 
+## Use it as a free Linux practice environment
+
+> **No VM. No Docker. No signup. Just open a browser and start typing.**
+
+This project doubles as a free, browser-based Linux sandbox. Use it to practice Linux commands without risking anything on a real server. It runs a simulated AlmaLinux 9.7 environment with a realistic filesystem, two user accounts (`root` and `mike`), and over 65 commands covering everything beginners and intermediate users need to know.
+
+**Who is this for?**
+
+- Beginners learning Linux for the first time
+- Students preparing for the LPIC-1, CompTIA Linux+, or RHCSA exams
+- Sysadmins who want a quick command reference they can actually run
+- Developers who want to add a Linux terminal to their portfolio site
+- Anyone who just wants to poke around a Linux shell without setting up a VM
+
+**What makes it different from paid Linux practice sites?**
+
+- Free and open source (MIT licence)
+- Zero setup — no account, no download, no VM
+- Runs in any browser, including mobile
+- **Fully self-hostable** — runs on any machine with PHP 7.4+, including your local laptop, a Raspberry Pi, a shared hosting account, or a VPS. No internet connection required after the initial clone. See [Setup](#setup) below.
+- 65+ commands implemented: `ls`, `cd`, `grep`, `ps`, `top`, `htop`, `systemctl`, `dnf`, `nano`, `sudo`, `chmod`, `tar`, `zip`, `curl`, `wget`, `ping`, and many more
+- Two users: `root` (full access) and `mike` (regular user with `sudo` rights) — practice privilege escalation safely
+- Realistic fake filesystem with config files, logs, home directories, and service unit files
+- Session-persistent — changes you make (`mkdir`, `touch`, `rm`) survive across commands in the same session
+- Embeddable in any page via a single `<iframe>`
+
+**Run it locally in 30 seconds:**
+
+```bash
+git clone https://github.com/MikkieMuis/php-webterminal.git
+cd php-webterminal
+cp config.example.php config.php
+php -S localhost:8080
+```
+
+Then open `http://localhost:8080` in your browser. That's it — no database, no composer, no npm.
+
+**Keywords:** linux terminal online, linux command line practice, linux sandbox browser, learn linux commands, linux practice environment, fake linux terminal, linux command simulator, bash practice online, linux shell online, linux for beginners, rhcsa practice, lpic practice, comptia linux practice, linux vm alternative, linux web terminal, php terminal emulator, localhost linux terminal, offline linux practice, self-hosted linux sandbox, linux practice without vm
+
+---
+
 ## Features
 
 - Realistic boot sequence with configurable kernel version, CPU and disk info (never exposes real server data)
