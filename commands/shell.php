@@ -57,6 +57,7 @@ switch ($cmd) {
           . "  wc [-lwc] <file>  count lines/words/bytes\n"
           . "  grep [OPTS] PAT F search file for pattern\n"
           . "  sort [-rnuf] [-k N] F sort lines of a file\n"
+          . "  uniq [-cdu] [-i] F filter adjacent duplicate lines\n"
           . "  diff [-u] F1 F2   compare two files\n"
           . "  du [-sh] [PATH]   disk usage of directory\n"
           . "  chmod MODE FILE   change file permissions (cosmetic)\n"

@@ -1,6 +1,6 @@
 <?php
 //  filesystem commands: ls, cd, mkdir, rmdir, touch, rm, cat, wc, cp, mv, grep,
-//                       head, tail, du, chmod, chown, diff, more, less, sort
+//                       head, tail, du, chmod, chown, diff, more, less, sort, uniq
 //  Archive commands (zip, unzip, tar) live in commands/archive.php
 //  Receives: $cmd, $args, $argv, $user, $body  (from terminal.php scope)
 
@@ -828,5 +828,72 @@ switch ($cmd) {
         if ($unique)  $lines = array_values(array_unique($lines));
 
         out(implode("\n", $lines));
+    }
+
+    // uniq
+    case 'uniq': {
+        // Usage: uniq [-c] [-d] [-u] [-i] [FILE]
+        // -c   prefix lines with occurrence count
+        // -d   only print duplicate lines (lines that appear more than once)
+        // -u   only print unique lines (lines that appear exactly once)
+        // -i   ignore case when comparing
+        $count     = false;
+        $dupOnly   = false;
+        $uniqOnly  = false;
+        $ignCase   = false;
+        $uniqfile  = '';
+
+        foreach ($argv as $a) {
+            if ($a[0] === '-' && strlen($a) > 1) {
+                $flags = ltrim($a, '-');
+                if (strpos($flags, 'c') !== false) $count    = true;
+                if (strpos($flags, 'd') !== false) $dupOnly  = true;
+                if (strpos($flags, 'u') !== false) $uniqOnly = true;
+                if (strpos($flags, 'i') !== false) $ignCase  = true;
+            } else {
+                $uniqfile = $a;
+            }
+        }
+
+        if ($uniqfile === '') {
+            err('uniq: no input — reading from stdin not supported; provide a file');
+        }
+
+        $path = res_path($uniqfile);
+        if (!isset($_SESSION['fs'][$path]))
+            err('uniq: ' . $uniqfile . ': No such file or directory');
+        if ($_SESSION['fs'][$path]['type'] === 'dir')
+            err('uniq: ' . $uniqfile . ': Is a directory');
+
+        $content = $_SESSION['fs'][$path]['content'] ?? '';
+        $lines   = explode("\n", $content);
+        // strip trailing empty line from files ending in \n
+        if (end($lines) === '') array_pop($lines);
+
+        if (empty($lines)) { out(''); }
+
+        // Run-length encode adjacent identical lines (optionally case-insensitive)
+        $runs = [];
+        foreach ($lines as $line) {
+            $key = $ignCase ? strtolower($line) : $line;
+            if (!empty($runs) && $runs[count($runs)-1]['key'] === $key) {
+                $runs[count($runs)-1]['count']++;
+            } else {
+                $runs[] = ['line' => $line, 'key' => $key, 'count' => 1];
+            }
+        }
+
+        $out = [];
+        foreach ($runs as $run) {
+            if ($dupOnly  && $run['count'] < 2) continue;
+            if ($uniqOnly && $run['count'] > 1) continue;
+            if ($count) {
+                $out[] = sprintf('%7d %s', $run['count'], $run['line']);
+            } else {
+                $out[] = $run['line'];
+            }
+        }
+
+        out(implode("\n", $out));
     }
 }

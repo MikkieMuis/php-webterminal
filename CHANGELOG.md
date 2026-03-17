@@ -2,6 +2,16 @@
 
 All notable changes to php-webterminal will be documented here.
 
+## [2.6.0] - 2026-03-17
+
+### Added
+- `uniq` — filter adjacent duplicate lines from a file
+  - `-c` prefix each output line with its occurrence count
+  - `-d` only print lines that are repeated (adjacent duplicates)
+  - `-u` only print lines that appear exactly once
+  - `-i` case-insensitive comparison
+  - Man page for `uniq`
+
 ## [2.5.0] - 2026-03-17
 
 ### Added
