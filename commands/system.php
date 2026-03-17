@@ -1,7 +1,7 @@
 <?php
 //  system commands: whoami, pwd, hostname, uname, uptime, date,
 //                   df, free, ps, top, id, env, which, fastfetch, neofetch,
-//                   systemctl, php
+//                   systemctl, php, exa, firewall-cmd
 //  Receives: $cmd, $args, $argv, $user, $body  (from terminal.php scope)
 
 switch ($cmd) {
@@ -223,6 +223,8 @@ switch ($cmd) {
             'rmdir'=>'/bin/rmdir','du'=>'/usr/bin/du',
             'diff'=>'/usr/bin/diff','unzip'=>'/usr/bin/unzip',
             'base64'=>'/usr/bin/base64','bc'=>'/usr/bin/bc',
+            'exa'=>'/usr/bin/exa','firewall-cmd'=>'/usr/bin/firewall-cmd',
+            'telnet'=>'/usr/bin/telnet','sendmail'=>'/usr/sbin/sendmail',
         ];
         $results = [];
         foreach (explode(' ', $args) as $w) {
@@ -233,10 +235,110 @@ switch ($cmd) {
         }
         out(implode("\n", $results));
 
+    // exa
+    case 'exa': {
+        // Supported flags: --long / -l, --tree / -T, --git, --icons, --all / -a, -h (header)
+        $isLong  = preg_match('/\b(--long|-[a-zA-Z]*l[a-zA-Z]*)/', $args) || strpos($args, '--long') !== false
+                   || (strpos($args, '-l') !== false);
+        $isTree  = strpos($args, '--tree') !== false || strpos($args, '-T') !== false;
+        $isAll   = strpos($args, '--all') !== false || strpos($args, '-a') !== false;
+        $hasGit  = strpos($args, '--git') !== false;
+        $hasIcons= strpos($args, '--icons') !== false;
+
+        // Determine target path
+        $targetPath = $_SESSION['cwd'];
+        foreach ($argv as $av) {
+            if ($av[0] !== '-') { $targetPath = res_path($av); break; }
+        }
+
+        $fs = $_SESSION['fs'];
+        if (!isset($fs[$targetPath]) || $fs[$targetPath]['type'] !== 'dir') {
+            // could be a file
+            if (isset($fs[$targetPath])) {
+                out(basename($targetPath));
+            }
+            err('exa: ' . $targetPath . ': No such file or directory');
+        }
+
+        $prefix  = rtrim($targetPath, '/');
+        $entries = [];
+        foreach ($fs as $p => $node) {
+            if ($p === $targetPath) continue;
+            $dir = dirname($p);
+            $parent = ($prefix === '') ? '/' : $prefix;
+            if ($dir !== $parent) continue;
+            $name  = basename($p);
+            if (!$isAll && $name[0] === '.') continue;
+            $isDir = ($node['type'] === 'dir');
+            $size  = $isDir ? '-' : str_pad(isset($node['content']) ? strlen($node['content']) : 0, 6);
+            $mtime = isset($node['mtime']) ? date('Y-m-d H:i', $node['mtime']) : '2026-03-09 08:11';
+            $perm  = $isDir ? 'drwxr-xr-x' : '-rw-r--r--';
+            $entries[] = [
+                'name'  => $name,
+                'isDir' => $isDir,
+                'size'  => $size,
+                'mtime' => $mtime,
+                'perm'  => $perm,
+            ];
+        }
+
+        if (empty($entries)) { out($isLong ? 'total 0' : ''); }
+        usort($entries, function($a,$b){ return strcmp($a['name'],$b['name']); });
+
+        if ($isTree) {
+            $lines = [basename($targetPath) . '/'];
+            $cnt = count($entries);
+            foreach ($entries as $i => $e) {
+                $prefix2 = ($i === $cnt - 1) ? '└── ' : '├── ';
+                $lines[] = $prefix2 . ($e['isDir'] ? $e['name'] . '/' : $e['name']);
+            }
+            out(implode("\n", $lines));
+        }
+
+        if ($isLong) {
+            $header = '';
+            if ($hasGit) {
+                $header = sprintf("%-10s  %s  %-6s  %-16s  %-4s  %s\n",
+                    'Permissions', 'Size', 'User', 'Date Modified', ' Git', 'Name');
+            } else {
+                $header = sprintf("%-10s  %s  %-6s  %-16s  %s\n",
+                    'Permissions', 'Size', 'User', 'Date Modified', 'Name');
+            }
+            $lines = [$header];
+            foreach ($entries as $e) {
+                $gitCol = $hasGit ? sprintf('  %-4s', '--') : '';
+                $sizeCol = $e['isDir'] ? sprintf('%6s', '-') : sprintf('%6d', is_numeric(trim($e['size'])) ? (int)trim($e['size']) : 0);
+                $lines[] = sprintf('%-10s  %s  %-6s  %-16s%s  %s',
+                    $e['perm'], $sizeCol, 'root', $e['mtime'], $gitCol,
+                    $e['isDir'] ? $e['name'] . '/' : $e['name']);
+            }
+            out(implode("\n", $lines));
+        }
+
+        // short format — column layout
+        $names = array_map(function($e){ return $e['isDir'] ? $e['name'].'/' : $e['name']; }, $entries);
+        $maxLen   = max(array_map('strlen', $names));
+        $colWidth = $maxLen + 2;
+        $numCols  = max(1, (int)floor(($cols ?: 80) / $colWidth));
+        $rows     = (int)ceil(count($names) / $numCols);
+        $out = [];
+        for ($r = 0; $r < $rows; $r++) {
+            $parts = [];
+            for ($c = 0; $c < $numCols; $c++) {
+                $idx = $c * $rows + $r;
+                if ($idx >= count($names)) break;
+                $isLast2 = ($c === $numCols - 1) || (($idx + $rows) >= count($names));
+                $parts[] = $isLast2 ? $names[$idx] : str_pad($names[$idx], $colWidth);
+            }
+            $out[] = implode('', $parts);
+        }
+        out(implode("\n", $out));
+        break;
+    }
+
     // fastfetch / neofetch
     case 'fastfetch':
-    case 'neofetch':
-        $upSecs  = time() - $_SESSION['boot'];
+    case 'neofetch':        $upSecs  = time() - $_SESSION['boot'];
         $upDays  = floor($upSecs / 86400);
         $upHours = floor(($upSecs % 86400) / 3600);
         $upMins  = floor(($upSecs % 3600) / 60);
@@ -438,6 +540,41 @@ switch ($cmd) {
         }
 
         err('systemctl: Unknown operation \'' . $subcmd . '\'.');
+        break;
+    }
+
+    // firewall-cmd
+    case 'firewall-cmd': {
+        // Supported: --state, --list-all, --add-port=PORT/proto, --remove-port=PORT/proto, --reload
+        if ($args === '' || $args === '--help') {
+            out("Usage: firewall-cmd [OPTIONS...]\n\nGeneral Options:\n  --state                  Return and print firewalld state\n  --reload                 Reload firewall and keep state information\n\nZone Options (default zone: public):\n  --list-all               List everything added for or enabled in the zone\n  --add-port=PORT/PROTO    Add the port to the zone\n  --remove-port=PORT/PROTO Remove the port from the zone\n  --list-ports             List ports added to the zone\n\nSee 'man firewall-cmd' for full documentation.");
+        }
+
+        if (strpos($args, '--state') !== false) {
+            out('running');
+        }
+
+        if (strpos($args, '--reload') !== false) {
+            out('success');
+        }
+
+        if (strpos($args, '--list-all') !== false) {
+            out("public (active)\n  target: default\n  icmp-block-inversion: no\n  interfaces: eth0\n  sources:\n  services: cockpit dhcpv6-client http https ssh\n  ports: 80/tcp 443/tcp 8080/tcp\n  protocols:\n  forward: yes\n  masquerade: no\n  forward-ports:\n  source-ports:\n  icmp-blocks:\n  rich rules:");
+        }
+
+        if (strpos($args, '--list-ports') !== false) {
+            out('80/tcp 443/tcp 8080/tcp');
+        }
+
+        if (preg_match('/--add-port=([0-9\-]+\/(?:tcp|udp))/i', $args, $m)) {
+            out('success');
+        }
+
+        if (preg_match('/--remove-port=([0-9\-]+\/(?:tcp|udp))/i', $args, $m)) {
+            out('success');
+        }
+
+        err('firewall-cmd: Unknown option ' . $args);
         break;
     }
 

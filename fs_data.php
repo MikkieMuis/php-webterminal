@@ -82,6 +82,64 @@ function fs_get_data() {
     '/etc/dnf'              => ['type'=>'dir','mtime'=>mktime(16,43,0,11,29,2024)],
     '/etc/dracut.conf.d'    => ['type'=>'dir','mtime'=>mktime(18,48,0,12,17,2024)],
     '/etc/firewalld'        => ['type'=>'dir','mtime'=>mktime(12,48,0,11,4,2024)],
+    '/etc/firewalld/firewalld.conf' => ['type'=>'file','mtime'=>mktime(12,48,0,11,4,2024),'content'=>
+"# firewalld config file
+
+# Default zone
+# The default zone used if an empty zone string is used.
+# Default: public
+DefaultZone=public
+
+# Lockdown
+# If set to enabled, firewall changes with the D-Bus interface will be limited
+# to applications that are listed in the lockdown whitelist.
+# The lockdown whitelist file is lockdown-whitelist.xml
+# Default: no
+Lockdown=no
+
+# IPv6_rpfilter
+# Performs a reverse path filter test on a packet for IPv6.
+# Default: yes
+IPv6_rpfilter=yes
+
+# IndividualCalls
+# Do not use combined -restore calls, but individual calls.
+# Default: no
+IndividualCalls=no
+
+# LogDenied
+# Add logging rules right before reject and drop rules in the INPUT, FORWARD
+# and OUTPUT chains for the default rules and also final reject and drop rules
+# in zones. Possible values are: all, unicast, broadcast, multicast and off.
+# Default: off
+LogDenied=off
+
+# AutomaticHelpers
+# For the purpose of connection tracking helpers, the kernel will try to
+# enable the automatic helper assignment.
+# Default: system
+AutomaticHelpers=system
+
+# CleanupModulesOnExit
+# Setting this option to yes will cleanup kernel modules when firewalld stops.
+# Default: yes
+CleanupModulesOnExit=yes"],
+    '/etc/firewalld/zones'  => ['type'=>'dir','mtime'=>mktime(12,48,0,11,4,2024)],
+    '/etc/firewalld/zones/public.xml' => ['type'=>'file','mtime'=>mktime(12,48,0,11,4,2024),'content'=>
+'<?xml version="1.0" encoding="utf-8"?>
+<zone>
+  <short>Public</short>
+  <description>For use in public areas. You do not trust the other computers on networks to not harm your computer. Only selected incoming connections are accepted.</description>
+  <service name="ssh"/>
+  <service name="dhcpv6-client"/>
+  <service name="http"/>
+  <service name="https"/>
+  <service name="cockpit"/>
+  <port protocol="tcp" port="80"/>
+  <port protocol="tcp" port="443"/>
+  <port protocol="tcp" port="8080"/>
+  <forward/>
+</zone>'],
     '/etc/fonts'            => ['type'=>'dir','mtime'=>mktime(0,0,0,2,14,2024)],
     '/etc/gcrypt'           => ['type'=>'dir','mtime'=>mktime(0,0,0,10,1,2024)],
     '/etc/gnupg'            => ['type'=>'dir','mtime'=>mktime(22,34,0,1,15,2026)],

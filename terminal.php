@@ -34,7 +34,7 @@ if (isset($_GET['sysinfo'])) {
 
 // initialise session filesystem
 // Bump this version string whenever fs_data.php changes to force a session reset.
-define('FS_VERSION', '9');
+define('FS_VERSION', '10');
 
 if (!isset($_SESSION['fs']) || ($_SESSION['fs_version'] ?? '') !== FS_VERSION) {
     require_once __DIR__ . '/fs_data.php';
@@ -156,10 +156,12 @@ switch ($cmd) {
     case 'date': case 'df': case 'free': case 'ps': case 'top': case 'htop':
     case 'id': case 'env': case 'printenv': case 'which':
     case 'fastfetch': case 'neofetch': case 'systemctl': case 'php':
+    case 'exa': case 'firewall-cmd':
         require __DIR__ . '/commands/system.php';
         break;
 
     case 'ifconfig': case 'ip': case 'ping': case 'wget': case 'curl':
+    case 'telnet': case 'sendmail':
         require __DIR__ . '/commands/network.php';
         break;
 

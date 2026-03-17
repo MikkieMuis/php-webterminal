@@ -1,5 +1,5 @@
 <?php
-//  network commands: ifconfig, ip, ping, wget, curl
+//  network commands: ifconfig, ip, ping, wget, curl, telnet, sendmail
 //  Receives: $cmd, $args, $argv, $user, $body  (from terminal.php scope)
 
 switch ($cmd) {
@@ -142,4 +142,73 @@ switch ($cmd) {
             'silent' => $cSilent,
         ]);
         exit;
+
+    // telnet
+    case 'telnet': {
+        if ($args === '') {
+            out("telnet> \ntelnet: no host specified. Usage: telnet HOST [PORT]");
+        }
+        $telHost = '';
+        $telPort = 23;
+        foreach ($argv as $av) {
+            if ($av[0] !== '-' && $telHost === '') { $telHost = $av; }
+            elseif (is_numeric($av))               { $telPort = (int)$av; }
+        }
+        if ($telHost === '') err('telnet: no host specified. Usage: telnet HOST [PORT]');
+
+        // Resolve display IP
+        $knownHosts = [
+            'localhost'  => '127.0.0.1',
+            '127.0.0.1'  => '127.0.0.1',
+        ];
+        $ip = isset($knownHosts[$telHost]) ? $knownHosts[$telHost]
+            : implode('.', [rand(1,254),rand(1,254),rand(1,254),rand(1,254)]);
+
+        echo json_encode([
+            'output'  => '',
+            'telnet'  => true,
+            'host'    => $telHost,
+            'ip'      => $ip,
+            'port'    => $telPort,
+        ]);
+        exit;
+    }
+
+    // sendmail
+    case 'sendmail': {
+        // Usage: sendmail [-v] recipient
+        //        sendmail -t  (read from stdin — we just accept and discard)
+        if ($args === '' || $args === '-t') {
+            out("sendmail: ready to accept input (use Ctrl+D to send)\n(non-interactive mode: message discarded)");
+        }
+        $recipient = '';
+        $verbose   = false;
+        foreach ($argv as $av) {
+            if ($av === '-v')          { $verbose = true; }
+            elseif ($av[0] !== '-')    { $recipient = $av; }
+        }
+        if ($recipient === '') {
+            err('sendmail: no recipient specified');
+        }
+        $ts = date('D, d M Y H:i:s O');
+        if ($verbose) {
+            out("sendmail: Connecting to localhost (127.0.0.1) port 25...\n"
+              . "220 " . CONF_HOSTNAME . " ESMTP Postfix\n"
+              . "EHLO " . CONF_HOSTNAME . "\n"
+              . "250-" . CONF_HOSTNAME . " Hello\n"
+              . "250 OK\n"
+              . "MAIL FROM:<root@" . CONF_HOSTNAME . ">\n"
+              . "250 OK\n"
+              . "RCPT TO:<" . $recipient . ">\n"
+              . "250 Accepted\n"
+              . "DATA\n"
+              . "354 Enter message, ending with \".\" on a line by itself\n"
+              . ".\n"
+              . "250 OK: message queued as " . strtoupper(bin2hex(random_bytes(5))) . "\n"
+              . "QUIT\n"
+              . "221 Bye");
+        }
+        out("Message queued for delivery to " . $recipient . "\nDate: " . $ts);
+        break;
+    }
 }
