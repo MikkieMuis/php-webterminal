@@ -28,12 +28,12 @@ Whether you want to show off your server-side skills, add a geeky touch to your 
 | Category | Commands |
 |---|---|
 | Navigation | `ls`, `ll`, `cd`, `pwd` |
-| Files | `cat`, `touch`, `mkdir`, `rmdir`, `rm`, `cp`, `mv`, `wc`, `grep`, `head`, `tail`, `diff`, `du`, `chmod`, `chown`, `zip`, `unzip`, `tar` |
+| Files | `cat`, `touch`, `mkdir`, `rmdir`, `rm`, `cp`, `mv`, `wc`, `grep`, `head`, `tail`, `diff`, `du`, `chmod`, `chown`, `zip`, `unzip`, `tar`, `sort`, `uniq` |
 | Pagers | `more`, `less` |
-| System | `uname`, `uptime`, `hostname`, `date`, `df`, `free`, `ps`, `top`, `id`, `env`, `printenv`, `which`, `whoami`, `fastfetch`, `neofetch`, `systemctl`, `php` |
-| Network | `ping`, `ifconfig`, `ip`, `wget`, `curl` |
+| System | `uname`, `uptime`, `hostname`, `date`, `df`, `free`, `ps`, `top`, `htop`, `id`, `env`, `printenv`, `which`, `whoami`, `fastfetch`, `neofetch`, `systemctl`, `php`, `exa`, `firewall-cmd` |
+| Network | `ping`, `ifconfig`, `ip`, `wget`, `curl`, `telnet`, `sendmail` |
 | Shell | `echo`, `history`, `alias`, `clear`, `exit`, `logout`, `help`, `man`, `sudo`, `last`, `passwd`, `base64`, `bc` |
-| Editors | `nano` |
+| Editors | `nano`, `joe` |
 | Packages | `dnf` |
 
 `grep` supports `-i` (ignore case), `-n` (line numbers), `-v` (invert), `-c` (count), `-l` (filenames only), and `-r` (recursive).
@@ -52,7 +52,13 @@ Whether you want to show off your server-side skills, add a geeky touch to your 
 
 `zip` creates ZIP archives from files and directories. `zip -r` recurses into directories. `unzip` extracts archives, lists contents with `-l`, and can extract to a target directory with `-d`. `tar` creates and extracts `.tar.gz` (with `-z`) and `.tar.bz2` (with `-j`) archives; `-c` create, `-x` extract, `-t` list, `-v` verbose.
 
+`sort` sorts lines of a file. Supports `-r` (reverse), `-n` (numeric), `-u` (unique), `-f` (ignore case), `-k N` (sort by field N), and `-t SEP` (field separator).
+
+`uniq` filters adjacent duplicate lines. Supports `-c` (prefix with count), `-d` (duplicates only), `-u` (unique only), and `-i` (ignore case).
+
 `fastfetch` and `neofetch` display system information alongside the AlmaLinux ASCII logo.
+
+`top` shows a live process table (auto-refreshes). `htop` shows an enhanced process viewer with colour bars for CPU and memory; press `q` to exit.
 
 `dnf` supports `install`, `remove`, `update`/`upgrade` (animated), `list [installed|available]`, `search`, `info`, `history`, `check-update`, and `clean all`. `install`, `remove`, `update`, `upgrade`, and `clean` require root.
 
@@ -60,9 +66,19 @@ Whether you want to show off your server-side skills, add a geeky touch to your 
 
 `php` supports `-v` / `--version` (version string), `-i` (phpinfo), `-m` (module list), and `-r 'code'` (evaluate arithmetic and echo expressions).
 
+`exa` is a modern replacement for `ls`. Supports `--long` / `-l` (detailed table with Permissions, Size, Date columns), `--tree` / `-T` (recursive tree view), `--all` / `-a` (include dotfiles), `--git` (add a Git status column), and `--icons`.
+
+`firewall-cmd` is a front-end for firewalld. Supports `--state`, `--reload`, `--list-all`, `--list-ports`, `--add-port=PORT/PROTO`, and `--remove-port=PORT/PROTO`.
+
+`telnet` connects to a remote host and port (default 23). Returns connection metadata to the JS layer for a simulated connection animation.
+
+`sendmail` queues a mail message. Plain invocation reports the message as queued. `-v` prints a full SMTP trace (EHLO, MAIL FROM, RCPT TO, DATA, QUIT). `-t` accepts the message from stdin (non-interactive stub).
+
 `rmdir` removes empty directories (errors if the directory has contents). `du` reports disk usage; supports `-s` (summarise) and `-h` (human-readable). `chmod` and `chown` are cosmetic — they accept the standard arguments and succeed silently. `diff` compares two files line by line; supports `-u` (unified format) and `-i` (ignore case).
 
 `passwd` simulates a password change prompt and always reports success. `base64` encodes or decodes a string (`-d` / `--decode`); pass input via `<<<`. `bc` evaluates arithmetic expressions (`+`, `-`, `*`, `/`, `^`, `%`, parentheses); pass the expression via `<<<`.
+
+`nano` is a full-screen text editor overlay. Open a file with `nano <file>`, edit freely, and save with `Ctrl+O` (then Enter) or exit with `Ctrl+X`. `joe` is an alternative full-screen editor with `^K` prefix key bindings; save with `^KD`, exit with `^KX`, abort with `^KC`.
 
 ---
 
