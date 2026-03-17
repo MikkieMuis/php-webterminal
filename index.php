@@ -278,8 +278,10 @@ function hidePrompt() {
 }
 
 function updateTitleAndPrompt() {
-  var shortCwd = cwd.replace('/root', '~');
-  var p = loginUser + '@' + sysHostname + ':' + shortCwd + '#';
+  var userHome  = (loginUser === 'root') ? '/root' : '/home/' + loginUser;
+  var shortCwd  = cwd === userHome ? '~' : cwd.replace(userHome + '/', '~/');
+  var sigil     = (loginUser === 'root') ? '#' : '$';
+  var p = loginUser + '@' + sysHostname + ':' + shortCwd + sigil;
   curprompt.textContent = p;
   renderLine();
 }
@@ -605,7 +607,11 @@ function handleEnter(val) {
 
   } else if (mode === 'password') {
     print('Password: ', 'n');
-    if (val.length > 8) {
+    var pwOk = false;
+    if (loginUser === 'mike' && val === 'mike1234') pwOk = true;
+    // root and all other usernames: accept any password longer than 8 chars
+    if (!pwOk && loginUser !== 'mike' && val.length > 8) pwOk = true;
+    if (pwOk) {
       doLoginSuccess();
     } else {
       print('Login incorrect', 'e');
@@ -622,10 +628,11 @@ function handleEnter(val) {
 // login
 function startLogin() {
   clearScr();
-  cmdLog  = [];
-  histIdx = -1;
-  cwd     = '/root';
-  mode    = 'username';
+  cmdLog    = [];
+  histIdx   = -1;
+  loginUser = '';
+  cwd       = '/root';
+  mode      = 'username';
   print(sysOS, 'b');
   print('Kernel ' + sysKernel + ' on an ' + sysArch, 'd');
   print('', 'n');
@@ -637,11 +644,14 @@ function doLoginSuccess() {
   print('Last login: ' + new Date(Date.now() - 86400000).toString().slice(0,24) + ' from 192.168.1.42', 'd');
   print('', 'n');
 
+  // determine home directory for this user
+  var userHome = (loginUser === 'root') ? '/root' : '/home/' + loginUser;
+
   // fetch and display /etc/motd
   fetch('terminal.php', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({cmd: 'cat /etc/motd', user: 'root', cols: 80})
+    body: JSON.stringify({cmd: 'cat /etc/motd', user: loginUser, cols: 80})
   })
   .then(r => r.json())
   .then(data => {
@@ -654,7 +664,7 @@ function doLoginSuccess() {
   .finally(() => {
     mode      = 'command';
     masked    = false;
-    cwd       = '/root';
+    cwd       = userHome;
     typed     = '';
     cursorPos = 0;
     updateTitleAndPrompt();
@@ -717,7 +727,10 @@ function handleResponse(data) {
 // run command via AJAX
 function runCmd(raw) {
   var trimmed = raw.trim();
-  print(loginUser + '@' + sysHostname + ':' + cwd.replace('/root','~') + '# ' + trimmed, 'n');
+  var userHome  = (loginUser === 'root') ? '/root' : '/home/' + loginUser;
+  var shortCwd  = cwd === userHome ? '~' : cwd.replace(userHome + '/', '~/');
+  var sigil     = (loginUser === 'root') ? '#' : '$';
+  print(loginUser + '@' + sysHostname + ':' + shortCwd + sigil + ' ' + trimmed, 'n');
 
   if (!trimmed) { print('','n'); updateTitleAndPrompt(); curline.style.display = 'flex'; return; }
 
