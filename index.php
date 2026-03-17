@@ -680,6 +680,13 @@ function handleResponse(data) {
     doTop(data); return;
   } else if (data.htop) {
     doHtop(data); return;
+  } else if (data.fastfetch) {
+    var ffEl = document.createElement('span');
+    ffEl.className = 'ln n';
+    ffEl.style.whiteSpace = 'pre';
+    ffEl.style.display = 'block';
+    ffEl.innerHTML = data.html;
+    scr.insertBefore(ffEl, curline);
   } else if (data.wget) {
     doWget(data); return;
   } else if (data.curl) {

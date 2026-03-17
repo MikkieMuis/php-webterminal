@@ -170,19 +170,27 @@ switch ($cmd) {
 
     // id
     case 'id':
-        out('uid=0(root) gid=0(root) groups=0(root),1(bin),2(daemon),3(sys),4(adm),6(disk),10(wheel)');
+        if ($user === 'root') {
+            out('uid=0(root) gid=0(root) groups=0(root),1(bin),2(daemon),3(sys),4(adm),6(disk),10(wheel)');
+        } else {
+            out('uid=1002(' . $user . ') gid=1002(' . $user . ') groups=1002(' . $user . '),10(wheel)');
+        }
 
     // env / printenv
     case 'env':
     case 'printenv':
+        $home = ($user === 'root') ? '/root' : '/home/' . $user;
+        $path = ($user === 'root')
+            ? 'PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
+            : 'PATH=/usr/local/bin:/usr/bin:/bin:/home/' . $user . '/.local/bin';
         out("SHELL=/bin/bash\n"
           . "TERM=xterm-256color\n"
           . "USER=" . $user . "\n"
           . "MAIL=/var/mail/" . $user . "\n"
-          . "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin\n"
+          . $path . "\n"
           . "PWD=" . $_SESSION['cwd'] . "\n"
           . "LANG=en_US.UTF-8\n"
-          . "HOME=/root\n"
+          . "HOME=" . $home . "\n"
           . "LOGNAME=" . $user . "\n"
           . "HISTSIZE=1000\n"
           . "HISTFILESIZE=2000\n"
@@ -338,7 +346,8 @@ switch ($cmd) {
 
     // fastfetch / neofetch
     case 'fastfetch':
-    case 'neofetch':        $upSecs  = time() - $_SESSION['boot'];
+    case 'neofetch': {
+        $upSecs  = time() - $_SESSION['boot'];
         $upDays  = floor($upSecs / 86400);
         $upHours = floor(($upSecs % 86400) / 3600);
         $upMins  = floor(($upSecs % 3600) / 60);
@@ -366,69 +375,153 @@ switch ($cmd) {
         $localip  = '192.168.1.10/24';
         $locale   = 'en_US.UTF-8';
 
-        // Real fastfetch AlmaLinux logo — 19 lines, 36 chars wide
-        $logo = [
-            "         'c:.                   ",
-            "        lkkkx, ..       ..   ,cc,",
-            "        okkkk:ckkx'  .lxkkx.okkkkd",
-            "        .:llcokkx'  :kkkxkko:xkkd, ",
-            "      .xkkkkdood:  ;kx,  .lkxlll;  ",
-            "       xkkx.       xk'     xkkkkk:  ",
-            "       'xkx.       xd      .....,.  ",
-            "      .. :xkl'     :c      ..''..   ",
-            "    .dkx'  .:ldl:'. '  ':lollldkkxo;",
-            "  .''lkkko'                     ckkkx.",
-            "'xkkkd:kkd.       ..  ;'        :kkxo.",
-            ",xkkkd;kk'      ,d;    ld.   ':dkd::cc,",
-            " .,,.;xkko'.';lxo.      dx,  :kkk'xkkkkc",
-            "     'dkkkkkxo:.        ;kx  .kkk:;xkkd. ",
-            "       .....   .;dk:.   lkk.  :;,          ",
-            "             :kkkkkkkdoxkkx               ",
-            "              ,c,,;;;:xkkd.               ",
-            "                ;kkkkl.                   ",
-            "                 ,od;                     ",
+        // AlmaLinux logo with $1–$5 colour placeholders (real fastfetch source)
+        // $1=red $2=light-yellow $3=blue $4=light-green $5=cyan
+        $logoRaw = [
+            '$1         \'c:.                   ',
+            '$1        lkkkx, ..       $2..   ,cc,',
+            '$1        okkkk:ckkx\'  $2.lxkkx.okkkkd',
+            '$1        .:llcokkx\'  $2:kkkxkko:xkkd, ',
+            '$1      .xkkkkdood:  $2;kx,  .lkxlll;  ',
+            '$1       xkkx.       $2xk\'     xkkkkk:  ',
+            '$1       \'xkx.       $2xd      .....,.  ',
+            '$3      .. $1:xkl\'     $2:c      ..\'\'..   ',
+            '$3    .dkx\'  $1.:ldl:\'. $2\'  $4\':lollldkkxo;',
+            '$3  .\'\'lkkko\'                     $4ckkkx.',
+            '$3\'xkkkd:kkd.       ..  $5;\'        $4:kkxo.',
+            '$3,xkkkd;kk\'      ,d;    $5ld.   $4\':dkd::cc,',
+            '$3 .,,.;xkko\'.\';lxo.      $5dx,  $4:kkk\'xkkkkc',
+            '$3     \'dkkkkkxo:.        $5;kx  $4.kkk:;xkkd. ',
+            '$3       .....   $5.;dk:.   $5lkk.  $4:;,          ',
+            '             $5:kkkkkkkdoxkkx               ',
+            '              $5,c,,;;;:xkkd.               ',
+            '                $5;kkkkl.                   ',
+            '                 $5,od;                     ',
         ];
 
-        // Info block
-        $header = $user . '@' . CONF_HOSTNAME;
-        $sep    = str_repeat('-', strlen($header));
-        $info = [
-            $header,
-            $sep,
-            'OS:         ' . CONF_OS . ' x86_64',
-            'Kernel:     Linux ' . CONF_KERNEL,
-            'Uptime:     ' . $upStr,
-            'Packages:   ' . $pkgCount,
-            'Shell:      ' . $shell,
-            'Display:    ' . $display,
-            'Terminal:   ' . $terminal,
-            'CPU:        ' . $cpu,
-            'GPU:        ' . $gpu,
-            'Memory:     ' . $memUsed . ' / ' . $memTotal . ' (' . $memPct . ')',
-            'Disk (/):   ' . $fmtGiB($diskUsed) . ' / ' . $fmtGiB($diskTotal) . ' (' . $diskPct . '%) - xfs',
-            'Local IP:   ' . $localip,
-            'Locale:     ' . $locale,
+        // Colour map for logo placeholders
+        $logoColors = [
+            '1' => '#cc3333',
+            '2' => '#cccc00',
+            '3' => '#3355cc',
+            '4' => '#55cc55',
+            '5' => '#00bbbb',
         ];
 
-        // Combine: logo left, info right
-        // Logo lines vary in length — pad each to the longest
-        $logoWidth = max(array_map('strlen', $logo));
-        $totalLines = max(count($logo), count($info));
-        $out = [];
-        for ($i = 0; $i < $totalLines; $i++) {
-            $l = isset($logo[$i]) ? $logo[$i] : '';
-            $r = isset($info[$i]) ? $info[$i] : '';
-            $out[] = str_pad($l, $logoWidth) . '  ' . $r;
+        // Helper: convert a raw logo line (with $N tokens) into an HTML string.
+        // Returns [html_string, plain_length] where plain_length is the visible char count.
+        $renderLogoLine = function(string $raw) use ($logoColors): array {
+            // Split on colour tokens like $1 .. $5
+            $parts = preg_split('/(\$[1-5])/', $raw, -1, PREG_SPLIT_DELIM_CAPTURE);
+            $html       = '';
+            $plainLen   = 0;
+            $curColor   = '#e0e0e0';
+            foreach ($parts as $part) {
+                if (preg_match('/^\$([1-5])$/', $part, $m)) {
+                    $curColor = $logoColors[$m[1]];
+                } else {
+                    $plainLen += strlen($part);
+                    $escaped   = htmlspecialchars($part, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+                    $html     .= '<span style="color:' . $curColor . '">' . $escaped . '</span>';
+                }
+            }
+            return [$html, $plainLen];
+        };
+
+        // Pre-render logo lines and find the maximum plain width
+        $renderedLogo = [];
+        $logoWidth    = 0;
+        foreach ($logoRaw as $line) {
+            [$html, $len] = $renderLogoLine($line);
+            $renderedLogo[] = [$html, $len];
+            if ($len > $logoWidth) $logoWidth = $len;
         }
-        // Colour palette strip (two rows: normal then bright, using block chars)
-        $blocks  = str_repeat('   ', 8);   // 8 colour blocks, 3 spaces each
-        $out[] = '';
-        $out[] = str_pad('', $logoWidth) . '  ' . $blocks;
-        $out[] = str_pad('', $logoWidth) . '  ' . $blocks;
-        out(implode("\n", $out));
+
+        // Info block — header red, separator white, keys yellow, values white
+        $header     = htmlspecialchars($user . '@' . CONF_HOSTNAME, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $sepPlain   = str_repeat('-', strlen($user . '@' . CONF_HOSTNAME));
+        $infoRaw = [
+            ['header', $user . '@' . CONF_HOSTNAME],
+            ['sep',    $sepPlain],
+            ['kv',     'OS',       CONF_OS . ' x86_64'],
+            ['kv',     'Kernel',   'Linux ' . CONF_KERNEL],
+            ['kv',     'Uptime',   $upStr],
+            ['kv',     'Packages', $pkgCount],
+            ['kv',     'Shell',    $shell],
+            ['kv',     'Display',  $display],
+            ['kv',     'Terminal', $terminal],
+            ['kv',     'CPU',      $cpu],
+            ['kv',     'GPU',      $gpu],
+            ['kv',     'Memory',   $memUsed . ' / ' . $memTotal . ' (' . $memPct . ')'],
+            ['kv',     'Disk (/)', $fmtGiB($diskUsed) . ' / ' . $fmtGiB($diskTotal) . ' (' . $diskPct . '%) - xfs'],
+            ['kv',     'Local IP', $localip],
+            ['kv',     'Locale',   $locale],
+        ];
+
+        $renderInfoLine = function(array $row): string {
+            $type = $row[0];
+            if ($type === 'header') {
+                $h = htmlspecialchars($row[1], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+                return '<span style="color:#cc3333;font-weight:bold">' . $h . '</span>';
+            }
+            if ($type === 'sep') {
+                $s = htmlspecialchars($row[1], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+                return '<span style="color:#e0e0e0">' . $s . '</span>';
+            }
+            // kv
+            $key = htmlspecialchars($row[1] . ':', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+            $val = htmlspecialchars($row[2],        ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+            // key column: 10 chars wide (pad with spaces inside span)
+            $keyPadded = str_pad($row[1] . ':', 10);
+            $keyEsc    = htmlspecialchars($keyPadded, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+            return '<span style="color:#cccc00">' . $keyEsc . '</span>'
+                 . '<span style="color:#e0e0e0"> ' . $val . '</span>';
+        };
+
+        // Build combined HTML lines
+        $totalLines = max(count($renderedLogo), count($infoRaw));
+        $htmlLines  = [];
+        for ($i = 0; $i < $totalLines; $i++) {
+            $logoHtml  = '';
+            $logoLen   = 0;
+            if (isset($renderedLogo[$i])) {
+                [$logoHtml, $logoLen] = $renderedLogo[$i];
+            }
+            // Pad to logoWidth with spaces
+            $pad      = $logoWidth - $logoLen;
+            $padHtml  = $pad > 0 ? str_repeat(' ', $pad) : '';
+            $infoHtml = isset($infoRaw[$i]) ? $renderInfoLine($infoRaw[$i]) : '';
+            $htmlLines[] = $logoHtml . $padHtml . '  ' . $infoHtml;
+        }
+
+        // Colour palette strip — 16 blocks (8 normal + 8 bright)
+        $palNormal = ['#000000','#cc3333','#33cc33','#cccc00','#3355cc','#cc33cc','#00cccc','#cccccc'];
+        $palBright = ['#555555','#ff5555','#55ff55','#ffff55','#5555ff','#ff55ff','#55ffff','#ffffff'];
+        $indent    = str_repeat(' ', $logoWidth + 2);
+
+        $buildBar = function(array $pal) use ($indent): string {
+            $s = $indent;
+            foreach ($pal as $bg) {
+                $s .= '<span style="background:' . $bg . ';color:' . $bg . '">   </span>';
+            }
+            return $s;
+        };
+
+        $htmlLines[] = '';
+        $htmlLines[] = $buildBar($palNormal);
+        $htmlLines[] = $buildBar($palBright);
+
+        $html = implode("\n", $htmlLines);
+        echo json_encode(['fastfetch' => true, 'html' => $html]);
+        exit;
+    }
 
     // systemctl
     case 'systemctl': {
+        if ($user !== 'root') {
+            err('Failed to connect to bus: Permission denied');
+            break;
+        }
         $subcmd  = isset($argv[0]) ? strtolower($argv[0]) : '';
         $service = isset($argv[1]) ? strtolower($argv[1]) : '';
 
@@ -545,6 +638,10 @@ switch ($cmd) {
 
     // firewall-cmd
     case 'firewall-cmd': {
+        if ($user !== 'root') {
+            err('Authorization failed.');
+            break;
+        }
         // Supported: --state, --list-all, --add-port=PORT/proto, --remove-port=PORT/proto, --reload
         if ($args === '' || $args === '--help') {
             out("Usage: firewall-cmd [OPTIONS...]\n\nGeneral Options:\n  --state                  Return and print firewalld state\n  --reload                 Reload firewall and keep state information\n\nZone Options (default zone: public):\n  --list-all               List everything added for or enabled in the zone\n  --add-port=PORT/PROTO    Add the port to the zone\n  --remove-port=PORT/PROTO Remove the port from the zone\n  --list-ports             List ports added to the zone\n\nSee 'man firewall-cmd' for full documentation.");
