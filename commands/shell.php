@@ -81,6 +81,7 @@ switch ($cmd) {
           . "  env / printenv    print environment variables\n"
           . "  which <cmd>       locate a command\n"
           . "  fastfetch         system info with ASCII logo\n"
+          . "  neofetch          system info with ASCII logo (alias)\n"
           . "  systemctl         manage system services\n"
           . "  exa               modern ls replacement (--long/--tree/--git)\n"
           . "  firewall-cmd      manage firewalld rules\n"
@@ -163,8 +164,11 @@ switch ($cmd) {
 
     // passwd
     case 'passwd':
-        // fake password change — accept silently, do nothing
         $target = ($args !== '') ? $args : $user;
+        // Non-root cannot change another user's password
+        if ($user !== 'root' && $target !== $user) {
+            err('passwd: You may not view or modify password information for ' . $target . '.');
+        }
         out("Changing password for " . $target . ".\nNew password: \nRetype new password: \npasswd: all authentication tokens updated successfully.");
 
     // base64

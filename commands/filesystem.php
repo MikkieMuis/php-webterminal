@@ -86,7 +86,8 @@ switch ($cmd) {
 
     // cd
     case 'cd':
-        $target = ($args === '' || $args === '~') ? '/root' : res_path($args);
+        $home   = ($user === 'root') ? '/root' : '/home/' . $user;
+        $target = ($args === '' || $args === '~') ? $home : res_path(str_replace('~', $home, $args));
         if (!isset($_SESSION['fs'][$target])) {
             err('bash: cd: ' . $args . ': No such file or directory');
         }
@@ -630,6 +631,7 @@ switch ($cmd) {
         out('');
 
     case 'chown':
+        if ($user !== 'root') { err('chown: changing ownership: Operation not permitted'); break; }
         if (count($argv) < 2) err('chown: missing operand');
         out('');
 

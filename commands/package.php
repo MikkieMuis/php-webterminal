@@ -6,6 +6,10 @@ switch ($cmd) {
 
     // dnf
     case 'dnf':
+        if ($user !== 'root') {
+            err('Error: This command has to be run with superuser privileges (under the root user on most systems).');
+            break;
+        }
         $sub = isset($argv[0]) ? strtolower($argv[0]) : '';
 
         // dnf (no subcommand)

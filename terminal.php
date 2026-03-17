@@ -34,7 +34,7 @@ if (isset($_GET['sysinfo'])) {
 
 // initialise session filesystem
 // Bump this version string whenever fs_data.php changes to force a session reset.
-define('FS_VERSION', '10');
+define('FS_VERSION', '11');
 
 if (!isset($_SESSION['fs']) || ($_SESSION['fs_version'] ?? '') !== FS_VERSION) {
     require_once __DIR__ . '/fs_data.php';
@@ -121,6 +121,15 @@ $body = json_decode($raw_body, true);
 $raw  = isset($body['cmd'])  ? substr(trim($body['cmd']),  0, 1024) : '';
 $user = isset($body['user']) ? substr(trim($body['user']), 0, 64)   : 'user';
 $cols = isset($body['cols']) ? max(20, min(500, (int)$body['cols'])) : 80;
+
+// Determine home directory for this user
+$userHome = ($user === 'root') ? '/root' : '/home/' . $user;
+
+// If the session's cwd is still the default /root but we are not root, reset to user's home.
+// This handles the case where a non-root user logs in fresh.
+if ($_SESSION['cwd'] === '/root' && $user !== 'root') {
+    $_SESSION['cwd'] = $userHome;
+}
 
 if ($raw === '') out('');
 

@@ -245,7 +245,7 @@ CleanupModulesOnExit=yes"],
     '/etc/os-release'       => ['type'=>'file','mtime'=>mktime(11,15,0,11,11,2024),'content'=>
 "NAME=\"AlmaLinux\"\nVERSION=\"9.7 (Seafoam Ocelot)\"\nID=almalinux\nID_LIKE=\"rhel centos fedora\"\nVERSION_ID=\"9.7\"\nPLATFORM_ID=\"platform:el9\"\nPRETTY_NAME=\"AlmaLinux 9.7 (Seafoam Ocelot)\"\nANSI_COLOR=\"0;34\"\nLOGO=\"fedora-logo-icon\"\nCPE_NAME=\"cpe:/o:almalinux:almalinux:9::baseos\"\nHOME_URL=\"https://almalinux.org/\"\nDOCUMENTATION_URL=\"https://wiki.almalinux.org/\"\nBUG_REPORT_URL=\"https://bugs.almalinux.org/\"\nALMA_SUPPORT_END_DATE=\"2032-06-01\""],
     '/etc/passwd'           => ['type'=>'file','mtime'=>mktime(0,0,0,5,28,2025),'content'=>
-"root:x:0:0:root:/root:/bin/bash\nbin:x:1:1:bin:/bin:/sbin/nologin\ndaemon:x:2:2:daemon:/sbin:/sbin/nologin\nadm:x:3:4:adm:/var/adm:/sbin/nologin\nlp:x:4:7:lp:/var/spool/lpd:/sbin/nologin\nsync:x:5:0:sync:/sbin:/bin/sync\nshutdown:x:6:0:shutdown:/sbin:/sbin/shutdown\nhalt:x:7:0:halt:/sbin:/sbin/halt\nmail:x:8:12:mail:/var/spool/mail:/sbin/nologin\nnobody:x:65534:65534:Kernel Overflow User:/:/sbin/nologin\nhttpd:x:48:48:Apache:/usr/share/httpd:/sbin/nologin\nmysql:x:27:27:MySQL Server:/var/lib/mysql:/sbin/nologin\nnginx:x:998:998:Nginx web server:/var/lib/nginx:/sbin/nologin\nphp-fpm:x:997:997:php-fpm:/run/php-fpm:/sbin/nologin\nsshd:x:74:74:Privilege-separated SSH:/usr/share/empty.sshd:/sbin/nologin\nchrony:x:994:994::/var/lib/chrony:/sbin/nologin\ndeploy:x:1001:1001:Deploy User:/home/deploy:/bin/bash"],
+"root:x:0:0:root:/root:/bin/bash\nbin:x:1:1:bin:/bin:/sbin/nologin\ndaemon:x:2:2:daemon:/sbin:/sbin/nologin\nadm:x:3:4:adm:/var/adm:/sbin/nologin\nlp:x:4:7:lp:/var/spool/lpd:/sbin/nologin\nsync:x:5:0:sync:/sbin:/bin/sync\nshutdown:x:6:0:shutdown:/sbin:/sbin/shutdown\nhalt:x:7:0:halt:/sbin:/sbin/halt\nmail:x:8:12:mail:/var/spool/mail:/sbin/nologin\nnobody:x:65534:65534:Kernel Overflow User:/:/sbin/nologin\nhttpd:x:48:48:Apache:/usr/share/httpd:/sbin/nologin\nmysql:x:27:27:MySQL Server:/var/lib/mysql:/sbin/nologin\nnginx:x:998:998:Nginx web server:/var/lib/nginx:/sbin/nologin\nphp-fpm:x:997:997:php-fpm:/run/php-fpm:/sbin/nologin\nsshd:x:74:74:Privilege-separated SSH:/usr/share/empty.sshd:/sbin/nologin\nchrony:x:994:994::/var/lib/chrony:/sbin/nologin\ndeploy:x:1001:1001:Deploy User:/home/deploy:/bin/bash\nmike:x:1002:1002:Mike:/home/mike:/bin/bash"],
     '/etc/php-fpm.conf'     => ['type'=>'file','mtime'=>mktime(6,30,0,2,11,2026),'content'=>"[global]\npid = /run/php-fpm/php-fpm.pid\nerror_log = /var/log/php-fpm/error.log\nlog_level = warning\ndaemonize = yes\ninclude=/etc/php-fpm.d/*.conf"],
     '/etc/php-fpm.d/www.conf' => ['type'=>'file','mtime'=>mktime(15,26,0,3,4,2026),'content'=>
 "[www]\nuser = apache\ngroup = apache\nlisten = /run/php-fpm/www.sock\nlisten.acl_users = apache,nginx\npm = dynamic\npm.max_children = 50\npm.start_servers = 5\npm.min_spare_servers = 5\npm.max_spare_servers = 35\npm.max_requests = 500\nslowlog = /var/log/php-fpm/www-slow.log\nphp_admin_value[error_log] = /var/log/php-fpm/www-error.log\nphp_admin_flag[log_errors] = on\nphp_value[session.save_handler] = files\nphp_value[session.save_path] = /var/lib/php/session\nphp_value[soap.wsdl_cache_dir] = /var/lib/php/wsdlcache"],
@@ -421,6 +421,22 @@ CleanupModulesOnExit=yes"],
 "# .profile\nif [ -n \"\$BASH_VERSION\" ]; then\n    if [ -f \"\$HOME/.bashrc\" ]; then\n        . \"\$HOME/.bashrc\"\n    fi\nfi"],
     '/home/deploy/deploy.sh'    => ['type'=>'file','content'=>
 "#!/bin/bash\n# Deployment script\nset -e\ncd /var/www/html\necho \"[$(date)] Starting deployment...\"\ngit fetch origin\ngit reset --hard origin/main\ncomposer install --no-dev --optimize-autoloader\nphp artisan migrate --force\nphp artisan cache:clear\nphp artisan config:cache\nsudo systemctl reload httpd\necho \"[$(date)] Deployment complete.\""],
+
+
+    //  /home/mike
+
+    '/home/mike'                => ['type'=>'dir'],
+    '/home/mike/.ssh'           => ['type'=>'dir'],
+    '/home/mike/.ssh/authorized_keys' => ['type'=>'file','content'=>
+"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDm7p... mike@laptop"],
+    '/home/mike/.bashrc'        => ['type'=>'file','content'=>
+"# .bashrc\nexport PS1='\\u@\\h:\\w\\$ '\nexport EDITOR=vim\nexport PATH=\$PATH:/home/mike/.local/bin\nalias ll='ls -la'\nalias la='ls -A'\nalias grep='grep --color=auto'"],
+    '/home/mike/.bash_history'  => ['type'=>'file','content'=>
+"ls -la\ncd /var/www/html\ncat /etc/passwd\nsudo systemctl status httpd\ngit log --oneline -10\ndf -h\nfree -h\nps aux | grep httpd"],
+    '/home/mike/.profile'       => ['type'=>'file','content'=>
+"# .profile\nif [ -n \"\$BASH_VERSION\" ]; then\n    if [ -f \"\$HOME/.bashrc\" ]; then\n        . \"\$HOME/.bashrc\"\n    fi\nfi"],
+    '/home/mike/notes.txt'      => ['type'=>'file','mtime'=>mktime(9,0,0,3,10,2026),'content'=>
+"TODO\n====\n- check server logs\n- update deployment scripts\n- renew SSL cert before September"],
 
 
     //  /root
