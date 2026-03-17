@@ -143,7 +143,7 @@ if ($cmd === 'll') { $cmd = 'ls'; array_unshift($argv, '-la'); $args = implode('
 switch ($cmd) {
     case 'ls': case 'cd': case 'mkdir': case 'rmdir': case 'touch': case 'rm': case 'cat':
     case 'wc': case 'more': case 'less': case 'grep': case 'cp': case 'mv':
-    case 'head': case 'tail': case 'du': case 'chmod': case 'chown': case 'diff':
+    case 'head': case 'tail': case 'du': case 'chmod': case 'chown': case 'diff': case 'sort':
         require __DIR__ . '/commands/filesystem.php';
         break;
 

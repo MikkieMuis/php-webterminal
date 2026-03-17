@@ -2,6 +2,19 @@
 
 All notable changes to php-webterminal will be documented here.
 
+## [2.5.0] - 2026-03-17
+
+### Added
+- `sort` — sort lines of text files
+  - `-r` reverse order
+  - `-n` numeric sort
+  - `-u` unique (deduplicate equal lines)
+  - `-f` case-insensitive sort
+  - `-k N` sort by Nth whitespace-delimited field
+  - `-t SEP` use SEP as field separator (pairs with `-k`)
+  - Multiple file support — lines from all files are merged before sorting
+  - Man page for `sort`
+
 ## [2.4.0] - 2026-03-17
 
 ### Added

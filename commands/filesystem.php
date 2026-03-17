@@ -1,6 +1,6 @@
 <?php
 //  filesystem commands: ls, cd, mkdir, rmdir, touch, rm, cat, wc, cp, mv, grep,
-//                       head, tail, du, chmod, chown, diff, more, less
+//                       head, tail, du, chmod, chown, diff, more, less, sort
 //  Archive commands (zip, unzip, tar) live in commands/archive.php
 //  Receives: $cmd, $args, $argv, $user, $body  (from terminal.php scope)
 
@@ -756,4 +756,77 @@ switch ($cmd) {
             'filename' => basename($target),
         ]);
         exit;
+
+    // sort
+    case 'sort': {
+        // Usage: sort [-r] [-n] [-u] [-k N] [-t SEP] [-f] [FILE...]
+        // Flags
+        $reverse   = false;
+        $numeric   = false;
+        $unique    = false;
+        $ignCase   = false;
+        $field     = null;   // 1-based field index (-k)
+        $fieldSep  = null;   // field separator (-t)
+        $files     = [];
+
+        $i = 0;
+        while ($i < count($argv)) {
+            $a = $argv[$i];
+            if ($a === '-r')                    { $reverse  = true; }
+            elseif ($a === '-n')                { $numeric  = true; }
+            elseif ($a === '-u')                { $unique   = true; }
+            elseif ($a === '-f')                { $ignCase  = true; }
+            elseif ($a === '-rn' || $a === '-nr') { $reverse = true; $numeric = true; }
+            elseif ($a === '-ru' || $a === '-ur') { $reverse = true; $unique  = true; }
+            elseif ($a === '-nu' || $a === '-un') { $numeric = true; $unique  = true; }
+            elseif (preg_match('/^-k(\d+)$/', $a, $m))            { $field = (int)$m[1]; }
+            elseif ($a === '-k' && isset($argv[$i+1]))             { $field = (int)$argv[++$i]; }
+            elseif (preg_match('/^-t(.)$/', $a, $m))              { $fieldSep = $m[1]; }
+            elseif ($a === '-t' && isset($argv[$i+1]))             { $fieldSep = $argv[++$i]; }
+            elseif ($a[0] !== '-')              { $files[] = $a; }
+            $i++;
+        }
+
+        // collect lines from file(s)
+        $lines = [];
+        if (empty($files)) {
+            err('sort: no input — reading from stdin not supported; provide a file');
+        }
+        foreach ($files as $f) {
+            $path = res_path($f);
+            if (!isset($_SESSION['fs'][$path]))
+                err('sort: cannot read \'' . $f . '\': No such file or directory');
+            if ($_SESSION['fs'][$path]['type'] === 'dir')
+                err('sort: read failed \'' . $f . '\': Is a directory');
+            $content = $_SESSION['fs'][$path]['content'] ?? '';
+            $fileLines = explode("\n", $content);
+            // remove trailing empty line from files ending in \n
+            if (end($fileLines) === '') array_pop($fileLines);
+            $lines = array_merge($lines, $fileLines);
+        }
+
+        // sort comparator
+        usort($lines, function($a, $b) use ($numeric, $ignCase, $field, $fieldSep) {
+            $va = $a; $vb = $b;
+            // field extraction
+            if ($field !== null) {
+                $sep  = $fieldSep ?? null;
+                $partsA = $sep ? explode($sep, $a) : preg_split('/\s+/', ltrim($a));
+                $partsB = $sep ? explode($sep, $b) : preg_split('/\s+/', ltrim($b));
+                $va = $partsA[$field - 1] ?? '';
+                $vb = $partsB[$field - 1] ?? '';
+            }
+            if ($ignCase) { $va = strtolower($va); $vb = strtolower($vb); }
+            if ($numeric) {
+                $na = (float)$va; $nb = (float)$vb;
+                return $na <=> $nb;
+            }
+            return strcmp($va, $vb);
+        });
+
+        if ($reverse) $lines = array_reverse($lines);
+        if ($unique)  $lines = array_values(array_unique($lines));
+
+        out(implode("\n", $lines));
+    }
 }
