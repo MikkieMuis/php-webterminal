@@ -2,6 +2,17 @@
 
 All notable changes to php-webterminal will be documented here.
 
+## [2.4.0] - 2026-03-17
+
+### Added
+- `htop` — interactive process viewer overlay
+  - Per-CPU usage bars, memory/swap bars at the top of the display
+  - Process list sorted by CPU%, refreshes every 2 seconds
+  - Footer bar showing F-key shortcuts (F1–F10)
+  - Press `q` or `F10` to quit
+  - Man page for `htop`
+  - `htop` already present in `which` binary map
+
 ## [2.3.0] - 2026-03-16
 
 ### Changed

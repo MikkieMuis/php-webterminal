@@ -130,6 +130,44 @@ switch ($cmd) {
         ]);
         exit;
 
+    // htop
+    case 'htop':
+        $load   = [CONF_LOAD_1, CONF_LOAD_5, CONF_LOAD_15];
+        $upSecs = time() - $_SESSION['boot'];
+        $upH    = floor($upSecs/3600);
+        $upM    = floor(($upSecs%3600)/60);
+        $procs  = [
+            ['pid'=>1,    'user'=>'root',     'pr'=>20,'ni'=>0, 'virt'=>169440,  'res'=>11264, 'shr'=>8192,  's'=>'S','cpu'=>0.0,'mem'=>0.1,'time'=>'0:04.12','cmd'=>'systemd'],
+            ['pid'=>432,  'user'=>'root',     'pr'=>20,'ni'=>0, 'virt'=>28356,   'res'=>9832,  'shr'=>7680,  's'=>'S','cpu'=>0.0,'mem'=>0.1,'time'=>'0:00.43','cmd'=>'systemd-journald'],
+            ['pid'=>914,  'user'=>'root',     'pr'=>20,'ni'=>0, 'virt'=>15428,   'res'=>8732,  'shr'=>6144,  's'=>'S','cpu'=>0.0,'mem'=>0.1,'time'=>'0:00.11','cmd'=>'sshd'],
+            ['pid'=>1105, 'user'=>'www-data', 'pr'=>20,'ni'=>0, 'virt'=>256440,  'res'=>24688, 'shr'=>18432, 's'=>'S','cpu'=>0.3,'mem'=>0.3,'time'=>'0:01.77','cmd'=>'apache2'],
+            ['pid'=>1212, 'user'=>'mysql',    'pr'=>20,'ni'=>0, 'virt'=>1823440, 'res'=>118344,'shr'=>12288, 's'=>'S','cpu'=>0.7,'mem'=>1.4,'time'=>'2:14.55','cmd'=>'mysqld'],
+            ['pid'=>1380, 'user'=>'redis',    'pr'=>20,'ni'=>0, 'virt'=>62840,   'res'=>4096,  'shr'=>2048,  's'=>'S','cpu'=>0.0,'mem'=>0.1,'time'=>'0:02.34','cmd'=>'redis-server'],
+            ['pid'=>1512, 'user'=>'root',     'pr'=>20,'ni'=>0, 'virt'=>11440,   'res'=>2048,  'shr'=>1536,  's'=>'S','cpu'=>0.0,'mem'=>0.0,'time'=>'0:00.06','cmd'=>'crond'],
+            ['pid'=>1890, 'user'=>'php-fpm',  'pr'=>20,'ni'=>0, 'virt'=>194560,  'res'=>32768, 'shr'=>16384, 's'=>'S','cpu'=>0.1,'mem'=>0.4,'time'=>'0:03.22','cmd'=>'php-fpm: pool www'],
+            ['pid'=>2048, 'user'=>'root',     'pr'=>20,'ni'=>0, 'virt'=>14532,   'res'=>2048,  'shr'=>1536,  's'=>'S','cpu'=>0.0,'mem'=>0.0,'time'=>'0:00.02','cmd'=>'-bash'],
+            ['pid'=>2092, 'user'=>'root',     'pr'=>20,'ni'=>0, 'virt'=>17640,   'res'=>1948,  'shr'=>1280,  's'=>'R','cpu'=>0.0,'mem'=>0.0,'time'=>'0:00.00','cmd'=>'htop'],
+        ];
+        // memory bars (fake, fixed fractions of total)
+        $memTotal  = 15872;   // MiB
+        $memUsed   = 3277;
+        $swapTotal = 2048;
+        $swapUsed  = 0;
+        echo json_encode([
+            'output'    => '',
+            'htop'      => true,
+            'uptime'    => sprintf('%d:%02d', $upH, $upM),
+            'load'      => [round($load[0],2), round($load[1],2), round($load[2],2)],
+            'procs'     => $procs,
+            'time'      => date('H:i:s'),
+            'memTotal'  => $memTotal,
+            'memUsed'   => $memUsed,
+            'swapTotal' => $swapTotal,
+            'swapUsed'  => $swapUsed,
+            'cpuCount'  => 4,
+        ]);
+        exit;
+
     // id
     case 'id':
         out('uid=0(root) gid=0(root) groups=0(root),1(bin),2(daemon),3(sys),4(adm),6(disk),10(wheel)');

@@ -266,6 +266,7 @@ function handleKey(key, ctrlKey, altKey, metaKey) {
   if (nanoActive) { nanoKey(key, ctrlKey); return; }
   if (pagerActive) { pagerKey(key); return; }
   if (topActive) return;
+  if (htopActive) return;
 
   // Enter
   if (key === 'Enter') {
@@ -571,6 +572,8 @@ function handleResponse(data) {
     doPing(data); return;
   } else if (data.top) {
     doTop(data); return;
+  } else if (data.htop) {
+    doHtop(data); return;
   } else if (data.wget) {
     doWget(data); return;
   } else if (data.curl) {
@@ -799,6 +802,11 @@ var topInterval = null;
 var topEl = null;
 var topActive = false;
 
+// htop overlay
+var htopInterval = null;
+var htopEl = null;
+var htopActive = false;
+
 function doTop(data) {
   // build full-screen overlay
   topActive = true;
@@ -871,7 +879,108 @@ function doTop(data) {
   if (window.self === window.top) document.addEventListener('keydown', topKeyNative);
 }
 
-// wget animation
+// htop overlay — interactive process viewer with colour bars
+function doHtop(data) {
+  htopActive = true;
+  htopEl = document.createElement('div');
+  htopEl.id = 'htop-overlay';
+  htopEl.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;background:#0a0a0a;color:#39ff14;font-family:"Courier New",Courier,monospace;font-size:13px;padding:10px;box-sizing:border-box;overflow:hidden;z-index:100;white-space:pre;';
+  document.getElementById('terminal').appendChild(htopEl);
+  hidePrompt();
+
+  var sortField = 'cpu'; // default sort
+  var cpuCount  = data.cpuCount || 4;
+
+  function barStr(used, total, width) {
+    var filled = Math.round((used / total) * width);
+    filled = Math.max(0, Math.min(filled, width));
+    return '[' + '|'.repeat(filled) + ' '.repeat(width - filled) + ']';
+  }
+
+  function render() {
+    var load = data.load.map(function(l){ return (l + (Math.random()*0.05-0.025)).toFixed(2); });
+    var now  = new Date();
+    var hh   = String(now.getHours()).padStart(2,'0');
+    var mm   = String(now.getMinutes()).padStart(2,'0');
+    var ss   = String(now.getSeconds()).padStart(2,'0');
+
+    // CPU bars — fake per-core based on load average
+    var cpuLines = '';
+    for (var c = 0; c < cpuCount; c++) {
+      var pct = Math.min(99, Math.max(0, Math.round(parseFloat(load[0]) * 10 + (Math.random()*5-2.5))));
+      cpuLines += '  CPU' + (c+1) + ' ' + barStr(pct, 100, 20) + ' ' + String(pct).padStart(2) + '%\n';
+    }
+
+    var memPct  = Math.round((data.memUsed  / data.memTotal)  * 100);
+    var swapPct = data.swapTotal > 0 ? Math.round((data.swapUsed / data.swapTotal) * 100) : 0;
+    var memBar  = '  Mem  ' + barStr(data.memUsed,  data.memTotal,  20) + ' ' + data.memUsed  + 'M/' + data.memTotal  + 'M\n';
+    var swapBar = '  Swap ' + barStr(data.swapUsed, data.swapTotal, 20) + ' ' + data.swapUsed + 'M/' + data.swapTotal + 'M\n';
+
+    var header =
+      cpuLines +
+      memBar +
+      swapBar +
+      '\n' +
+      '  Tasks: ' + data.procs.length + ' total; 1 running, ' + (data.procs.length-1) + ' sleeping\n' +
+      '  Load average: ' + load.join(' ') + '   Uptime: ' + data.uptime + '   ' + hh+':'+mm+':'+ss + '\n' +
+      '\n' +
+      '  PID   USER       PRI  NI  VIRT   RES   SHR S  CPU%  MEM%   TIME+  COMMAND\n';
+
+    // sort by cpu descending
+    var procs = data.procs.slice().sort(function(a,b){ return b.cpu - a.cpu; });
+
+    var rows = procs.map(function(p, i) {
+      var cpu = Math.max(0, p.cpu + (Math.random()*0.3-0.15)).toFixed(1);
+      var row =
+        String(p.pid).padStart(5) + '  ' +
+        p.user.padEnd(10) + ' ' +
+        String(p.pr).padStart(3) + '  ' +
+        String(p.ni).padStart(2) + ' ' +
+        String(p.virt).padStart(6) + ' ' +
+        String(p.res).padStart(5) + ' ' +
+        String(p.shr).padStart(5) + ' ' +
+        p.s + ' ' +
+        String(cpu).padStart(5) + ' ' +
+        String(p.mem.toFixed(1)).padStart(5) + ' ' +
+        p.time.padStart(9) + '  ' +
+        p.cmd;
+      // highlight the selected (first) row
+      return i === 0 ? '\x1b[7m' + row + '\x1b[0m' : row;
+    });
+
+    htopEl.textContent = header + rows.join('\n') + '\n\n';
+
+    // footer bar
+    var footer = document.createElement('div');
+    footer.style.cssText = 'position:absolute;bottom:0;left:0;width:100%;background:#39ff14;color:#0a0a0a;font-family:"Courier New",Courier,monospace;font-size:13px;padding:2px 10px;box-sizing:border-box;';
+    footer.textContent = ' F1Help  F2Setup  F3Search  F5Tree  F6SortBy  F9Kill  F10Quit  q Quit';
+    htopEl.appendChild(footer);
+  }
+
+  render();
+  htopInterval = setInterval(render, 2000);
+
+  function htopKey(e) {
+    var key = (e.data && e.data.type === 'keydown') ? e.data.key : null;
+    if (key === 'q' || key === 'F10') { exitHtop(); }
+  }
+  function htopKeyNative(e) {
+    if (e.key === 'q' || e.key === 'F10') { e.preventDefault(); exitHtop(); }
+  }
+  function exitHtop() {
+    htopActive = false;
+    clearInterval(htopInterval); htopInterval = null;
+    if (htopEl) { htopEl.remove(); htopEl = null; }
+    window.removeEventListener('message', htopKey);
+    if (window.self === window.top) document.removeEventListener('keydown', htopKeyNative);
+    print('', 'n');
+    updateTitleAndPrompt();
+    curline.style.display = 'flex';
+    scr.scrollTop = scr.scrollHeight;
+  }
+  window.addEventListener('message', htopKey);
+  if (window.self === window.top) document.addEventListener('keydown', htopKeyNative);
+}
 function doWget(data) {
   var date = new Date().toString().slice(0,24);
   print('--' + date + '--  ' + data.url, 'n');

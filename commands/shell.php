@@ -75,6 +75,7 @@ switch ($cmd) {
           . "  free [-h]         display memory usage\n"
           . "  ps [aux]          list running processes\n"
           . "  top               dynamic process viewer\n"
+          . "  htop              interactive process viewer\n"
           . "  env / printenv    print environment variables\n"
           . "  which <cmd>       locate a command\n"
           . "  fastfetch         system info with ASCII logo\n"

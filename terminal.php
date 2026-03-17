@@ -152,7 +152,7 @@ switch ($cmd) {
         break;
 
     case 'whoami': case 'pwd': case 'hostname': case 'uname': case 'uptime':
-    case 'date': case 'df': case 'free': case 'ps': case 'top':
+    case 'date': case 'df': case 'free': case 'ps': case 'top': case 'htop':
     case 'id': case 'env': case 'printenv': case 'which':
     case 'fastfetch': case 'neofetch': case 'systemctl': case 'php':
         require __DIR__ . '/commands/system.php';
