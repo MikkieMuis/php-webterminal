@@ -119,6 +119,46 @@ html, body {
   padding:1px 4px; flex-shrink:0;
   display:none;
 }
+
+/* joe overlay */
+#joe-overlay {
+  position:absolute; top:0; left:0; width:100%; height:100%;
+  background:#0a0a0a; color:#39ff14;
+  font-family:'Courier New',Courier,monospace; font-size:13px;
+  display:flex; flex-direction:column;
+  z-index:101; overflow:hidden;
+}
+#joe-titlebar {
+  background:#39ff14; color:#0a0a0a;
+  padding:2px 4px; text-align:center;
+  font-weight:bold; flex-shrink:0;
+  white-space:nowrap; overflow:hidden;
+}
+#joe-content {
+  flex:1; overflow:auto; position:relative;
+  padding:2px 4px;
+  white-space:pre; font-family:'Courier New',Courier,monospace;
+}
+#joe-status {
+  background:#0a0a0a; color:#39ff14;
+  padding:1px 4px; min-height:1.4em; flex-shrink:0;
+  font-size:13px;
+}
+#joe-shortcuts {
+  flex-shrink:0;
+}
+.joe-shortcut-row {
+  display:flex; flex-wrap:wrap;
+  background:#39ff14; color:#0a0a0a;
+  font-size:12px; padding:1px 2px;
+}
+.joe-sc {
+  display:inline-flex; margin-right:8px; white-space:nowrap;
+}
+.joe-sc-key {
+  background:#0a0a0a; color:#39ff14;
+  padding:0 3px; margin-right:2px;
+}
 </style>
 </head>
 <body>
@@ -152,10 +192,35 @@ html, body {
       </div>
     </div>
   </div>
+  <!-- joe overlay (hidden until joe command runs) -->
+  <div id="joe-overlay" style="display:none;">
+    <div id="joe-titlebar"></div>
+    <div id="joe-content"></div>
+    <div id="joe-status"></div>
+    <div id="joe-shortcuts">
+      <div class="joe-shortcut-row">
+        <span class="joe-sc"><span class="joe-sc-key">^KH</span>Help</span>
+        <span class="joe-sc"><span class="joe-sc-key">^KS</span>Save</span>
+        <span class="joe-sc"><span class="joe-sc-key">^KX</span>Save+Exit</span>
+        <span class="joe-sc"><span class="joe-sc-key">^KQ</span>Quit</span>
+        <span class="joe-sc"><span class="joe-sc-key">^KF</span>Find</span>
+        <span class="joe-sc"><span class="joe-sc-key">F1</span>Help</span>
+      </div>
+      <div class="joe-shortcut-row">
+        <span class="joe-sc"><span class="joe-sc-key">^KD</span>Save As</span>
+        <span class="joe-sc"><span class="joe-sc-key">^KU</span>Top</span>
+        <span class="joe-sc"><span class="joe-sc-key">^KV</span>Bottom</span>
+        <span class="joe-sc"><span class="joe-sc-key">^Y</span>Cut Line</span>
+        <span class="joe-sc"><span class="joe-sc-key">^KC</span>Paste</span>
+        <span class="joe-sc"><span class="joe-sc-key">^D</span>Del Char</span>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script src="js/pager.js"></script>
 <script src="js/nano.js"></script>
+<script src="js/joe.js"></script>
 <script>
 // DOM refs
 var scr       = document.getElementById('screen');
@@ -264,6 +329,7 @@ function renderLine() {
 function handleKey(key, ctrlKey, altKey, metaKey) {
   if (mode === 'boot') return;
   if (nanoActive) { nanoKey(key, ctrlKey); return; }
+  if (joeActive)  { joeKey(key, ctrlKey, altKey); return; }
   if (pagerActive) { pagerKey(key); return; }
   if (topActive) return;
   if (htopActive) return;
@@ -374,6 +440,7 @@ document.addEventListener('keydown', function(e) {
   // Ctrl+C — cancel typed line (SIGINT), show ^C like a real terminal
   if (e.ctrlKey && !e.shiftKey && (e.key === 'c' || e.key === 'C')) {
     if (nanoActive) return;  // let nano handle it
+    if (joeActive)  return;  // let joe handle it
     if (pagerActive) { pagerExit(); return; }  // Ctrl+C exits pager
     e.preventDefault();
     if (mode === 'command' || mode === 'username' || mode === 'password') {
@@ -426,6 +493,27 @@ document.addEventListener('paste', function(e) {
     }
     nanoData.modified = true;
     nanoRender();
+  } else if (joeActive) {
+    // insert pasted text into joe at cursor position
+    var lines = text.split('\n');
+    var cur = joeData.lines[joeData.curRow];
+    var before = cur.slice(0, joeData.curCol);
+    var after  = cur.slice(joeData.curCol);
+    if (lines.length === 1) {
+      joeData.lines[joeData.curRow] = before + lines[0] + after;
+      joeData.curCol += lines[0].length;
+    } else {
+      joeData.lines[joeData.curRow] = before + lines[0];
+      for (var pi = 1; pi < lines.length - 1; pi++) {
+        joeData.curRow++;
+        joeData.lines.splice(joeData.curRow, 0, lines[pi]);
+      }
+      joeData.curRow++;
+      joeData.lines.splice(joeData.curRow, 0, lines[lines.length-1] + after);
+      joeData.curCol = lines[lines.length-1].length;
+    }
+    joeData.modified = true;
+    joeRender();
   } else if (mode === 'command' || mode === 'username' || mode === 'password') {
     // paste into the command line at cursor position (strip newlines — just take first line)
     var firstLine = text.split('\n')[0];
@@ -479,6 +567,26 @@ window.addEventListener('message', function(e) {
       }
       nanoData.modified = true;
       nanoRender();
+    } else if (joeActive) {
+      var lines = text.split('\n');
+      var cur = joeData.lines[joeData.curRow];
+      var before = cur.slice(0, joeData.curCol);
+      var after  = cur.slice(joeData.curCol);
+      if (lines.length === 1) {
+        joeData.lines[joeData.curRow] = before + lines[0] + after;
+        joeData.curCol += lines[0].length;
+      } else {
+        joeData.lines[joeData.curRow] = before + lines[0];
+        for (var qi = 1; qi < lines.length - 1; qi++) {
+          joeData.curRow++;
+          joeData.lines.splice(joeData.curRow, 0, lines[qi]);
+        }
+        joeData.curRow++;
+        joeData.lines.splice(joeData.curRow, 0, lines[lines.length-1] + after);
+        joeData.curCol = lines[lines.length-1].length;
+      }
+      joeData.modified = true;
+      joeRender();
     } else if (mode === 'command' || mode === 'username' || mode === 'password') {
       var firstLine = text.split('\n')[0];
       typed = typed.slice(0, cursorPos) + firstLine + typed.slice(cursorPos);
@@ -582,6 +690,8 @@ function handleResponse(data) {
     doDnf(data); return;
   } else if (data.nano) {
     doNano(data); return;
+  } else if (data.joe) {
+    doJoe(data); return;
   } else if (data.pager !== undefined) {
     doPager(data); return;
   } else if (data.sudo_prompt) {

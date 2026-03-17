@@ -2,6 +2,21 @@
 
 All notable changes to php-webterminal will be documented here.
 
+## [2.7.0] - 2026-03-17
+
+### Added
+- `joe` — Joe's Own Editor overlay
+  - `^K`-prefix command system (`^KS` save, `^KX` save+exit, `^KD` save-as, `^KQ` quit)
+  - `^KH` / `F1` — full scrollable in-editor help screen
+  - `^KF` find/search, `^L` repeat search
+  - `^KU` / `^KV` go to top/bottom of file
+  - `^KY` cut line, `^KC` / `^KM` paste cut buffer
+  - `^D` delete char, `^Y` cut line, `^W` delete word right
+  - `^A` / `^E` beginning/end of line, `Alt+F` / `Alt+B` word movement
+  - Reuses `__nano_save` PHP endpoint — no new backend save endpoint
+  - Man page for `joe`
+  - `joe` added to `which` binary map (`/usr/bin/joe`)
+
 ## [2.6.0] - 2026-03-17
 
 ### Added

@@ -102,6 +102,7 @@ switch ($cmd) {
           . "  base64 [-d]       encode/decode base64\n"
           . "  bc                basic calculator\n"
           . "  nano <file>       text editor\n"
+          . "  joe <file>        Joe's Own Editor (^K commands)\n"
           . "  man <cmd>         show manual page\n"
           . "  dnf               package manager\n"
           . "  exit / logout     close the session\n"

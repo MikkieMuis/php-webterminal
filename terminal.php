@@ -169,7 +169,7 @@ switch ($cmd) {
         require __DIR__ . '/commands/shell.php';
         break;
 
-    case 'nano': case '__nano_save':
+    case 'nano': case 'joe': case '__nano_save':
         require __DIR__ . '/commands/editors.php';
         break;
 

@@ -1,5 +1,5 @@
 <?php
-//  editor commands: nano, __nano_save
+//  editor commands: nano, joe, __nano_save
 //  Receives: $cmd, $args, $argv, $user, $body  (from terminal.php scope)
 
 switch ($cmd) {
@@ -32,7 +32,35 @@ switch ($cmd) {
         ]);
         exit;
 
-    // __nano_save (internal — called by JS nano overlay)
+    // joe
+    case 'joe':
+        if ($args === '') {
+            // no filename — open a new empty buffer
+            $path    = res_path('New Buffer');
+            $isNew   = true;
+            $content = '';
+        } else {
+            $path    = res_path($args);
+            $isNew   = !isset($_SESSION['fs'][$path]);
+            $content = '';
+            if (!$isNew) {
+                if ($_SESSION['fs'][$path]['type'] === 'dir') {
+                    err('joe: ' . $args . ': Is a directory');
+                }
+                $content = $_SESSION['fs'][$path]['content'] ?? '';
+            }
+        }
+        echo json_encode([
+            'output'   => '',
+            'joe'      => true,
+            'path'     => $path,
+            'filename' => $args === '' ? 'New Buffer' : basename($path),
+            'content'  => $content,
+            'isnew'    => $isNew,
+        ]);
+        exit;
+
+    // __nano_save (internal — called by JS nano/joe overlay)
     case '__nano_save':
         $savePath    = isset($body['path'])    ? $body['path']    : '';
         $saveContent = isset($body['content']) ? $body['content'] : '';
