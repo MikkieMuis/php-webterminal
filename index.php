@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Terminal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
 /* reset */
 * { margin:0; padding:0; box-sizing:border-box; }
@@ -12,7 +15,7 @@
 html, body {
   width:100%; height:100%;
   background:#0a0a0a;
-  font-family:'Courier New', Courier, monospace;
+  font-family:'JetBrains Mono', 'Courier New', monospace;
   overflow:hidden;
 }
 
@@ -35,23 +38,23 @@ html, body {
   user-select:text;
   -webkit-user-select:text;
   line-height:1.6;
-  color:#39ff14;
+  color:#e0e0e0;
   cursor:text;
 }
 #screen::-webkit-scrollbar { width:6px; }
 #screen::-webkit-scrollbar-track { background:#0a0a0a; }
-#screen::-webkit-scrollbar-thumb { background:#1a5c1a; border-radius:3px; }
+#screen::-webkit-scrollbar-thumb { background:#444444; border-radius:3px; }
 
 /* output lines */
 .ln {
   display:block;
   white-space:pre-wrap;
   word-break:break-word;
-  font-family:'Courier New', Courier, monospace;
+  font-family:'JetBrains Mono', 'Courier New', monospace;
 }
-.n { color:#39ff14; }
-.d { color:#00aa00; }
-.b { color:#aaff00; }
+.n { color:#e0e0e0; }
+.d { color:#808080; }
+.b { color:#ffffff; }
 .e { color:#ff4444; }
 .w { color:#ffaa00; }
 
@@ -59,32 +62,32 @@ html, body {
 #curline {
   display:flex;
   align-items:center;
-  font-family:'Courier New', Courier, monospace;
+  font-family:'JetBrains Mono', 'Courier New', monospace;
   font-size:15px;
-  color:#39ff14;
+  color:#e0e0e0;
   margin-top:2px;
   gap:0.5ch;
 }
-#curprompt  { white-space:nowrap; color:#39ff14; }
-#curtyped   { color:#39ff14; }
+#curprompt  { white-space:nowrap; color:#e0e0e0; }
+#curtyped   { color:#e0e0e0; }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
 #curcursor  {
   display:inline-block;
   width:0.6ch; height:1.1em;
-  background:#39ff14;
+  background:#e0e0e0;
   animation:blink 1s infinite;
 }
 
 /* nano overlay */
 #nano-overlay {
   position:absolute; top:0; left:0; width:100%; height:100%;
-  background:#0a0a0a; color:#39ff14;
-  font-family:'Courier New',Courier,monospace; font-size:13px;
+  background:#0a0a0a; color:#e0e0e0;
+  font-family:'JetBrains Mono','Courier New',monospace; font-size:13px;
   display:flex; flex-direction:column;
   z-index:100; overflow:hidden;
 }
 #nano-titlebar {
-  background:#39ff14; color:#0a0a0a;
+  background:#e0e0e0; color:#0a0a0a;
   padding:2px 4px; text-align:center;
   font-weight:bold; flex-shrink:0;
   white-space:nowrap; overflow:hidden;
@@ -92,10 +95,10 @@ html, body {
 #nano-content {
   flex:1; overflow:hidden; position:relative;
   padding:2px 4px;
-  white-space:pre; font-family:'Courier New',Courier,monospace;
+  white-space:pre; font-family:'JetBrains Mono','Courier New',monospace;
 }
 #nano-status {
-  background:#0a0a0a; color:#39ff14;
+  background:#0a0a0a; color:#e0e0e0;
   padding:1px 4px; min-height:1.4em; flex-shrink:0;
   font-size:13px;
 }
@@ -104,18 +107,18 @@ html, body {
 }
 .nano-shortcut-row {
   display:flex; flex-wrap:wrap;
-  background:#39ff14; color:#0a0a0a;
+  background:#e0e0e0; color:#0a0a0a;
   font-size:12px; padding:1px 2px;
 }
 .nano-sc {
   display:inline-flex; margin-right:8px; white-space:nowrap;
 }
 .nano-sc-key {
-  background:#0a0a0a; color:#39ff14;
+  background:#0a0a0a; color:#e0e0e0;
   padding:0 3px; margin-right:2px;
 }
 #nano-search-bar {
-  background:#0a0a0a; color:#39ff14;
+  background:#0a0a0a; color:#e0e0e0;
   padding:1px 4px; flex-shrink:0;
   display:none;
 }
@@ -123,15 +126,15 @@ html, body {
 /* joe overlay — styled after real JOE 4.6 */
 #joe-overlay {
   position:absolute; top:0; left:0; width:100%; height:100%;
-  background:#0a0a0a; color:#39ff14;
-  font-family:'Courier New',Courier,monospace; font-size:13px;
+  background:#0a0a0a; color:#e0e0e0;
+  font-family:'JetBrains Mono','Courier New',monospace; font-size:13px;
   display:flex; flex-direction:column;
   z-index:101; overflow:hidden;
 }
 /* Help rows — shown at top when ^KH / F1 pressed */
 #joe-help {
   display:none;
-  background:#39ff14; color:#0a0a0a;
+  background:#e0e0e0; color:#0a0a0a;
   padding:1px 4px; flex-shrink:0;
   font-size:12px; white-space:pre;
   font-weight:bold;
@@ -140,15 +143,15 @@ html, body {
 #joe-content {
   flex:1; overflow:auto;
   padding:2px 4px;
-  white-space:pre; font-family:'Courier New',Courier,monospace;
+  white-space:pre; font-family:'JetBrains Mono','Courier New',monospace;
 }
 /* Block cursor style */
 .joe-cur {
-  background:#39ff14; color:#0a0a0a;
+  background:#e0e0e0; color:#0a0a0a;
 }
 /* Top status bar — reverse video, left/right split (filename + Row/Col) */
 #joe-status-top {
-  background:#39ff14; color:#0a0a0a;
+  background:#e0e0e0; color:#0a0a0a;
   padding:1px 4px; flex-shrink:0;
   font-size:13px; font-weight:bold;
   display:flex; justify-content:space-between;
@@ -159,7 +162,7 @@ html, body {
 }
 /* Bottom notice/prompt bar — reverse video */
 #joe-status-bottom {
-  background:#39ff14; color:#0a0a0a;
+  background:#e0e0e0; color:#0a0a0a;
   padding:1px 4px; flex-shrink:0;
   font-size:13px; font-weight:bold;
   white-space:nowrap; overflow:hidden;
@@ -228,7 +231,7 @@ var sysHostname = 'localhost';
 // terminal column count (measured from actual screen width)
 function termCols() {
   var testEl = document.createElement('span');
-  testEl.style.cssText = 'visibility:hidden;position:absolute;white-space:pre;font-family:"Courier New",Courier,monospace;font-size:15px;';
+  testEl.style.cssText = 'visibility:hidden;position:absolute;white-space:pre;font-family:"JetBrains Mono","Courier New",monospace;font-size:15px;';
   testEl.textContent = 'X';
   document.body.appendChild(testEl);
   var charW = testEl.getBoundingClientRect().width;
@@ -293,7 +296,7 @@ function renderLine() {
   if (!afterEl) {
     afterEl = document.createElement('span');
     afterEl.id = 'curafter';
-    afterEl.style.color = '#39ff14';
+    afterEl.style.color = '#e0e0e0';
     curcursor.parentNode.insertBefore(afterEl, curcursor.nextSibling);
   }
 
@@ -917,7 +920,7 @@ function doTop(data) {
   topActive = true;
   topEl = document.createElement('div');
   topEl.id = 'top-overlay';
-  topEl.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;background:#0a0a0a;color:#39ff14;font-family:"Courier New",Courier,monospace;font-size:13px;padding:10px;box-sizing:border-box;overflow:hidden;z-index:100;white-space:pre;';
+  topEl.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;background:#0a0a0a;color:#e0e0e0;font-family:"JetBrains Mono","Courier New",monospace;font-size:13px;padding:10px;box-sizing:border-box;overflow:hidden;z-index:100;white-space:pre;';
   document.getElementById('terminal').appendChild(topEl);
   hidePrompt();
 
@@ -989,7 +992,7 @@ function doHtop(data) {
   htopActive = true;
   htopEl = document.createElement('div');
   htopEl.id = 'htop-overlay';
-  htopEl.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;background:#0a0a0a;color:#39ff14;font-family:"Courier New",Courier,monospace;font-size:13px;padding:10px;box-sizing:border-box;overflow:hidden;z-index:100;white-space:pre;';
+  htopEl.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;background:#0a0a0a;color:#e0e0e0;font-family:"JetBrains Mono","Courier New",monospace;font-size:13px;padding:10px;box-sizing:border-box;overflow:hidden;z-index:100;white-space:pre;';
   document.getElementById('terminal').appendChild(htopEl);
   hidePrompt();
 
@@ -1057,7 +1060,7 @@ function doHtop(data) {
 
     // footer bar
     var footer = document.createElement('div');
-    footer.style.cssText = 'position:absolute;bottom:0;left:0;width:100%;background:#39ff14;color:#0a0a0a;font-family:"Courier New",Courier,monospace;font-size:13px;padding:2px 10px;box-sizing:border-box;';
+    footer.style.cssText = 'position:absolute;bottom:0;left:0;width:100%;background:#e0e0e0;color:#0a0a0a;font-family:"JetBrains Mono","Courier New",monospace;font-size:13px;padding:2px 10px;box-sizing:border-box;';
     footer.textContent = ' F1Help  F2Setup  F3Search  F5Tree  F6SortBy  F9Kill  F10Quit  q Quit';
     htopEl.appendChild(footer);
   }

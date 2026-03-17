@@ -16,7 +16,7 @@ function doPager(data) {
   if (pagerEl) { pagerEl.remove(); pagerEl = null; }
   pagerEl = document.createElement('div');
   pagerEl.id = 'pager-status';
-  pagerEl.style.cssText = 'position:sticky;bottom:0;background:#0a0a0a;color:#39ff14;padding:0 4px;';
+  pagerEl.style.cssText = 'position:sticky;bottom:0;background:#0a0a0a;color:#e0e0e0;padding:0 4px;';
   scr.appendChild(pagerEl);
   curline.style.display = 'none';
   pagerRender();

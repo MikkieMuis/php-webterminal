@@ -36,7 +36,7 @@ function nanoRender() {
       var before = escHtml(line.slice(0, col));
       var cursor = escHtml(col < line.length ? line[col] : ' ');
       var after  = escHtml(line.slice(col + 1));
-      html += before + '<span style="background:#39ff14;color:#0a0a0a;">' + cursor + '</span>' + after + '\n';
+      html += before + '<span style="background:#e0e0e0;color:#0a0a0a;">' + cursor + '</span>' + after + '\n';
     } else {
       html += escHtml(line) + '\n';
     }
