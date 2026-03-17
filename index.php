@@ -120,7 +120,7 @@ html, body {
   display:none;
 }
 
-/* joe overlay */
+/* joe overlay — styled after real JOE 4.6 */
 #joe-overlay {
   position:absolute; top:0; left:0; width:100%; height:100%;
   background:#0a0a0a; color:#39ff14;
@@ -128,36 +128,41 @@ html, body {
   display:flex; flex-direction:column;
   z-index:101; overflow:hidden;
 }
-#joe-titlebar {
+/* Help rows — shown at top when ^KH / F1 pressed */
+#joe-help {
+  display:none;
   background:#39ff14; color:#0a0a0a;
-  padding:2px 4px; text-align:center;
-  font-weight:bold; flex-shrink:0;
-  white-space:nowrap; overflow:hidden;
+  padding:1px 4px; flex-shrink:0;
+  font-size:12px; white-space:pre;
+  font-weight:bold;
 }
+/* Edit content area — fills available space */
 #joe-content {
-  flex:1; overflow:auto; position:relative;
+  flex:1; overflow:auto;
   padding:2px 4px;
   white-space:pre; font-family:'Courier New',Courier,monospace;
 }
-#joe-status {
-  background:#0a0a0a; color:#39ff14;
-  padding:1px 4px; min-height:1.4em; flex-shrink:0;
-  font-size:13px;
-}
-#joe-shortcuts {
-  flex-shrink:0;
-}
-.joe-shortcut-row {
-  display:flex; flex-wrap:wrap;
+/* Block cursor style */
+.joe-cur {
   background:#39ff14; color:#0a0a0a;
-  font-size:12px; padding:1px 2px;
 }
-.joe-sc {
-  display:inline-flex; margin-right:8px; white-space:nowrap;
+/* Top status bar — reverse video, left/right split (filename + Row/Col) */
+#joe-status-top {
+  background:#39ff14; color:#0a0a0a;
+  padding:1px 4px; flex-shrink:0;
+  font-size:13px; font-weight:bold;
+  display:flex; justify-content:space-between;
+  white-space:nowrap; overflow:hidden;
 }
-.joe-sc-key {
-  background:#0a0a0a; color:#39ff14;
-  padding:0 3px; margin-right:2px;
+#joe-status-top span:last-child {
+  padding-left:8px; flex-shrink:0;
+}
+/* Bottom notice/prompt bar — reverse video */
+#joe-status-bottom {
+  background:#39ff14; color:#0a0a0a;
+  padding:1px 4px; flex-shrink:0;
+  font-size:13px; font-weight:bold;
+  white-space:nowrap; overflow:hidden;
 }
 </style>
 </head>
@@ -193,34 +198,18 @@ html, body {
     </div>
   </div>
   <!-- joe overlay (hidden until joe command runs) -->
+  <!-- Layout (top→bottom): help rows | top status bar | content | bottom notice bar -->
   <div id="joe-overlay" style="display:none;">
-    <div id="joe-titlebar"></div>
+    <div id="joe-help"></div>
+    <div id="joe-status-top"><span></span><span></span></div>
     <div id="joe-content"></div>
-    <div id="joe-status"></div>
-    <div id="joe-shortcuts">
-      <div class="joe-shortcut-row">
-        <span class="joe-sc"><span class="joe-sc-key">^KH</span>Help</span>
-        <span class="joe-sc"><span class="joe-sc-key">^KS</span>Save</span>
-        <span class="joe-sc"><span class="joe-sc-key">^KX</span>Save+Exit</span>
-        <span class="joe-sc"><span class="joe-sc-key">^KQ</span>Quit</span>
-        <span class="joe-sc"><span class="joe-sc-key">^KF</span>Find</span>
-        <span class="joe-sc"><span class="joe-sc-key">F1</span>Help</span>
-      </div>
-      <div class="joe-shortcut-row">
-        <span class="joe-sc"><span class="joe-sc-key">^KD</span>Save As</span>
-        <span class="joe-sc"><span class="joe-sc-key">^KU</span>Top</span>
-        <span class="joe-sc"><span class="joe-sc-key">^KV</span>Bottom</span>
-        <span class="joe-sc"><span class="joe-sc-key">^Y</span>Cut Line</span>
-        <span class="joe-sc"><span class="joe-sc-key">^KC</span>Paste</span>
-        <span class="joe-sc"><span class="joe-sc-key">^D</span>Del Char</span>
-      </div>
-    </div>
+    <div id="joe-status-bottom"></div>
   </div>
 </div>
 
-<script src="js/pager.js"></script>
-<script src="js/nano.js"></script>
-<script src="js/joe.js"></script>
+<script src="js/pager.js?v=<?php echo filemtime(__DIR__.'/js/pager.js'); ?>"></script>
+<script src="js/nano.js?v=<?php echo filemtime(__DIR__.'/js/nano.js'); ?>"></script>
+<script src="js/joe.js?v=<?php echo filemtime(__DIR__.'/js/joe.js'); ?>"></script>
 <script>
 // DOM refs
 var scr       = document.getElementById('screen');
@@ -437,10 +426,16 @@ document.addEventListener('keydown', function(e) {
     return;
   }
 
+  // When joe is active, prevent ALL browser Ctrl shortcuts so they reach joe
+  if (joeActive && e.ctrlKey && !e.shiftKey) {
+    e.preventDefault();
+    handleKey(e.key, e.ctrlKey, e.altKey, e.metaKey);
+    return;
+  }
+
   // Ctrl+C — cancel typed line (SIGINT), show ^C like a real terminal
   if (e.ctrlKey && !e.shiftKey && (e.key === 'c' || e.key === 'C')) {
     if (nanoActive) return;  // let nano handle it
-    if (joeActive)  return;  // let joe handle it
     if (pagerActive) { pagerExit(); return; }  // Ctrl+C exits pager
     e.preventDefault();
     if (mode === 'command' || mode === 'username' || mode === 'password') {
