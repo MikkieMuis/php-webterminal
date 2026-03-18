@@ -171,6 +171,9 @@ html, body {
 </head>
 <body>
 <div id="terminal">
+  <!-- hidden input for mobile soft keyboard -->
+  <input id="mobileInput" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+    style="position:fixed;opacity:0;pointer-events:none;width:1px;height:1px;top:0;left:0;border:none;padding:0;margin:0;font-size:16px;">
 
   <div id="screen">
     <div id="curline"><span id="curprompt"></span><span id="curtyped"></span><span id="curcursor"></span></div>
@@ -220,6 +223,55 @@ var curline   = document.getElementById('curline');
 var curprompt = document.getElementById('curprompt');
 var curtyped  = document.getElementById('curtyped');
 var curcursor = document.getElementById('curcursor');
+var mobileInput = document.getElementById('mobileInput');
+
+// --- Mobile soft-keyboard support ---
+// Track whether the last interaction was a touch (mobile) or mouse/keyboard (desktop).
+var lastWasTouch = false;
+document.addEventListener('touchstart', function() { lastWasTouch = true;  }, {passive: true});
+document.addEventListener('mousedown',  function() { lastWasTouch = false; }, {passive: true});
+
+// Tap anywhere on the terminal → focus the hidden input so the soft keyboard appears.
+document.getElementById('terminal').addEventListener('click', function() {
+  if (mode === 'boot' || mode === 'dead') return;
+  mobileInput.focus();
+});
+
+// Android fires 'input' instead of 'keydown' for most soft-keyboard presses.
+// We read the new character by comparing the input value before/after.
+// Guard with lastWasTouch so desktop physical keyboards don't double-fire.
+mobileInput.addEventListener('input', function(e) {
+  if (mode === 'boot' || mode === 'dead') return;
+  if (!lastWasTouch) { mobileInput.value = ''; return; } // desktop — ignore, let document keydown handle it
+  var val = mobileInput.value;
+  if (!val) return;               // e.g. after a Backspace that emptied the field
+  // Insert each character that was typed (usually just one)
+  for (var i = 0; i < val.length; i++) {
+    handleKey(val[i], false, false, false);
+  }
+  mobileInput.value = '';         // clear so next input event gives us only the new chars
+});
+
+// Android Backspace fires as a keydown with key='Backspace' (or 'Delete') on some
+// browsers, but also as an input event with inputType='deleteContentBackward'.
+mobileInput.addEventListener('keydown', function(e) {
+  if (mode === 'boot' || mode === 'dead') return;
+  var ctrl = e.ctrlKey || e.metaKey;
+  if (e.key === 'Backspace' || e.key === 'Delete' ||
+      e.key === 'Enter' ||
+      e.key === 'ArrowLeft' || e.key === 'ArrowRight' ||
+      e.key === 'ArrowUp'   || e.key === 'ArrowDown' ||
+      e.key === 'Home' || e.key === 'End' || ctrl) {
+    e.preventDefault();
+    e.stopPropagation();          // prevent document keydown from double-firing
+    mobileInput.value = '';       // keep field empty
+    handleKey(e.key, e.ctrlKey, e.altKey, e.metaKey);
+  } else if (lastWasTouch && e.key.length === 1) {
+    // Printable key on mobile: stop propagation so document keydown doesn't also fire.
+    // The 'input' event will handle the actual character insertion.
+    e.stopPropagation();
+  }
+});
 
 
 // system info (populated before boot)
