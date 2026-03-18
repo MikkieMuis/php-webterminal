@@ -708,6 +708,10 @@ function handleResponse(data) {
     doPager(data); return;
   } else if (data.sudo_prompt) {
     doSudoPrompt(data.sudo_cmd); return;
+  } else if (data.su_prompt !== undefined) {
+    doSu(data.su_target, data.su_prompt); return;
+  } else if (data.passwd_prompt) {
+    doPasswd(data.passwd_target); return;
   } else if (data.output !== undefined && data.output !== '') {
     print(data.output, data.error ? 'e' : 'n');
   }
@@ -734,24 +738,101 @@ function runCmd(raw) {
   cmdLog.unshift(trimmed);
   histIdx = -1;
 
+  // expand shell variables and ~ before sending to PHP
+  var userHome2 = userHome; // closure-safe alias
+  var envPath = (loginUser === 'root')
+    ? '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/root/bin'
+    : '/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/home/' + loginUser + '/.local/bin';
+  var expanded = trimmed
+    .replace(/\$\{?HOME\}?/g,     userHome2)
+    .replace(/\$\{?USER\}?/g,     loginUser)
+    .replace(/\$\{?LOGNAME\}?/g,  loginUser)
+    .replace(/\$\{?PWD\}?/g,      cwd)
+    .replace(/\$\{?OLDPWD\}?/g,   cwd)
+    .replace(/\$\{?HOSTNAME\}?/g, sysHostname)
+    .replace(/\$\{?PATH\}?/g,     envPath)
+    .replace(/\$\{?SHELL\}?/g,    '/bin/bash')
+    .replace(/\$\{?TERM\}?/g,     'xterm-256color')
+    .replace(/\$\?/g,             '0')
+    .replace(/(^|\s)~\//g,        '$1' + userHome2 + '/')
+    .replace(/(^|\s)~$/g,         '$1' + userHome2);
+
   hidePrompt();
 
-  fetch('terminal.php', {
-    method:  'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify({ cmd: trimmed, user: loginUser, cols: termCols() })
-  })
-  .then(function(r){ return r.json(); })
-  .then(function(data) {
-    handleResponse(data);
-  })
-  .catch(function() {
-    print('bash: connection error', 'e');
-    print('', 'n');
-    updateTitleAndPrompt();
-    renderLine();
-    curline.style.display = 'flex';
-  });
+  // pipe support: split on | and run segments sequentially
+  // Quoted strings are respected — only split on unquoted pipes
+  var segments = (function(cmd) {
+    var parts = []; var cur = ''; var inSingle = false; var inDouble = false;
+    for (var ci = 0; ci < cmd.length; ci++) {
+      var ch = cmd[ci];
+      if (ch === "'" && !inDouble) { inSingle = !inSingle; cur += ch; }
+      else if (ch === '"' && !inSingle) { inDouble = !inDouble; cur += ch; }
+      else if (ch === '|' && !inSingle && !inDouble) { parts.push(cur.trim()); cur = ''; }
+      else { cur += ch; }
+    }
+    parts.push(cur.trim());
+    return parts.filter(function(p){ return p !== ''; });
+  })(expanded);
+
+  if (segments.length === 1) {
+    // no pipe — normal single request
+    fetch('terminal.php', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ cmd: expanded, user: loginUser, cols: termCols() })
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(data) { handleResponse(data); })
+    .catch(function() {
+      print('bash: connection error', 'e');
+      print('', 'n');
+      updateTitleAndPrompt();
+      renderLine();
+      curline.style.display = 'flex';
+    });
+  } else {
+    // pipe chain — run segments sequentially, passing output as stdin
+    var pipeStdin = null;
+    var segIdx = 0;
+    function runSegment() {
+      if (segIdx >= segments.length) { return; }
+      var seg = segments[segIdx];
+      var isLast = (segIdx === segments.length - 1);
+      segIdx++;
+      var payload = { cmd: seg, user: loginUser, cols: termCols() };
+      if (pipeStdin !== null) payload.stdin = pipeStdin;
+      fetch('terminal.php', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(payload)
+      })
+      .then(function(r){ return r.json(); })
+      .then(function(data) {
+        if (isLast) {
+          handleResponse(data);
+        } else {
+          // intermediate: capture output as stdin for next segment
+          // only plain output can be piped; special responses (fastfetch, dnf, etc.) terminate the pipe
+          if (data.output !== undefined && !data.error && !data.fastfetch && !data.sudo_prompt) {
+            pipeStdin = data.output;
+            if (data.cwd) cwd = data.cwd;
+            runSegment();
+          } else {
+            // something special or an error — just display it and stop
+            handleResponse(data);
+          }
+        }
+      })
+      .catch(function() {
+        print('bash: connection error', 'e');
+        print('', 'n');
+        updateTitleAndPrompt();
+        renderLine();
+        curline.style.display = 'flex';
+      });
+    }
+    runSegment();
+  }
 }
 
 // easter egg
@@ -898,6 +979,97 @@ function doSudoPrompt(sudoCmd) {
       updateTitleAndPrompt();
       curline.style.display = 'flex';
     }
+  };
+}
+
+// su — switch user
+function doSu(target, needsPassword) {
+  function switchTo(targetUser) {
+    loginUser = targetUser;
+    cwd = (targetUser === 'root') ? '/root' : '/home/' + targetUser;
+    print('', 'n');
+    updateTitleAndPrompt();
+    renderLine();
+    curline.style.display = 'flex';
+    scr.scrollTop = scr.scrollHeight;
+  }
+
+  if (!needsPassword) {
+    // root switching to another user — no password needed
+    switchTo(target);
+    return;
+  }
+
+  // prompt for target user's password
+  var prevMode = mode;
+  mode = 'su_password';
+  setPrompt('Password:', true);
+
+  var _origEnter = handleEnter;
+  handleEnter = function(val) {
+    handleEnter = _origEnter;
+    print('Password: ', 'n');
+    if (val.length >= 2) {
+      mode = 'command';
+      masked = false;
+      switchTo(target);
+    } else {
+      print('su: Authentication failure', 'e');
+      print('', 'n');
+      mode = 'command';
+      masked = false;
+      updateTitleAndPrompt();
+      curline.style.display = 'flex';
+    }
+  };
+}
+
+// passwd — interactive password change
+function doPasswd(target) {
+  print('Changing password for ' + target + '.', 'n');
+
+  // step 1: new password
+  var prevMode = mode;
+  mode = 'passwd_new';
+  setPrompt('New password:', true);
+
+  var _origEnter = handleEnter;
+  handleEnter = function(pw1) {
+    print('New password: ', 'n');
+
+    if (pw1.length < 2) {
+      handleEnter = _origEnter;
+      print('BAD PASSWORD: The password is shorter than 2 characters', 'e');
+      print('passwd: Authentication token manipulation error', 'e');
+      print('', 'n');
+      mode = 'command';
+      masked = false;
+      updateTitleAndPrompt();
+      curline.style.display = 'flex';
+      return;
+    }
+
+    // step 2: confirm
+    mode = 'passwd_confirm';
+    setPrompt('Retype new password:', true);
+
+    handleEnter = function(pw2) {
+      handleEnter = _origEnter;
+      print('Retype new password: ', 'n');
+      mode = 'command';
+      masked = false;
+      if (pw1 === pw2) {
+        print('passwd: all authentication tokens updated successfully.', 'n');
+      } else {
+        print('Sorry, passwords do not match.', 'e');
+        print('passwd: Authentication token manipulation error', 'e');
+      }
+      print('', 'n');
+      updateTitleAndPrompt();
+      renderLine();
+      curline.style.display = 'flex';
+      scr.scrollTop = scr.scrollHeight;
+    };
   };
 }
 

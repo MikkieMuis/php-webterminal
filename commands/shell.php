@@ -58,6 +58,7 @@ switch ($cmd) {
           . "  grep [OPTS] PAT F search file for pattern\n"
           . "  sort [-rnuf] [-k N] F sort lines of a file\n"
           . "  uniq [-cdu] [-i] F filter adjacent duplicate lines\n"
+          . "  find [PATH] [OPTS] search for files in directory tree\n"
           . "  diff [-u] F1 F2   compare two files\n"
           . "  du [-sh] [PATH]   disk usage of directory\n"
           . "  chmod MODE FILE   change file permissions (cosmetic)\n"
@@ -103,6 +104,7 @@ switch ($cmd) {
           . "  alias             list command aliases\n"
           . "  last              show recent login history\n"
           . "  sudo <cmd>        run command as superuser\n"
+          . "  su [USER]         switch user (default: root)\n"
           . "  passwd            change user password\n"
           . "  base64 [-d]       encode/decode base64\n"
           . "  bc                basic calculator\n"
@@ -150,6 +152,27 @@ switch ($cmd) {
         echo json_encode(['output'=>'', 'sudo_prompt'=>true, 'sudo_cmd'=>$args]);
         exit;
 
+    // su
+    case 'su':
+        // determine target user: `su`, `su -`, `su root` → root; `su - username` / `su username` → that user
+        $target = 'root';
+        if ($args !== '' && $args !== '-') {
+            $parts = preg_split('/\s+/', ltrim($args, '-'));
+            $target = trim($parts[count($parts)-1]);
+        }
+        if ($user === $target) {
+            out('');  // already that user — no-op like real su
+            exit;
+        }
+        if ($user === 'root') {
+            // root can su to anyone without a password
+            echo json_encode(['output'=>'', 'su_prompt'=>false, 'su_target'=>$target]);
+            exit;
+        }
+        // non-root: need password prompt
+        echo json_encode(['output'=>'', 'su_prompt'=>true, 'su_target'=>$target]);
+        exit;
+
     // man
     case 'man':
         if ($args === '') {
@@ -169,7 +192,8 @@ switch ($cmd) {
         if ($user !== 'root' && $target !== $user) {
             err('passwd: You may not view or modify password information for ' . $target . '.');
         }
-        out("Changing password for " . $target . ".\nNew password: \nRetype new password: \npasswd: all authentication tokens updated successfully.");
+        echo json_encode(['output'=>'', 'passwd_prompt'=>true, 'passwd_target'=>$target]);
+        exit;
 
     // base64
     case 'base64': {

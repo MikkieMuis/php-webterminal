@@ -118,9 +118,10 @@ function ls_dir($path, $long, $cols = 80) {
 // read input
 $raw_body = file_get_contents('php://input', false, null, 0, 4096);  // cap at 4 KB
 $body = json_decode($raw_body, true);
-$raw  = isset($body['cmd'])  ? substr(trim($body['cmd']),  0, 1024) : '';
-$user = isset($body['user']) ? substr(trim($body['user']), 0, 64)   : 'user';
-$cols = isset($body['cols']) ? max(20, min(500, (int)$body['cols'])) : 80;
+$raw   = isset($body['cmd'])   ? substr(trim($body['cmd']),   0, 1024) : '';
+$user  = isset($body['user'])  ? substr(trim($body['user']),  0, 64)   : 'user';
+$cols  = isset($body['cols'])  ? max(20, min(500, (int)$body['cols'])) : 80;
+$stdin = isset($body['stdin']) ? $body['stdin']                         : null;
 
 // Determine home directory for this user
 $userHome = ($user === 'root') ? '/root' : '/home/' . $user;
@@ -153,7 +154,7 @@ switch ($cmd) {
     case 'ls': case 'cd': case 'mkdir': case 'rmdir': case 'touch': case 'rm': case 'cat':
     case 'wc': case 'more': case 'less': case 'grep': case 'cp': case 'mv':
     case 'head': case 'tail': case 'du': case 'chmod': case 'chown': case 'diff': case 'sort':
-    case 'uniq':
+    case 'uniq': case 'find':
         require __DIR__ . '/commands/filesystem.php';
         break;
 
@@ -175,7 +176,7 @@ switch ($cmd) {
         break;
 
     case 'echo': case 'clear': case 'exit': case 'logout': case 'history':
-    case 'help': case 'alias': case 'last': case 'sudo': case 'man':
+    case 'help': case 'alias': case 'last': case 'sudo': case 'su': case 'man':
     case 'passwd': case 'base64': case 'bc':
         require __DIR__ . '/commands/shell.php';
         break;

@@ -152,6 +152,7 @@ switch ($cmd) {
 
     // cat
     case 'cat':
+        if ($args === '' && $stdin !== null) out($stdin);
         if ($args === '') err('cat: missing operand');
         $target = res_path($args);
         if (!isset($_SESSION['fs'][$target])) err('cat: ' . $args . ': No such file or directory');
@@ -167,15 +168,20 @@ switch ($cmd) {
             if ($a[0] === '-') { $flags .= ltrim($a, '-'); }
             else { $wcfile = $a; }
         }
-        if ($wcfile === '') err('wc: missing operand');
-        $target = res_path($wcfile);
-        if (!isset($_SESSION['fs'][$target])) err('wc: ' . $wcfile . ': No such file or directory');
-        if ($_SESSION['fs'][$target]['type'] === 'dir') err('wc: ' . $wcfile . ': Is a directory');
-        $content = $_SESSION['fs'][$target]['content'] ?? '';
+        if ($wcfile === '' && $stdin !== null) {
+            $content = $stdin;
+        } elseif ($wcfile === '') {
+            err('wc: missing operand');
+        } else {
+            $target = res_path($wcfile);
+            if (!isset($_SESSION['fs'][$target])) err('wc: ' . $wcfile . ': No such file or directory');
+            if ($_SESSION['fs'][$target]['type'] === 'dir') err('wc: ' . $wcfile . ': Is a directory');
+            $content = $_SESSION['fs'][$target]['content'] ?? '';
+        }
+        $name    = $wcfile !== '' ? basename($wcfile) : '';
         $lines   = $content === '' ? 0 : substr_count($content, "\n") + (substr($content, -1) !== "\n" ? 1 : 0);
         $words   = $content === '' ? 0 : str_word_count($content);
         $bytes   = strlen($content);
-        $name    = basename($target);
         // decide what to show based on flags
         if ($flags === '') {
             out(sprintf(' %4d %4d %4d %s', $lines, $words, $bytes, $name));
@@ -314,12 +320,25 @@ switch ($cmd) {
             if ($ignoreCase) $pcre .= 'i';
         }
 
-        // collect files to search
-        // if no files given and not recursive → error (we don't support stdin)
+        // collect files to search; fall back to stdin if available
         if (empty($targets)) {
             if ($recursive) {
-                $targets = ['/'];  // grep -r with no path defaults to current dir
                 $targets = [$_SESSION['cwd']];
+            } elseif ($stdin !== null) {
+                // grep on piped stdin — match directly, no file collection needed
+                $stdinLines = explode("\n", $stdin);
+                $out = [];
+                foreach ($stdinLines as $lnum => $line) {
+                    $matches = (bool)preg_match($pcre, $line);
+                    if ($invert) $matches = !$matches;
+                    if ($matches) {
+                        if ($countOnly) { /* counted below */ }
+                        elseif ($lineNums) $out[] = ($lnum + 1) . ':' . $line;
+                        else               $out[] = $line;
+                    }
+                }
+                if ($countOnly) out((string)count($out));
+                else out(implode("\n", $out));
             } else {
                 err('grep: no file operand — reading from stdin is not supported in this terminal');
             }
@@ -442,7 +461,14 @@ switch ($cmd) {
                     $headfiles[] = $a;
                 }
             }
-            if (empty($headfiles)) err('head: missing operand');
+            if (empty($headfiles)) {
+                if ($stdin !== null) {
+                    $content = $stdin;
+                    if ($bytes >= 0) { out(substr($content, 0, $bytes)); }
+                    else { $ls = explode("\n", $content); out(implode("\n", array_slice($ls, 0, $n))); }
+                }
+                err('head: missing operand');
+            }
             $multiFile = count($headfiles) > 1;
             $outParts  = [];
             foreach ($headfiles as $hf) {
@@ -514,7 +540,14 @@ switch ($cmd) {
                     $tailfiles[] = $a;
                 }
             }
-            if (empty($tailfiles)) err('tail: missing operand');
+            if (empty($tailfiles)) {
+                if ($stdin !== null) {
+                    $ls = explode("\n", $stdin);
+                    if ($bytes >= 0) { out(substr($stdin, max(0, strlen($stdin) - $bytes))); }
+                    else { out(implode("\n", array_slice($ls, -$n))); }
+                }
+                err('tail: missing operand');
+            }
             $multiFile = count($tailfiles) > 1;
             $outParts  = [];
             foreach ($tailfiles as $tf) {
@@ -789,10 +822,15 @@ switch ($cmd) {
             $i++;
         }
 
-        // collect lines from file(s)
+        // collect lines from file(s) or stdin
         $lines = [];
         if (empty($files)) {
-            err('sort: no input — reading from stdin not supported; provide a file');
+            if ($stdin !== null) {
+                $lines = explode("\n", $stdin);
+                if (end($lines) === '') array_pop($lines);
+            } else {
+                err('sort: no input — reading from stdin not supported; provide a file');
+            }
         }
         foreach ($files as $f) {
             $path = res_path($f);
@@ -832,6 +870,152 @@ switch ($cmd) {
         out(implode("\n", $lines));
     }
 
+    // find
+    case 'find': {
+        // Usage: find [PATH] [EXPRESSION...]
+        // Supported tests: -name, -type (f/d), -maxdepth, -mindepth, -size (+/-N[ckMG])
+        // Supported actions: -print (default), -delete
+        // Supported logic: -not / !, -and / -a, -or / -o  (implicit -and between tests)
+
+        // Parse argv
+        $searchRoot = null;   // starting path(s)
+        $namePattern = null;  // -name PATTERN (shell glob → PCRE)
+        $typeFilter  = null;  // 'f' or 'd'
+        $maxDepth    = PHP_INT_MAX;
+        $minDepth    = 0;
+        $sizeTest    = null;  // ['op'=>'+'/'-'/'=', 'bytes'=>N]
+        $doDelete    = false;
+        $doNot       = false; // flip next test
+        $searchRoots = [];
+
+        $i = 0;
+        while ($i < count($argv)) {
+            $a = $argv[$i];
+            switch ($a) {
+                case '-name':
+                    $namePattern = isset($argv[$i+1]) ? trim($argv[++$i], '"\'') : '';
+                    break;
+                case '-type':
+                    $typeFilter = isset($argv[$i+1]) ? $argv[++$i] : '';
+                    break;
+                case '-maxdepth':
+                    $maxDepth = isset($argv[$i+1]) ? max(0, (int)$argv[++$i]) : 0;
+                    break;
+                case '-mindepth':
+                    $minDepth = isset($argv[$i+1]) ? max(0, (int)$argv[++$i]) : 0;
+                    break;
+                case '-size':
+                    if (isset($argv[$i+1])) {
+                        $sv = $argv[++$i];
+                        $op = '=';
+                        if ($sv[0] === '+') { $op = '+'; $sv = substr($sv, 1); }
+                        elseif ($sv[0] === '-') { $op = '-'; $sv = substr($sv, 1); }
+                        $unit = strtolower(substr($sv, -1));
+                        $num  = (float)$sv;
+                        $mult = 512; // default: 512-byte blocks
+                        if ($unit === 'c') $mult = 1;
+                        elseif ($unit === 'k') $mult = 1024;
+                        elseif ($unit === 'm') $mult = 1048576;
+                        elseif ($unit === 'g') $mult = 1073741824;
+                        $sizeTest = ['op' => $op, 'bytes' => (int)($num * $mult)];
+                    }
+                    break;
+                case '-delete':
+                    $doDelete = true;
+                    break;
+                case '-print':
+                    break; // default action — ignore
+                case '-not': case '!':
+                    // simple toggle; we track it per-iteration — apply to namePattern/typeFilter check
+                    $doNot = !$doNot;
+                    $i++;
+                    continue 2;
+                case '-and': case '-a': case '-or': case '-o':
+                    break; // we don't support short-circuit logic fully, just skip
+                default:
+                    // if it doesn't start with - it's a path argument
+                    if ($a[0] !== '-') {
+                        $searchRoots[] = $a;
+                    }
+                    break;
+            }
+            $i++;
+        }
+
+        if (empty($searchRoots)) {
+            $searchRoots[] = '.';
+        }
+
+        // Convert shell glob pattern to PCRE (only * and ?)
+        function glob_to_pcre(string $glob): string {
+            $re = preg_quote($glob, '/');
+            $re = str_replace('\*', '.*', $re);
+            $re = str_replace('\?', '.', $re);
+            return '/^' . $re . '$/i';
+        }
+
+        $namePcre = ($namePattern !== null) ? glob_to_pcre($namePattern) : null;
+
+        // Walk the virtual filesystem under each root
+        $results = [];
+        foreach ($searchRoots as $rawRoot) {
+            $home = ($user === 'root') ? '/root' : '/home/' . $user;
+            $rootPath = res_path(str_replace('~', $home, $rawRoot));
+            if (!isset($_SESSION['fs'][$rootPath])) {
+                err('find: \'' . $rawRoot . '\': No such file or directory');
+            }
+            $rootDepth = substr_count(rtrim($rootPath, '/'), '/');
+
+            foreach ($_SESSION['fs'] as $p => $node) {
+                // must be at or under rootPath
+                if ($p !== $rootPath && strpos($p, rtrim($rootPath, '/') . '/') !== 0) continue;
+
+                $depth = substr_count(rtrim($p, '/'), '/') - $rootDepth;
+
+                if ($depth < $minDepth || $depth > $maxDepth) continue;
+
+                // -type test
+                $typeOk = true;
+                if ($typeFilter !== null) {
+                    if ($typeFilter === 'f') $typeOk = ($node['type'] === 'file');
+                    elseif ($typeFilter === 'd') $typeOk = ($node['type'] === 'dir');
+                }
+
+                // -name test
+                $nameOk = true;
+                if ($namePcre !== null) {
+                    $nameOk = (bool)preg_match($namePcre, basename($p));
+                }
+
+                // -size test
+                $sizeOk = true;
+                if ($sizeTest !== null) {
+                    $fileBytes = isset($node['content']) ? strlen($node['content']) : 0;
+                    if ($sizeTest['op'] === '+') $sizeOk = ($fileBytes > $sizeTest['bytes']);
+                    elseif ($sizeTest['op'] === '-') $sizeOk = ($fileBytes < $sizeTest['bytes']);
+                    else $sizeOk = ($fileBytes === $sizeTest['bytes']);
+                }
+
+                $match = $typeOk && $nameOk && $sizeOk;
+                if ($doNot) $match = !$match;
+
+                if (!$match) continue;
+
+                if ($doDelete) {
+                    if ($p !== $rootPath) unset($_SESSION['fs'][$p]);
+                } else {
+                    // format output path relative to the search root arg
+                    $relPath = ($rawRoot === '.' || $rawRoot === '')
+                        ? '.' . substr($p, strlen(rtrim($rootPath, '/')))
+                        : rtrim($rawRoot, '/') . substr($p, strlen(rtrim($rootPath, '/')));
+                    $results[] = $relPath;
+                }
+            }
+        }
+
+        out(implode("\n", $results));
+    }
+
     // uniq
     case 'uniq': {
         // Usage: uniq [-c] [-d] [-u] [-i] [FILE]
@@ -858,16 +1042,19 @@ switch ($cmd) {
         }
 
         if ($uniqfile === '') {
-            err('uniq: no input — reading from stdin not supported; provide a file');
+            if ($stdin !== null) {
+                $content = $stdin;
+            } else {
+                err('uniq: no input — reading from stdin not supported; provide a file');
+            }
+        } else {
+            $path = res_path($uniqfile);
+            if (!isset($_SESSION['fs'][$path]))
+                err('uniq: ' . $uniqfile . ': No such file or directory');
+            if ($_SESSION['fs'][$path]['type'] === 'dir')
+                err('uniq: ' . $uniqfile . ': Is a directory');
+            $content = $_SESSION['fs'][$path]['content'] ?? '';
         }
-
-        $path = res_path($uniqfile);
-        if (!isset($_SESSION['fs'][$path]))
-            err('uniq: ' . $uniqfile . ': No such file or directory');
-        if ($_SESSION['fs'][$path]['type'] === 'dir')
-            err('uniq: ' . $uniqfile . ': Is a directory');
-
-        $content = $_SESSION['fs'][$path]['content'] ?? '';
         $lines   = explode("\n", $content);
         // strip trailing empty line from files ending in \n
         if (end($lines) === '') array_pop($lines);
