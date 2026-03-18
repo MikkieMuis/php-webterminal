@@ -226,10 +226,13 @@ var curcursor = document.getElementById('curcursor');
 var mobileInput = document.getElementById('mobileInput');
 
 // --- Mobile soft-keyboard support ---
-// Track whether the last interaction was a touch (mobile) or mouse/keyboard (desktop).
-var lastWasTouch = false;
-document.addEventListener('touchstart', function() { lastWasTouch = true;  }, {passive: true});
-document.addEventListener('mousedown',  function() { lastWasTouch = false; }, {passive: true});
+// mobileActive = true while the hidden input is focused (i.e. soft keyboard is up).
+// When active, the document keydown handler skips printable characters so only
+// the 'input' event processes them — preventing double-insertion.
+var mobileActive = false;
+
+mobileInput.addEventListener('focus', function() { mobileActive = true;  });
+mobileInput.addEventListener('blur',  function() { mobileActive = false; });
 
 // Tap anywhere on the terminal → focus the hidden input so the soft keyboard appears.
 document.getElementById('terminal').addEventListener('click', function() {
@@ -237,40 +240,36 @@ document.getElementById('terminal').addEventListener('click', function() {
   mobileInput.focus();
 });
 
-// Android fires 'input' instead of 'keydown' for most soft-keyboard presses.
-// We read the new character by comparing the input value before/after.
-// Guard with lastWasTouch so desktop physical keyboards don't double-fire.
-mobileInput.addEventListener('input', function(e) {
+// 'input' event: fired by Android soft keyboard for every character typed.
+// We read whatever landed in the field, feed it to handleKey(), then clear the field.
+mobileInput.addEventListener('input', function() {
   if (mode === 'boot' || mode === 'dead') return;
-  if (!lastWasTouch) { mobileInput.value = ''; return; } // desktop — ignore, let document keydown handle it
   var val = mobileInput.value;
-  if (!val) return;               // e.g. after a Backspace that emptied the field
-  // Insert each character that was typed (usually just one)
+  mobileInput.value = '';
+  if (!val) return;
   for (var i = 0; i < val.length; i++) {
     handleKey(val[i], false, false, false);
   }
-  mobileInput.value = '';         // clear so next input event gives us only the new chars
 });
 
-// Android Backspace fires as a keydown with key='Backspace' (or 'Delete') on some
-// browsers, but also as an input event with inputType='deleteContentBackward'.
+// 'keydown' on the hidden input: used for control keys (Enter, Backspace, arrows).
+// stopPropagation() prevents the document keydown handler from also firing.
 mobileInput.addEventListener('keydown', function(e) {
   if (mode === 'boot' || mode === 'dead') return;
   var ctrl = e.ctrlKey || e.metaKey;
-  if (e.key === 'Backspace' || e.key === 'Delete' ||
-      e.key === 'Enter' ||
-      e.key === 'ArrowLeft' || e.key === 'ArrowRight' ||
-      e.key === 'ArrowUp'   || e.key === 'ArrowDown' ||
-      e.key === 'Home' || e.key === 'End' || ctrl) {
+  var isControl = e.key === 'Backspace' || e.key === 'Delete' ||
+                  e.key === 'Enter' ||
+                  e.key === 'ArrowLeft' || e.key === 'ArrowRight' ||
+                  e.key === 'ArrowUp'   || e.key === 'ArrowDown' ||
+                  e.key === 'Home' || e.key === 'End' || ctrl;
+  // Always stop propagation so document keydown never double-fires while mobile is active.
+  e.stopPropagation();
+  if (isControl) {
     e.preventDefault();
-    e.stopPropagation();          // prevent document keydown from double-firing
-    mobileInput.value = '';       // keep field empty
+    mobileInput.value = '';
     handleKey(e.key, e.ctrlKey, e.altKey, e.metaKey);
-  } else if (lastWasTouch && e.key.length === 1) {
-    // Printable key on mobile: stop propagation so document keydown doesn't also fire.
-    // The 'input' event will handle the actual character insertion.
-    e.stopPropagation();
   }
+  // Printable keys: do nothing here — the 'input' event handles them.
 });
 
 
@@ -471,6 +470,12 @@ function handleKey(key, ctrlKey, altKey, metaKey) {
 // native keydown — always active (handles both standalone and focused-iframe)
 document.addEventListener('keydown', function(e) {
   if (mode === 'boot' || mode === 'dead') return;
+
+  // When mobile input is focused, it handles everything via its own keydown+input
+  // listeners (with stopPropagation). Nothing should reach here from that path.
+  // But as a safety net, skip printable characters if mobileActive to avoid
+  // double-insertion when a physical keyboard is used on a touch device.
+  if (mobileActive && e.key.length === 1 && !e.ctrlKey && !e.metaKey) return;
 
   // Ctrl+Shift+C — copy selected text to clipboard, or typed line if nothing selected
   if (e.ctrlKey && e.shiftKey && (e.key === 'c' || e.key === 'C')) {
