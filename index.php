@@ -607,7 +607,7 @@ function handleEnter(val) {
 
   } else if (mode === 'password') {
     print('Password: ', 'n');
-    var pwOk = val.length > 8;
+    var pwOk = val.length >= 2;
     if (pwOk) {
       doLoginSuccess();
     } else {
@@ -870,7 +870,7 @@ function doSudoPrompt(sudoCmd) {
     handleEnter = _origEnter;
     print('[sudo] password for ' + loginUser + ': ', 'n');
 
-    if (val.length > 8) {
+    if (val.length >= 2) {
       // password accepted — re-run the inner command as root
       mode = 'command';
       masked = false;
