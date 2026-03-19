@@ -770,27 +770,37 @@ switch ($cmd) {
         out(implode("\n", $out));
     }
 
-    // more / less
-    case 'more':
-    case 'less':
-        if ($args === '') err($cmd . ': missing operand — try \'' . $cmd . ' <file>\'');
-        // strip any leading flags (e.g. less -N)
-        $pagerfile = '';
-        foreach ($argv as $a) {
-            if ($a[0] !== '-') { $pagerfile = $a; break; }
-        }
-        if ($pagerfile === '') err($cmd . ': missing filename');
-        $target = res_path($pagerfile);
-        if (!isset($_SESSION['fs'][$target])) err($cmd . ': ' . $pagerfile . ': No such file or directory');
-        if ($_SESSION['fs'][$target]['type'] === 'dir') err($cmd . ': ' . $pagerfile . ': Is a directory');
-        $content = $_SESSION['fs'][$target]['content'] ?? '';
-        // return pager payload — JS will handle rendering + scrolling
-        echo json_encode([
-            'pager'    => $content,
-            'pagercmd' => $cmd,
-            'filename' => basename($target),
-        ]);
-        exit;
+     // more / less
+     case 'more':
+     case 'less':
+         // strip any leading flags (e.g. less -N)
+         $pagerfile = '';
+         foreach ($argv as $a) {
+             if ($a[0] !== '-') { $pagerfile = $a; break; }
+         }
+         // if no file given, fall back to stdin (pipe support)
+         if ($pagerfile === '') {
+             if ($stdin !== null) {
+                 echo json_encode([
+                     'pager'    => $stdin,
+                     'pagercmd' => $cmd,
+                     'filename' => 'stdin',
+                 ]);
+                 exit;
+             }
+             err($cmd . ': missing operand — try \'' . $cmd . ' <file>\'');
+         }
+         $target = res_path($pagerfile);
+         if (!isset($_SESSION['fs'][$target])) err($cmd . ': ' . $pagerfile . ': No such file or directory');
+         if ($_SESSION['fs'][$target]['type'] === 'dir') err($cmd . ': ' . $pagerfile . ': Is a directory');
+         $content = $_SESSION['fs'][$target]['content'] ?? '';
+         // return pager payload — JS will handle rendering + scrolling
+         echo json_encode([
+             'pager'    => $content,
+             'pagercmd' => $cmd,
+             'filename' => basename($target),
+         ]);
+         exit;
 
     // sort
     case 'sort': {

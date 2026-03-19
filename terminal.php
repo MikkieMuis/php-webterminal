@@ -185,6 +185,10 @@ switch ($cmd) {
         require __DIR__ . '/commands/editors.php';
         break;
 
+    case 'mysql': case 'mariadb':
+        require __DIR__ . '/commands/database.php';
+        break;
+
     case 'dnf':
         require __DIR__ . '/commands/package.php';
         break;

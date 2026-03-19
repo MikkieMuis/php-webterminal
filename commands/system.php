@@ -213,7 +213,7 @@ switch ($cmd) {
             'git'=>'/usr/bin/git','php'=>'/usr/bin/php','python3'=>'/usr/bin/python3',
             'perl'=>'/usr/bin/perl','ruby'=>'/usr/bin/ruby','node'=>'/usr/bin/node',
             'npm'=>'/usr/bin/npm','pip3'=>'/usr/bin/pip3',
-            'mysql'=>'/usr/bin/mysql','redis-cli'=>'/usr/bin/redis-cli',
+            'mysql'=>'/usr/bin/mysql','mariadb'=>'/usr/bin/mariadb','redis-cli'=>'/usr/bin/redis-cli',
             'top'=>'/usr/bin/top','htop'=>'/usr/bin/htop','ps'=>'/bin/ps',
             'kill'=>'/bin/kill','df'=>'/bin/df','free'=>'/usr/bin/free',
             'ifconfig'=>'/sbin/ifconfig','ip'=>'/sbin/ip','ping'=>'/usr/bin/ping',

@@ -123,6 +123,38 @@ html, body {
   display:none;
 }
 
+/* mysql overlay */
+#mysql-overlay {
+  position:absolute; top:0; left:0; width:100%; height:100%;
+  background:#0a0a0a; color:#e0e0e0;
+  font-family:'JetBrains Mono','Courier New',monospace; font-size:13px;
+  display:flex; flex-direction:column;
+  z-index:102; overflow:hidden;
+}
+#mysql-titlebar {
+  background:#e0e0e0; color:#0a0a0a;
+  padding:1px 4px; flex-shrink:0;
+  font-size:13px; font-weight:bold;
+  white-space:nowrap; overflow:hidden;
+}
+#mysql-output {
+  flex:1; overflow-y:auto; padding:4px 6px;
+  white-space:pre; word-break:break-all;
+}
+.mysql-error { color:#ff5555; }
+#mysql-inputline {
+  display:flex; align-items:center; padding:2px 6px;
+  flex-shrink:0; border-top:1px solid #333;
+  white-space:pre;
+}
+#mysql-prompt-label { color:#e0e0e0; }
+#mysql-prompt-db    { color:#7ec8e3; }
+#mysql-input        { color:#e0e0e0; flex:1; }
+#mysql-cursor {
+  display:inline-block; width:0.6ch; height:1.1em;
+  background:#e0e0e0; animation:blink 1s infinite;
+}
+
 /* joe overlay — styled after real JOE 4.6 */
 #joe-overlay {
   position:absolute; top:0; left:0; width:100%; height:100%;
@@ -211,11 +243,21 @@ html, body {
     <div id="joe-content"></div>
     <div id="joe-status-bottom"></div>
   </div>
+
+  <!-- mysql overlay (hidden until mysql/mariadb command runs) -->
+  <div id="mysql-overlay" style="display:none;">
+    <div id="mysql-titlebar">MariaDB 10.5.22</div>
+    <div id="mysql-output"></div>
+    <div id="mysql-inputline">
+      <span id="mysql-prompt-label">MariaDB [</span><span id="mysql-prompt-db">none</span><span id="mysql-prompt-label">]&gt;&nbsp;</span><span id="mysql-input"></span><span id="mysql-cursor">&nbsp;</span>
+    </div>
+  </div>
 </div>
 
 <script src="js/pager.js?v=<?php echo filemtime(__DIR__.'/js/pager.js'); ?>"></script>
 <script src="js/nano.js?v=<?php echo filemtime(__DIR__.'/js/nano.js'); ?>"></script>
 <script src="js/joe.js?v=<?php echo filemtime(__DIR__.'/js/joe.js'); ?>"></script>
+<script src="js/mysql.js?v=<?php echo filemtime(__DIR__.'/js/mysql.js'); ?>"></script>
 <script>
 // DOM refs
 var scr       = document.getElementById('screen');
@@ -373,8 +415,9 @@ function renderLine() {
 
 function handleKey(key, ctrlKey, altKey, metaKey) {
   if (mode === 'boot') return;
-  if (nanoActive) { nanoKey(key, ctrlKey); return; }
-  if (joeActive)  { joeKey(key, ctrlKey, altKey); return; }
+  if (nanoActive)  { nanoKey(key, ctrlKey); return; }
+  if (joeActive)   { joeKey(key, ctrlKey, altKey); return; }
+  if (mysqlActive) { mysqlKey(key, ctrlKey); return; }
   if (pagerActive) { pagerKey(key); return; }
   if (topActive) return;
   if (htopActive) return;
@@ -761,6 +804,8 @@ function handleResponse(data) {
     doNano(data); return;
   } else if (data.joe) {
     doJoe(data); return;
+  } else if (data.mysql) {
+    doMysql(data); return;
   } else if (data.pager !== undefined) {
     doPager(data); return;
   } else if (data.sudo_prompt) {
