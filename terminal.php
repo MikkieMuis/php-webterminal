@@ -134,6 +134,27 @@ if ($_SESSION['cwd'] === '/root' && $user !== 'root') {
 
 if ($raw === '') out('');
 
+// variable and tilde expansion
+// Expand ~ and $VAR before parsing so commands see resolved paths/values.
+$_var_map = [
+    'HOME'     => $userHome,
+    'USER'     => $user,
+    'LOGNAME'  => $user,
+    'PWD'      => $_SESSION['cwd'],
+    'PATH'     => '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin',
+    'SHELL'    => '/bin/bash',
+    'HOSTNAME' => CONF_HOSTNAME,
+    'TERM'     => 'xterm-256color',
+    'LANG'     => 'en_US.UTF-8',
+];
+// expand ${VAR} and $VAR (longest-match via named vars above)
+$raw = preg_replace_callback('/\$\{([A-Za-z_][A-Za-z0-9_]*)\}|\$([A-Za-z_][A-Za-z0-9_]*)/', function($m) use ($_var_map) {
+    $name = $m[1] !== '' ? $m[1] : $m[2];
+    return array_key_exists($name, $_var_map) ? $_var_map[$name] : $m[0];
+}, $raw);
+// expand leading ~ and ~/ to home directory
+$raw = preg_replace('/(?<=\s|^)~(?=\/|$|\s)/', $userHome, $raw);
+
 // log command (cap entry length and total entries)
 $_SESSION['cmdlog'][] = substr($raw, 0, 1024);
 if (count($_SESSION['cmdlog']) > 100) {
@@ -154,7 +175,7 @@ switch ($cmd) {
     case 'ls': case 'cd': case 'mkdir': case 'rmdir': case 'touch': case 'rm': case 'cat':
     case 'wc': case 'more': case 'less': case 'grep': case 'cp': case 'mv':
     case 'head': case 'tail': case 'du': case 'chmod': case 'chown': case 'diff': case 'sort':
-    case 'uniq': case 'find':
+    case 'uniq': case 'find': case 'cut': case 'tr':
         require __DIR__ . '/commands/filesystem.php';
         break;
 
@@ -166,7 +187,7 @@ switch ($cmd) {
     case 'date': case 'df': case 'free': case 'ps': case 'top': case 'htop':
     case 'id': case 'env': case 'printenv': case 'which':
     case 'fastfetch': case 'neofetch': case 'systemctl': case 'php':
-    case 'exa': case 'firewall-cmd':
+    case 'exa': case 'firewall-cmd': case 'kill': case 'pkill':
         require __DIR__ . '/commands/system.php';
         break;
 

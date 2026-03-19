@@ -1125,4 +1125,247 @@ switch ($cmd) {
 
         out(implode("\n", $out));
     }
+
+    // cut
+    case 'cut': {
+        // Flags: -d DELIM, -f FIELDS, -c CHARS, -s (suppress lines without delimiter)
+        $delim   = "\t";
+        $fields  = null;  // array of 1-based field indices, or null
+        $chars   = null;  // array of 1-based char positions, or null
+        $suppress = false;
+        $cutfile  = '';
+
+        $i = 0;
+        while ($i < count($argv)) {
+            $a = $argv[$i];
+            if ($a === '-d' || $a === '--delimiter') {
+                $delim = isset($argv[$i+1]) ? $argv[$i+1] : "\t";
+                // unescape common escapes
+                $delim = str_replace('\t', "\t", $delim);
+                $i += 2; continue;
+            }
+            if (preg_match('/^-d(.+)$/', $a, $m)) { $delim = str_replace('\t', "\t", $m[1]); $i++; continue; }
+            if ($a === '-f' || $a === '--fields') {
+                $fspec  = isset($argv[$i+1]) ? $argv[$i+1] : '';
+                $fields = [];
+                foreach (explode(',', $fspec) as $part) {
+                    if (strpos($part, '-') !== false) {
+                        [$lo, $hi] = explode('-', $part, 2);
+                        $lo = ($lo === '') ? 1 : (int)$lo;
+                        $hi = ($hi === '') ? 999 : (int)$hi;
+                        for ($n = $lo; $n <= $hi; $n++) $fields[] = $n;
+                    } else {
+                        $fields[] = (int)$part;
+                    }
+                }
+                $i += 2; continue;
+            }
+            if (preg_match('/^-f(.+)$/', $a, $m)) {
+                $fspec  = $m[1]; $fields = [];
+                foreach (explode(',', $fspec) as $part) {
+                    if (strpos($part, '-') !== false) {
+                        [$lo, $hi] = explode('-', $part, 2);
+                        $lo = ($lo === '') ? 1 : (int)$lo;
+                        $hi = ($hi === '') ? 999 : (int)$hi;
+                        for ($n = $lo; $n <= $hi; $n++) $fields[] = $n;
+                    } else {
+                        $fields[] = (int)$part;
+                    }
+                }
+                $i++; continue;
+            }
+            if ($a === '-c' || $a === '--characters') {
+                $cspec = isset($argv[$i+1]) ? $argv[$i+1] : '';
+                $chars = [];
+                foreach (explode(',', $cspec) as $part) {
+                    if (strpos($part, '-') !== false) {
+                        [$lo, $hi] = explode('-', $part, 2);
+                        $lo = ($lo === '') ? 1 : (int)$lo;
+                        $hi = ($hi === '') ? 999 : (int)$hi;
+                        for ($n = $lo; $n <= $hi; $n++) $chars[] = $n;
+                    } else {
+                        $chars[] = (int)$part;
+                    }
+                }
+                $i += 2; continue;
+            }
+            if (preg_match('/^-c(.+)$/', $a, $m)) {
+                $cspec = $m[1]; $chars = [];
+                foreach (explode(',', $cspec) as $part) {
+                    if (strpos($part, '-') !== false) {
+                        [$lo, $hi] = explode('-', $part, 2);
+                        $lo = ($lo === '') ? 1 : (int)$lo;
+                        $hi = ($hi === '') ? 999 : (int)$hi;
+                        for ($n = $lo; $n <= $hi; $n++) $chars[] = $n;
+                    } else {
+                        $chars[] = (int)$part;
+                    }
+                }
+                $i++; continue;
+            }
+            if ($a === '-s' || $a === '--only-delimited') { $suppress = true; $i++; continue; }
+            if ($a[0] !== '-') { $cutfile = $a; }
+            $i++;
+        }
+
+        if ($fields === null && $chars === null)
+            err('cut: you must specify a list of bytes, characters, or fields');
+
+        // get input
+        if ($cutfile !== '') {
+            $path = res_path($cutfile);
+            if (!isset($_SESSION['fs'][$path])) err('cut: ' . $cutfile . ': No such file or directory');
+            if ($_SESSION['fs'][$path]['type'] === 'dir') err('cut: ' . $cutfile . ': Is a directory');
+            $content = $_SESSION['fs'][$path]['content'] ?? '';
+        } elseif ($stdin !== null) {
+            $content = $stdin;
+        } else {
+            err('cut: no input — provide a file or pipe input');
+        }
+
+        $lines = explode("\n", $content);
+        if (end($lines) === '') array_pop($lines);
+
+        $result = [];
+        foreach ($lines as $line) {
+            if ($chars !== null) {
+                // character mode
+                $out_chars = '';
+                foreach ($chars as $pos) {
+                    if ($pos >= 1 && $pos <= strlen($line)) $out_chars .= $line[$pos-1];
+                }
+                $result[] = $out_chars;
+            } else {
+                // field mode
+                if (strpos($line, $delim) === false) {
+                    if ($suppress) continue;
+                    $result[] = $line; // no delimiter: pass through whole line
+                } else {
+                    $parts = explode($delim, $line);
+                    $selected = [];
+                    foreach ($fields as $f) {
+                        if (isset($parts[$f-1])) $selected[] = $parts[$f-1];
+                    }
+                    $result[] = implode($delim, $selected);
+                }
+            }
+        }
+
+        out(implode("\n", $result));
+    }
+
+    // tr
+    case 'tr': {
+        // Usage: tr [OPTION]... SET1 [SET2]
+        // Flags: -d (delete), -s (squeeze), -c/-C (complement)
+        $delete     = false;
+        $squeeze    = false;
+        $complement = false;
+        $sets       = [];
+
+        foreach ($argv as $a) {
+            if ($a === '-d' || $a === '--delete')            { $delete = true; continue; }
+            if ($a === '-s' || $a === '--squeeze-repeats')   { $squeeze = true; continue; }
+            if ($a === '-c' || $a === '-C' || $a === '--complement') { $complement = true; continue; }
+            // combined short flags e.g. -ds
+            if (preg_match('/^-[dscC]+$/', $a)) {
+                if (strpos($a, 'd') !== false) $delete = true;
+                if (strpos($a, 's') !== false) $squeeze = true;
+                if (strpos($a, 'c') !== false || strpos($a, 'C') !== false) $complement = true;
+                continue;
+            }
+            $sets[] = $a;
+        }
+
+        // expand a tr set-string into an array of characters
+        $expand_set = function(string $s): array {
+            // unescape: \n \t \r
+            $s = str_replace('\n', "\n", $s);
+            $s = str_replace('\t', "\t", $s);
+            $s = str_replace('\r', "\r", $s);
+            $chars = [];
+            $len = strlen($s);
+            $i = 0;
+            while ($i < $len) {
+                // range: a-z
+                if ($i+2 < $len && $s[$i+1] === '-') {
+                    $lo = ord($s[$i]);
+                    $hi = ord($s[$i+2]);
+                    if ($lo <= $hi) {
+                        for ($c = $lo; $c <= $hi; $c++) $chars[] = chr($c);
+                    }
+                    $i += 3;
+                } else {
+                    $chars[] = $s[$i];
+                    $i++;
+                }
+            }
+            return $chars;
+        };
+
+        // get input from stdin or pipe
+        if ($stdin !== null) {
+            $content = $stdin;
+        } else {
+            err('tr: no input — tr reads from stdin; pipe input to it');
+        }
+
+        $set1 = isset($sets[0]) ? $expand_set($sets[0]) : [];
+        $set2 = isset($sets[1]) ? $expand_set($sets[1]) : [];
+
+        if ($delete) {
+            // -d: delete characters in set1
+            $del_chars = array_flip($set1);
+            $out = '';
+            for ($i = 0; $i < strlen($content); $i++) {
+                $c = $content[$i];
+                if (!isset($del_chars[$c])) $out .= $c;
+            }
+            $content = $out;
+        } else {
+            // translate set1 → set2
+            if (!empty($set1) && !empty($set2)) {
+                // pad set2 to length of set1 with last char of set2
+                $last = end($set2);
+                while (count($set2) < count($set1)) $set2[] = $last;
+                $map = [];
+                foreach ($set1 as $idx => $ch) $map[$ch] = $set2[$idx];
+                $out = '';
+                for ($i = 0; $i < strlen($content); $i++) {
+                    $c = $content[$i];
+                    $out .= isset($map[$c]) ? $map[$c] : $c;
+                }
+                $content = $out;
+            }
+        }
+
+        if ($squeeze && !empty($set2)) {
+            // squeeze repeated characters that are in set2
+            $sq_chars = array_flip($set2);
+            $out = '';
+            $prev = '';
+            for ($i = 0; $i < strlen($content); $i++) {
+                $c = $content[$i];
+                if ($c === $prev && isset($sq_chars[$c])) continue;
+                $out .= $c;
+                $prev = $c;
+            }
+            $content = $out;
+        } elseif ($squeeze && $delete && !empty($set1)) {
+            // -ds: squeeze set1 chars in remaining output — unusual but handle
+            $sq_chars = array_flip($set1);
+            $out = '';
+            $prev = '';
+            for ($i = 0; $i < strlen($content); $i++) {
+                $c = $content[$i];
+                if ($c === $prev && isset($sq_chars[$c])) continue;
+                $out .= $c;
+                $prev = $c;
+            }
+            $content = $out;
+        }
+
+        // strip trailing newline added by echo so output is clean
+        out(rtrim($content, "\n"));
+    }
 }

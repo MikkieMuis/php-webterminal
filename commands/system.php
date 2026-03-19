@@ -737,4 +737,72 @@ switch ($cmd) {
         err("php: invalid option -- '" . ltrim($flag, '-') . "'\nUsage: php [options] [-r code] [--] [args...]\n       php [options] [-] [args...]\nUse --help to get this help.");
         break;
     }
+
+    // kill
+    case 'kill': {
+        // fake process table — same PIDs as ps/top
+        $known = [1=>'systemd', 432=>'systemd-journald', 914=>'sshd',
+                  1105=>'apache2', 1212=>'mysqld', 1380=>'redis-server',
+                  1512=>'crond', 1890=>'php-fpm', 2048=>'-bash'];
+
+        // parse: kill [-SIGNAL] PID [PID...]
+        $signal  = 15; // SIGTERM default
+        $targets = [];
+        foreach ($argv as $a) {
+            if (preg_match('/^-(\d+)$/', $a, $m))        { $signal = (int)$m[1]; }
+            elseif (preg_match('/^-([A-Z]+)$/i', $a, $m)){ /* named signal — ignored */ }
+            elseif (ctype_digit($a))                      { $targets[] = (int)$a; }
+        }
+
+        if (empty($targets)) err('kill: usage: kill [-s sigspec | -n signum | -sigspec] pid | jobspec ... or kill -l [sigspec]');
+
+        foreach ($targets as $pid) {
+            if ($pid === 2048) {
+                err('kill: (' . $pid . ') - Operation not permitted');
+            }
+            if (!isset($known[$pid])) {
+                err('kill: (' . $pid . ') - No such process');
+            }
+            // success — bash kill prints nothing on success
+        }
+        out('');
+        break;
+    }
+
+    // pkill
+    case 'pkill': {
+        $known = [
+            ['pid'=>1,    'cmd'=>'systemd'],
+            ['pid'=>432,  'cmd'=>'systemd-journald'],
+            ['pid'=>914,  'cmd'=>'sshd'],
+            ['pid'=>1105, 'cmd'=>'apache2'],
+            ['pid'=>1212, 'cmd'=>'mysqld'],
+            ['pid'=>1380, 'cmd'=>'redis-server'],
+            ['pid'=>1512, 'cmd'=>'crond'],
+            ['pid'=>1890, 'cmd'=>'php-fpm'],
+            ['pid'=>2048, 'cmd'=>'-bash'],
+        ];
+
+        // strip signal flags, collect pattern
+        $pattern = '';
+        foreach ($argv as $a) {
+            if ($a[0] === '-') continue;
+            $pattern = $a;
+            break;
+        }
+
+        if ($pattern === '') err('pkill: no matching processes found');
+
+        $matched = false;
+        foreach ($known as $p) {
+            if (stripos($p['cmd'], $pattern) !== false) {
+                if ($p['pid'] === 2048) err('pkill: operation not permitted');
+                $matched = true;
+            }
+        }
+
+        if (!$matched) err('pkill: no matching processes found');
+        out('');
+        break;
+    }
 }
