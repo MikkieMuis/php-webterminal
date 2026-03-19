@@ -343,11 +343,83 @@ var cwd       = '/root';
 var cmdLog    = [];
 var histIdx   = -1;
 
+// ANSI colour map — SGR codes → CSS colour strings
+// Supports: 0 reset, 1 bold, 30-37 fg, 90-97 bright fg, 38;5;N 256-colour fg
+var _ansiColors = {
+  '30':'#2e2e2e','31':'#ff4444','32':'#44cc44','33':'#cccc00',
+  '34':'#5588ff','35':'#cc44cc','36':'#44cccc','37':'#e0e0e0',
+  '90':'#808080','91':'#ff6666','92':'#66ff66','93':'#ffff66',
+  '94':'#6699ff','95':'#ff66ff','96':'#66ffff','97':'#ffffff'
+};
+
+// Convert a string containing ANSI SGR escape sequences to safe HTML.
+// Each segment between escapes becomes a <span> with inline style.
+function ansiToHtml(text) {
+  // fast path — no escape sequences
+  if (text.indexOf('\x1b') === -1) {
+    return escHtml(text);
+  }
+  var out = '';
+  var curStyle = '';   // current CSS style string
+  var open = false;    // whether a <span> is open
+  // split on ESC[ ... m  sequences
+  var re = /\x1b\[([0-9;]*)m/g;
+  var last = 0; var m;
+  while ((m = re.exec(text)) !== null) {
+    // text before this escape
+    var seg = text.slice(last, m.index);
+    if (seg) {
+      if (open) out += escHtml(seg);
+      else if (curStyle) { out += '<span style="' + curStyle + '">' + escHtml(seg) + '</span>'; }
+      else out += escHtml(seg);
+    }
+    last = re.lastIndex;
+    // parse SGR params
+    var params = m[1] === '' ? ['0'] : m[1].split(';');
+    var i = 0; var bold = false; var fg = '';
+    // close current span
+    if (open) { out += '</span>'; open = false; }
+    curStyle = '';
+    while (i < params.length) {
+      var p = params[i];
+      if (p === '0' || p === '') { bold = false; fg = ''; }
+      else if (p === '1') { bold = true; }
+      else if (_ansiColors[p]) { fg = _ansiColors[p]; }
+      else if (p === '38' && params[i+1] === '5' && params[i+2] !== undefined) {
+        // 256-colour: map to nearest named colour (simplified)
+        var n = parseInt(params[i+2], 10);
+        if (n < 8)  fg = _ansiColors[String(30+n)];
+        else if (n < 16) fg = _ansiColors[String(90+(n-8))];
+        else fg = '#e0e0e0'; // punt on 216-cube
+        i += 2;
+      }
+      i++;
+    }
+    var parts = [];
+    if (fg) parts.push('color:' + fg);
+    if (bold) parts.push('font-weight:bold');
+    if (parts.length) { curStyle = parts.join(';'); open = true; out += '<span style="' + curStyle + '">'; }
+  }
+  // remainder
+  var tail = text.slice(last);
+  if (tail) out += escHtml(tail);
+  if (open) out += '</span>';
+  return out;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
 // output helpers
 function print(text, cls) {
   var s = document.createElement('span');
   s.className = 'ln ' + (cls || 'n');
-  s.textContent = text;
+  if (text.indexOf('\x1b') !== -1) {
+    s.innerHTML = ansiToHtml(text);
+  } else {
+    s.textContent = text;
+  }
   scr.insertBefore(s, curline);
   scr.scrollTop = scr.scrollHeight;
 }

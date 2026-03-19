@@ -4,6 +4,30 @@
 //  Archive commands (zip, unzip, tar) live in commands/archive.php
 //  Receives: $cmd, $args, $argv, $user, $body  (from terminal.php scope)
 
+// Return ANSI-coloured name for ls output.
+// Dirs → bold blue, symlinks → cyan, executables → green, rest → plain.
+function ls_color(string $name, string $type, string $path): string {
+    $ESC = "\x1b";
+    if ($type === 'dir') {
+        return $ESC . '[1;34m' . $name . $ESC . '[0m';
+    }
+    // symlink: name suffix convention OR path under /bin /usr/bin etc. contains ->
+    if (substr($name, -5) === '~link') {
+        return $ESC . '[0;36m' . rtrim($name, '~link') . $ESC . '[0m';
+    }
+    // executables: paths under bin/sbin dirs, or .sh extension
+    $execDirs = ['/bin/', '/sbin/', '/usr/bin/', '/usr/sbin/', '/usr/local/bin/', '/usr/libexec/'];
+    foreach ($execDirs as $d) {
+        if (strpos($path, $d) === 0) {
+            return $ESC . '[0;32m' . $name . $ESC . '[0m';
+        }
+    }
+    if (substr($name, -3) === '.sh') {
+        return $ESC . '[0;32m' . $name . $ESC . '[0m';
+    }
+    return $name;
+}
+
 switch ($cmd) {
 
     // ls
@@ -29,7 +53,8 @@ switch ($cmd) {
             $node = $_SESSION['fs'][$target];
             $sz   = isset($node['content']) ? strlen($node['content']) : 0;
             $mt   = isset($node['mtime']) ? date('M d H:i', $node['mtime']) : 'Mar  9 08:11';
-            out($long ? sprintf('-rw-r--r--  1 root root %6d  %s  %s', $sz, $mt, basename($target)) : basename($target));
+            $colored = ls_color(basename($target), 'file', $target);
+            out($long ? sprintf('-rw-r--r--  1 root root %6d  %s  %s', $sz, $mt, $colored) : $colored);
         }
         $fs      = $_SESSION['fs'];
         $prefix  = rtrim($target, '/');
@@ -44,7 +69,8 @@ switch ($cmd) {
             $size  = isset($node['content']) ? strlen($node['content']) : 4096;
             $mtime_raw = isset($node['mtime']) ? $node['mtime'] : 1741507200;
             $mtime = date('M d H:i', $mtime_raw);
-            $entries[] = ['name'=>$name,'perm'=>$perm,'size'=>$size,'mtime'=>$mtime,'mtime_raw'=>$mtime_raw,'type'=>$node['type']];
+            $colored = ls_color($name, $node['type'], $p);
+            $entries[] = ['name'=>$name,'colored'=>$colored,'perm'=>$perm,'size'=>$size,'mtime'=>$mtime,'mtime_raw'=>$mtime_raw,'type'=>$node['type']];
         }
         if (empty($entries)) { out(''); }
 
@@ -59,7 +85,9 @@ switch ($cmd) {
         if ($reverse) { $entries = array_reverse($entries); }
 
         if (!$long) {
+            // use raw names for column-width calculation (ANSI codes inflate strlen)
             $names    = array_map(function($e){ return $e['name']; }, $entries);
+            $colored  = array_map(function($e){ return $e['colored']; }, $entries);
             $maxLen   = max(array_map('strlen', $names) ?: [0]);
             $colWidth = $maxLen + 2;
             $termW    = isset($cols) ? $cols : 80;
@@ -72,7 +100,9 @@ switch ($cmd) {
                     $idx = $c * $rows + $r;
                     if ($idx >= count($names)) break;
                     $isLast = ($c === $numCols - 1) || (($idx + $rows) >= count($names));
-                    $parts[] = $isLast ? $names[$idx] : str_pad($names[$idx], $colWidth);
+                    // pad using raw name length so columns stay aligned
+                    $pad = $isLast ? 0 : ($colWidth - strlen($names[$idx]));
+                    $parts[] = $colored[$idx] . str_repeat(' ', max(0, $pad));
                 }
                 $lines[] = implode('', $parts);
             }
@@ -80,7 +110,7 @@ switch ($cmd) {
         }
         $lines = ['total ' . (count($entries) * 8)];
         foreach ($entries as $e) {
-            $lines[] = sprintf('%s  2 root root %6d  %s  %s', $e['perm'], $e['size'], $e['mtime'], $e['name']);
+            $lines[] = sprintf('%s  2 root root %6d  %s  %s', $e['perm'], $e['size'], $e['mtime'], $e['colored']);
         }
         out(implode("\n", $lines));
 
@@ -743,28 +773,28 @@ switch ($cmd) {
         if ($unified) {
             $mt1 = isset($_SESSION['fs'][$f1]['mtime']) ? date('Y-m-d H:i:s', $_SESSION['fs'][$f1]['mtime']) : '1970-01-01 00:00:00';
             $mt2 = isset($_SESSION['fs'][$f2]['mtime']) ? date('Y-m-d H:i:s', $_SESSION['fs'][$f2]['mtime']) : '1970-01-01 00:00:00';
-            $out[] = '--- ' . $diffargs[0] . "\t" . $mt1;
-            $out[] = '+++ ' . $diffargs[1] . "\t" . $mt2;
+            $out[] = "\x1b[1m--- " . $diffargs[0] . "\t" . $mt1 . "\x1b[0m";
+            $out[] = "\x1b[1m+++ " . $diffargs[1] . "\t" . $mt2 . "\x1b[0m";
             $ctx = 3;
             foreach ($hunks as $h) {
                 $a1 = max(0, $h['i0']-$ctx); $a2 = min($n1, $h['i1']+$ctx);
                 $b1 = max(0, $h['j0']-$ctx); $b2 = min($n2, $h['j1']+$ctx);
-                $out[] = '@@ -' . ($a1+1) . ',' . ($a2-$a1) . ' +' . ($b1+1) . ',' . ($b2-$b1) . ' @@';
+                $out[] = "\x1b[0;36m@@ -" . ($a1+1) . ',' . ($a2-$a1) . ' +' . ($b1+1) . ',' . ($b2-$b1) . " @@\x1b[0m";
                 for ($k=$a1; $k<$h['i0']; $k++) $out[] = ' ' . $lines1[$k];
-                for ($k=$h['i0']; $k<$h['i1']; $k++) $out[] = '-' . $lines1[$k];
-                for ($k=$h['j0']; $k<$h['j1']; $k++) $out[] = '+' . $lines2[$k];
+                for ($k=$h['i0']; $k<$h['i1']; $k++) $out[] = "\x1b[0;31m-" . $lines1[$k] . "\x1b[0m";
+                for ($k=$h['j0']; $k<$h['j1']; $k++) $out[] = "\x1b[0;32m+" . $lines2[$k] . "\x1b[0m";
                 for ($k=$h['i1']; $k<$a2; $k++) $out[] = ' ' . $lines1[$k];
             }
         } else {
             foreach ($hunks as $h) {
                 $r1 = ($h['i0']+1) . (($h['i1']-$h['i0']>1) ? ',' . $h['i1'] : '');
                 $r2 = ($h['j0']+1) . (($h['j1']-$h['j0']>1) ? ',' . $h['j1'] : '');
-                if ($h['i0'] === $h['i1'])      { $out[] = $h['i0'] . 'a' . $r2; }
-                elseif ($h['j0'] === $h['j1'])  { $out[] = $r1 . 'd' . $h['j0']; }
-                else                            { $out[] = $r1 . 'c' . $r2; }
-                for ($k=$h['i0']; $k<$h['i1']; $k++) $out[] = '< ' . $lines1[$k];
+                if ($h['i0'] === $h['i1'])      { $out[] = "\x1b[0;36m" . $h['i0'] . 'a' . $r2 . "\x1b[0m"; }
+                elseif ($h['j0'] === $h['j1'])  { $out[] = "\x1b[0;36m" . $r1 . 'd' . $h['j0'] . "\x1b[0m"; }
+                else                            { $out[] = "\x1b[0;36m" . $r1 . 'c' . $r2 . "\x1b[0m"; }
+                for ($k=$h['i0']; $k<$h['i1']; $k++) $out[] = "\x1b[0;31m< " . $lines1[$k] . "\x1b[0m";
                 if ($h['i0'] !== $h['i1'] && $h['j0'] !== $h['j1']) $out[] = '---';
-                for ($k=$h['j0']; $k<$h['j1']; $k++) $out[] = '> ' . $lines2[$k];
+                for ($k=$h['j0']; $k<$h['j1']; $k++) $out[] = "\x1b[0;32m> " . $lines2[$k] . "\x1b[0m";
             }
         }
         out(implode("\n", $out));

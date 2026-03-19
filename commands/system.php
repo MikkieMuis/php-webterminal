@@ -294,11 +294,13 @@ switch ($cmd) {
         usort($entries, function($a,$b){ return strcmp($a['name'],$b['name']); });
 
         if ($isTree) {
-            $lines = [basename($targetPath) . '/'];
+            $lines = ["\x1b[1;34m" . basename($targetPath) . "/\x1b[0m"];
             $cnt = count($entries);
             foreach ($entries as $i => $e) {
                 $prefix2 = ($i === $cnt - 1) ? '└── ' : '├── ';
-                $lines[] = $prefix2 . ($e['isDir'] ? $e['name'] . '/' : $e['name']);
+                $lines[] = $prefix2 . ($e['isDir']
+                    ? "\x1b[1;34m" . $e['name'] . "/\x1b[0m"
+                    : $e['name']);
             }
             out(implode("\n", $lines));
         }
@@ -316,27 +318,35 @@ switch ($cmd) {
             foreach ($entries as $e) {
                 $gitCol = $hasGit ? sprintf('  %-4s', '--') : '';
                 $sizeCol = $e['isDir'] ? sprintf('%6s', '-') : sprintf('%6d', is_numeric(trim($e['size'])) ? (int)trim($e['size']) : 0);
+                $coloredName = $e['isDir']
+                    ? "\x1b[1;34m" . $e['name'] . "/\x1b[0m"
+                    : $e['name'];
                 $lines[] = sprintf('%-10s  %s  %-6s  %-16s%s  %s',
-                    $e['perm'], $sizeCol, 'root', $e['mtime'], $gitCol,
-                    $e['isDir'] ? $e['name'] . '/' : $e['name']);
+                    $e['perm'], $sizeCol, 'root', $e['mtime'], $gitCol, $coloredName);
             }
             out(implode("\n", $lines));
         }
 
         // short format — column layout
-        $names = array_map(function($e){ return $e['isDir'] ? $e['name'].'/' : $e['name']; }, $entries);
-        $maxLen   = max(array_map('strlen', $names));
+        $rawNames = array_map(function($e){ return $e['isDir'] ? $e['name'].'/' : $e['name']; }, $entries);
+        $coloredNames = array_map(function($e){
+            return $e['isDir']
+                ? "\x1b[1;34m" . $e['name'] . "/\x1b[0m"
+                : $e['name'];
+        }, $entries);
+        $maxLen   = max(array_map('strlen', $rawNames));
         $colWidth = $maxLen + 2;
         $numCols  = max(1, (int)floor(($cols ?: 80) / $colWidth));
-        $rows     = (int)ceil(count($names) / $numCols);
+        $rows     = (int)ceil(count($rawNames) / $numCols);
         $out = [];
         for ($r = 0; $r < $rows; $r++) {
             $parts = [];
             for ($c = 0; $c < $numCols; $c++) {
                 $idx = $c * $rows + $r;
-                if ($idx >= count($names)) break;
-                $isLast2 = ($c === $numCols - 1) || (($idx + $rows) >= count($names));
-                $parts[] = $isLast2 ? $names[$idx] : str_pad($names[$idx], $colWidth);
+                if ($idx >= count($rawNames)) break;
+                $isLast2 = ($c === $numCols - 1) || (($idx + $rows) >= count($rawNames));
+                $pad = $isLast2 ? 0 : ($colWidth - strlen($rawNames[$idx]));
+                $parts[] = $coloredNames[$idx] . str_repeat(' ', max(0, $pad));
             }
             $out[] = implode('', $parts);
         }
