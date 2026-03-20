@@ -552,8 +552,13 @@ switch ($cmd) {
             'crond'    => ['label' => 'crond.service',    'desc' => 'Command Scheduler',                         'pid' => 1089, 'port' => ''],
         ];
 
-        // Services that are stopped by default
-        $stopped = ['nginx'];
+        // Services that are stopped/disabled by default
+        if (!isset($_SESSION['svc_stopped'])) {
+            $_SESSION['svc_stopped']  = ['nginx'];      // inactive by default
+            $_SESSION['svc_disabled'] = ['nginx'];      // disabled by default
+        }
+        $stopped  = $_SESSION['svc_stopped'];
+        $disabled = $_SESSION['svc_disabled'];
 
         // no subcommand
         if ($subcmd === '') {
@@ -562,22 +567,25 @@ switch ($cmd) {
 
         // list-units
         if ($subcmd === 'list-units') {
-            $lines = [
-                '  UNIT                    LOAD   ACTIVE SUB     DESCRIPTION',
-                '  crond.service           loaded active running Command Scheduler',
-                '  firewalld.service       loaded active running firewalld - dynamic firewall daemon',
-                '  httpd.service           loaded active running The Apache HTTP Server',
-                '  mariadb.service         loaded active running MariaDB 10.5 database server',
-                '  php-fpm.service         loaded active running The PHP FastCGI Process Manager',
-                '  sshd.service            loaded active running OpenSSH server daemon',
-                '  nginx.service           loaded active exited  The nginx HTTP and reverse proxy server',
-                '',
-                'LOAD   = Reflects whether the unit definition was properly loaded.',
-                'ACTIVE = The high-level unit activation state.',
-                'SUB    = The low-level unit activation state.',
-                '',
-                '7 loaded units listed.',
-            ];
+            $lines = ['  UNIT                    LOAD   ACTIVE SUB     DESCRIPTION'];
+            // Output all known services in a fixed display order
+            $listOrder = ['crond','firewalld','httpd','mariadb','php-fpm','sshd','nginx'];
+            foreach ($listOrder as $sn) {
+                if (!isset($services[$sn])) continue;
+                $svc    = $services[$sn];
+                $unit   = str_pad($svc['label'], 23);
+                if (in_array($sn, $stopped)) {
+                    $lines[] = '  ' . $unit . ' loaded active exited  ' . $svc['desc'];
+                } else {
+                    $lines[] = '  ' . $unit . ' loaded active running ' . $svc['desc'];
+                }
+            }
+            $lines[] = '';
+            $lines[] = 'LOAD   = Reflects whether the unit definition was properly loaded.';
+            $lines[] = 'ACTIVE = The high-level unit activation state.';
+            $lines[] = 'SUB    = The low-level unit activation state.';
+            $lines[] = '';
+            $lines[] = count($listOrder) . ' loaded units listed.';
             out(implode("\n", $lines));
         }
 
@@ -591,18 +599,47 @@ switch ($cmd) {
                 err('Failed to ' . $subcmd . ' ' . $service . '.service: Unit ' . $service . '.service not found.');
             }
 
-            $svc    = $services[$service];
-            $isStopped = in_array($service, $stopped);
+            $svc       = $services[$service];
+            $isStopped  = in_array($service, $stopped);
+            $isDisabled = in_array($service, $disabled);
 
             if ($subcmd === 'status') {
                 $active  = $isStopped ? 'inactive (dead)' : 'active (running)';
-                $dotchar = $isStopped ? 'x' : '*';
                 $since   = date('D Y-m-d H:i:s T', time() - rand(3600, 86400));
-                $lines   = [
-                    $dotchar . ' ' . $svc['label'] . ' - ' . $svc['desc'],
-                    '   Loaded: loaded (/usr/lib/systemd/system/' . $svc['label'] . '; enabled; vendor preset: disabled)',
-                    '   Active: ' . $active . ' since ' . $since,
-                ];
+
+                // ANSI colour codes matching real systemd output
+                $bold       = "\e[1m";
+                $reset      = "\e[0m";
+                $green      = "\e[32m";
+                $red        = "\e[31m";
+                $white      = "\e[37m";
+                $boldGreen  = "\e[1;32m";
+                $boldWhite  = "\e[1;37m";
+
+                // dot + service name line
+                if ($isStopped) {
+                    $dotLine = $white . '●' . $reset . ' ' . $bold . $svc['label'] . ' - ' . $svc['desc'] . $reset;
+                } else {
+                    $dotLine = $green . '●' . $reset . ' ' . $bold . $svc['label'] . ' - ' . $svc['desc'] . $reset;
+                }
+
+                // Loaded line — enabled/disabled state from session
+                $enabledStr = $isDisabled
+                    ? $white . 'disabled' . $reset
+                    : $green . 'enabled'  . $reset;
+                $loadedLine = '   Loaded: loaded (/usr/lib/systemd/system/' . $svc['label'] . '; '
+                    . $enabledStr
+                    . '; vendor preset: ' . $white . 'disabled' . $reset . ')';
+
+                // Active line — colour depends on state
+                if ($isStopped) {
+                    $activeLine = '   Active: ' . $white . $active . $reset . ' since ' . $since;
+                } else {
+                    $activeLine = '   Active: ' . $boldGreen . $active . $reset . ' since ' . $since;
+                }
+
+                $lines = [ $dotLine, $loadedLine, $activeLine ];
+
                 if (!$isStopped) {
                     $lines[] = '  Process: ' . $svc['pid'] . ' ExecStart=/usr/sbin/' . $service . ' (code=exited, status=0/SUCCESS)';
                     $lines[] = ' Main PID: ' . $svc['pid'] . ' (' . $service . ')';
@@ -615,26 +652,31 @@ switch ($cmd) {
             }
 
             if ($subcmd === 'start') {
-                if ($isStopped) {
-                    // Remove from stopped list (cosmetic — session state not tracked per service here)
-                    out('');
-                }
-                out(''); // already running — systemctl start is silent on success
+                $_SESSION['svc_stopped'] = array_values(array_diff($_SESSION['svc_stopped'], [$service]));
+                out('');
             }
 
             if ($subcmd === 'stop') {
-                out(''); // silent on success
+                if (!in_array($service, $_SESSION['svc_stopped'])) {
+                    $_SESSION['svc_stopped'][] = $service;
+                }
+                out('');
             }
 
             if ($subcmd === 'restart') {
-                out(''); // silent on success
+                $_SESSION['svc_stopped'] = array_values(array_diff($_SESSION['svc_stopped'], [$service]));
+                out('');
             }
 
             if ($subcmd === 'enable') {
+                $_SESSION['svc_disabled'] = array_values(array_diff($_SESSION['svc_disabled'], [$service]));
                 out('Created symlink /etc/systemd/system/multi-user.target.wants/' . $svc['label'] . ' → /usr/lib/systemd/system/' . $svc['label'] . '.');
             }
 
             if ($subcmd === 'disable') {
+                if (!in_array($service, $_SESSION['svc_disabled'])) {
+                    $_SESSION['svc_disabled'][] = $service;
+                }
                 out('Removed /etc/systemd/system/multi-user.target.wants/' . $svc['label'] . '.');
             }
 

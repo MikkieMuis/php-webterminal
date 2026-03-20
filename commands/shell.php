@@ -22,19 +22,12 @@ switch ($cmd) {
 
     // history
     case 'history':
-        $base = [
-            '    1  apt-get update',
-            '    2  apt-get upgrade -y',
-            '    3  df -h',
-            '    4  free -h',
-            '    5  ps aux',
-        ];
-        $log    = $_SESSION['cmdlog'];
-        $offset = count($base) + 1;
+        $log = array_reverse($_SESSION['cmdlog']);
+        $lines = [];
         foreach ($log as $i => $c) {
-            $base[] = sprintf('%5d  %s', $offset + $i, $c);
+            $lines[] = sprintf('%5d  %s', $i + 1, $c);
         }
-        out(implode("\n", $base));
+        out(implode("\n", $lines));
 
     // help
     case 'help':

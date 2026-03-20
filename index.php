@@ -66,7 +66,7 @@ html, body {
   font-size:15px;
   color:#e0e0e0;
   margin-top:2px;
-  gap:0.5ch;
+  gap:0;
 }
 #curprompt  { white-space:nowrap; color:#e0e0e0; }
 #curtyped   { color:#e0e0e0; }
@@ -452,7 +452,7 @@ function updateTitleAndPrompt() {
   var userHome  = (loginUser === 'root') ? '/root' : '/home/' + loginUser;
   var shortCwd  = cwd === userHome ? '~' : cwd.replace(userHome + '/', '~/');
   var sigil     = (loginUser === 'root') ? '#' : '$';
-  var p = loginUser + '@' + sysHostname + ':' + shortCwd + sigil;
+  var p = loginUser + '@' + sysHostname + ':' + shortCwd + sigil + '\u00a0';
   curprompt.textContent = p;
   renderLine();
 }
@@ -749,7 +749,7 @@ document.addEventListener('keydown', function(e) {
       renderLine();
       // print the prompt + typed text + ^C as a cancelled line
       var promptText = curprompt.textContent;
-      print(promptText + ' ' + cancelled + '^C', 'n');
+      print(promptText + cancelled + '^C', 'n');
       print('', 'n');
       if (mode === 'command') updateTitleAndPrompt();
       curline.style.display = 'flex';
