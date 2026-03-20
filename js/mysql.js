@@ -36,7 +36,7 @@ var mysqlSchema = {
             cols: ['id','username','email','password_hash','created_at','last_login','role','active'],
             rows: [
                 [1,'admin','admin@example.com','$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.','2025-01-15 09:00:00','2026-03-11 14:22:01','admin',1],
-                [2,'mike','mike@example.com','$2y$10$TKh8H1.PBR5TFyEAQxQfouQ7B4J3.NcVeXq2M4TlvUXj3AAED0OK2','2025-02-01 10:30:00','2026-03-10 18:45:33','user',1],
+                [2,'guest','guest@example.com','$2y$10$TKh8H1.PBR5TFyEAQxQfouQ7B4J3.NcVeXq2M4TlvUXj3AAED0OK2','2025-02-01 10:30:00','2026-03-10 18:45:33','user',1],
                 [3,'deploy','deploy@example.com','$2y$10$YBjL1jNY0EEZXQ7IvCHiWuBb.3RKI.4K2hOw4T6G5Dz.H5YxqR22','2025-02-14 08:00:00','2026-03-09 07:10:00','deploy',1],
                 [4,'sarah','sarah@example.com','$2y$10$eRx7k3K8bU1nR2fzZP9KbO.qN5yQz1T6H7vJj3M0WoLXiKf9D1Lri','2025-03-01 11:15:00','2026-02-28 20:05:17','user',1],
                 [5,'testuser','test@example.com','$2y$10$HgVx3cY5n6L.I7mKa9vHnO8XH2F3Sp7E6Kz4MoRLcQj0Nu5fG9Yq2','2025-06-01 00:00:00',null,'user',0]

@@ -172,6 +172,8 @@ switch ($cmd) {
     case 'id':
         if ($user === 'root') {
             out('uid=0(root) gid=0(root) groups=0(root),1(bin),2(daemon),3(sys),4(adm),6(disk),10(wheel)');
+        } elseif ($user === 'deploy') {
+            out('uid=1001(deploy) gid=1001(deploy) groups=1001(deploy),10(wheel),999(docker)');
         } else {
             out('uid=1002(' . $user . ') gid=1002(' . $user . ') groups=1002(' . $user . '),10(wheel)');
         }

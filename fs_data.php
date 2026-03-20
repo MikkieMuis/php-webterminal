@@ -216,7 +216,7 @@ CleanupModulesOnExit=yes"],
 "# /etc/fstab\n# <device>          <mount>    <type>  <options>           <dump> <pass>\n/dev/sda1           /          xfs     defaults            0      1\n/dev/sda2           /boot      xfs     defaults            0      2\n/dev/sdb1           /mnt/db    xfs     defaults,noatime    0      2\n/dev/sdc1           /mnt/backup xfs    defaults,noatime    0      2\ntmpfs               /tmp       tmpfs   defaults,nosuid,nodev 0    0\ntmpfs               /dev/shm   tmpfs   defaults            0      0"],
     '/etc/fuse.conf'        => ['type'=>'file','mtime'=>mktime(0,0,0,10,2,2024),'content'=>"# /etc/fuse.conf\n# Set the maximum number of FUSE mounts allowed to non-root users.\n# The default is 1000.\n#mount_max = 1000\nuser_allow_other"],
     '/etc/group'            => ['type'=>'file','mtime'=>mktime(0,0,0,5,28,2025),'content'=>
-"root:x:0:\nbin:x:1:\ndaemon:x:2:\nsys:x:3:\nadm:x:4:\ntty:x:5:\ndisk:x:6:\nlp:x:7:\nmem:x:8:\nkmem:x:9:\nwheel:x:10:\nmail:x:12:\nman:x:15:\ndialout:x:18:\nfloppy:x:19:\ngames:x:20:\ntape:x:33:\nvideo:x:39:\nftp:x:50:\nlock:x:54:\naudio:x:63:\nnobody:x:65534:\nusers:x:100:\nhttpd:x:48:\nmysql:x:27:\nnginx:x:998:\nphp-fpm:x:997:\nsshd:x:74:\nchrony:x:994:\ndeploy:x:1001:\ndocker:x:999:deploy\nmike:x:1002:"],
+"root:x:0:\nbin:x:1:\ndaemon:x:2:\nsys:x:3:\nadm:x:4:\ntty:x:5:\ndisk:x:6:\nlp:x:7:\nmem:x:8:\nkmem:x:9:\nwheel:x:10:\nmail:x:12:\nman:x:15:\ndialout:x:18:\nfloppy:x:19:\ngames:x:20:\ntape:x:33:\nvideo:x:39:\nftp:x:50:\nlock:x:54:\naudio:x:63:\nnobody:x:65534:\nusers:x:100:\nhttpd:x:48:\nmysql:x:27:\nnginx:x:998:\nphp-fpm:x:997:\nsshd:x:74:\nchrony:x:994:\ndeploy:x:1001:\ndocker:x:999:deploy\nguest:x:1002:"],
     '/etc/host.conf'        => ['type'=>'file','mtime'=>mktime(0,0,0,6,23,2020),'content'=>"multi on"],
     '/etc/hostname'         => ['type'=>'file','mtime'=>mktime(0,0,0,2,14,2024),'content'=>$H],
     '/etc/hosts'            => ['type'=>'file','mtime'=>mktime(0,0,0,2,14,2024),'content'=>
@@ -234,7 +234,7 @@ CleanupModulesOnExit=yes"],
     '/etc/machine-id'       => ['type'=>'file','mtime'=>mktime(0,0,0,10,27,2023),'content'=>"a3f2c1d4e5b6789012345678abcdef01"],
     '/etc/magic'            => ['type'=>'file','mtime'=>mktime(0,0,0,4,3,2024),'content'=>'# magic(5) - file magic patterns'],
     '/etc/man_db.conf'      => ['type'=>'file','mtime'=>mktime(14,56,0,9,21,2023),'content'=>"MANDB_MAP\t/usr/man\t/var/cache/man/fsstnd\nMANDB_MAP\t/usr/share/man\t/var/cache/man\nMANDB_MAP\t/usr/local/man\t/var/cache/man/oldlocal\nMANDB_MAP\t/usr/local/share/man\t/var/cache/man/local"],
-    '/etc/motd'             => ['type'=>'file','mtime'=>mktime(0,0,0,3,17,2026),'content'=>"############################################################\n#   php-webterminal — free Linux practice sandbox          #\n#   https://github.com/MikkieMuis/php-webterminal          #\n############################################################\n\nWelcome!  This is a simulated AlmaLinux 9.7 environment.\nFeel free to explore — nothing you do here is permanent.\n\nLogin with any username.  Use any password of at least 2 characters.\nUse sudo or su to escalate to root.\n\nUseful commands to get started:\n  help          show all available commands\n  fastfetch     system information overview\n  ls /          explore the filesystem\n  man <cmd>     read a manual page\n\n"],
+    '/etc/motd'             => ['type'=>'file','mtime'=>mktime(0,0,0,3,17,2026),'content'=>"############################################################\n#   php-webterminal — free Linux practice sandbox          #\n#   https://github.com/MikkieMuis/php-webterminal          #\n############################################################\n\nWelcome!  This is a simulated AlmaLinux 9.7 environment.\nFeel free to explore — nothing you do here is permanent.\n\nUse sudo or su to escalate to root (any password >= 2 characters).\n\nUseful commands to get started:\n  help          show all available commands\n  fastfetch     system information overview\n  ls /          explore the filesystem\n  man <cmd>     read a manual page\n\n"],
     '/etc/my.cnf'           => ['type'=>'file','mtime'=>mktime(0,0,0,2,24,2024),'content'=>
 "[mysqld]\ndatadir=/mnt/db/mysql\nsocket=/var/lib/mysql/mysql.sock\nlog-error=/var/log/mariadb/mariadb.log\npid-file=/run/mariadb/mariadb.pid\n\n[client]\nport=3306\nsocket=/var/lib/mysql/mysql.sock\n\n!includedir /etc/my.cnf.d"],
     '/etc/nanorc'           => ['type'=>'file','mtime'=>mktime(0,0,0,3,4,2026),'content'=>"# GNU nano config\nset autoindent\nset linenumbers\nset mouse\nset smooth\nset tabsize 4\nset tabstospaces\ninclude /usr/share/nano/*.nanorc"],
@@ -245,7 +245,7 @@ CleanupModulesOnExit=yes"],
     '/etc/os-release'       => ['type'=>'file','mtime'=>mktime(11,15,0,11,11,2024),'content'=>
 "NAME=\"AlmaLinux\"\nVERSION=\"9.7 (Seafoam Ocelot)\"\nID=almalinux\nID_LIKE=\"rhel centos fedora\"\nVERSION_ID=\"9.7\"\nPLATFORM_ID=\"platform:el9\"\nPRETTY_NAME=\"AlmaLinux 9.7 (Seafoam Ocelot)\"\nANSI_COLOR=\"0;34\"\nLOGO=\"fedora-logo-icon\"\nCPE_NAME=\"cpe:/o:almalinux:almalinux:9::baseos\"\nHOME_URL=\"https://almalinux.org/\"\nDOCUMENTATION_URL=\"https://wiki.almalinux.org/\"\nBUG_REPORT_URL=\"https://bugs.almalinux.org/\"\nALMA_SUPPORT_END_DATE=\"2032-06-01\""],
     '/etc/passwd'           => ['type'=>'file','mtime'=>mktime(0,0,0,5,28,2025),'content'=>
-"root:x:0:0:root:/root:/bin/bash\nbin:x:1:1:bin:/bin:/sbin/nologin\ndaemon:x:2:2:daemon:/sbin:/sbin/nologin\nadm:x:3:4:adm:/var/adm:/sbin/nologin\nlp:x:4:7:lp:/var/spool/lpd:/sbin/nologin\nsync:x:5:0:sync:/sbin:/bin/sync\nshutdown:x:6:0:shutdown:/sbin:/sbin/shutdown\nhalt:x:7:0:halt:/sbin:/sbin/halt\nmail:x:8:12:mail:/var/spool/mail:/sbin/nologin\nnobody:x:65534:65534:Kernel Overflow User:/:/sbin/nologin\nhttpd:x:48:48:Apache:/usr/share/httpd:/sbin/nologin\nmysql:x:27:27:MySQL Server:/var/lib/mysql:/sbin/nologin\nnginx:x:998:998:Nginx web server:/var/lib/nginx:/sbin/nologin\nphp-fpm:x:997:997:php-fpm:/run/php-fpm:/sbin/nologin\nsshd:x:74:74:Privilege-separated SSH:/usr/share/empty.sshd:/sbin/nologin\nchrony:x:994:994::/var/lib/chrony:/sbin/nologin\ndeploy:x:1001:1001:Deploy User:/home/deploy:/bin/bash\nmike:x:1002:1002:Mike:/home/mike:/bin/bash"],
+"root:x:0:0:root:/root:/bin/bash\nbin:x:1:1:bin:/bin:/sbin/nologin\ndaemon:x:2:2:daemon:/sbin:/sbin/nologin\nadm:x:3:4:adm:/var/adm:/sbin/nologin\nlp:x:4:7:lp:/var/spool/lpd:/sbin/nologin\nsync:x:5:0:sync:/sbin:/bin/sync\nshutdown:x:6:0:shutdown:/sbin:/sbin/shutdown\nhalt:x:7:0:halt:/sbin:/sbin/halt\nmail:x:8:12:mail:/var/spool/mail:/sbin/nologin\nnobody:x:65534:65534:Kernel Overflow User:/:/sbin/nologin\nhttpd:x:48:48:Apache:/usr/share/httpd:/sbin/nologin\nmysql:x:27:27:MySQL Server:/var/lib/mysql:/sbin/nologin\nnginx:x:998:998:Nginx web server:/var/lib/nginx:/sbin/nologin\nphp-fpm:x:997:997:php-fpm:/run/php-fpm:/sbin/nologin\nsshd:x:74:74:Privilege-separated SSH:/usr/share/empty.sshd:/sbin/nologin\nchrony:x:994:994::/var/lib/chrony:/sbin/nologin\ndeploy:x:1001:1001:Deploy User:/home/deploy:/bin/bash\nguest:x:1002:1002:Guest:/home/guest:/bin/bash"],
     '/etc/php-fpm.conf'     => ['type'=>'file','mtime'=>mktime(6,30,0,2,11,2026),'content'=>"[global]\npid = /run/php-fpm/php-fpm.pid\nerror_log = /var/log/php-fpm/error.log\nlog_level = warning\ndaemonize = yes\ninclude=/etc/php-fpm.d/*.conf"],
     '/etc/php-fpm.d/www.conf' => ['type'=>'file','mtime'=>mktime(15,26,0,3,4,2026),'content'=>
 "[www]\nuser = apache\ngroup = apache\nlisten = /run/php-fpm/www.sock\nlisten.acl_users = apache,nginx\npm = dynamic\npm.max_children = 50\npm.start_servers = 5\npm.min_spare_servers = 5\npm.max_spare_servers = 35\npm.max_requests = 500\nslowlog = /var/log/php-fpm/www-slow.log\nphp_admin_value[error_log] = /var/log/php-fpm/www-error.log\nphp_admin_flag[log_errors] = on\nphp_value[session.save_handler] = files\nphp_value[session.save_path] = /var/lib/php/session\nphp_value[soap.wsdl_cache_dir] = /var/lib/php/wsdlcache"],
@@ -317,7 +317,7 @@ CleanupModulesOnExit=yes"],
 
     // /etc/ssh
     '/etc/ssh/sshd_config'      => ['type'=>'file','mtime'=>mktime(2,52,0,12,18,2024),'content'=>
-"Port 22\nAddressFamily any\nListenAddress 0.0.0.0\nPermitRootLogin prohibit-password\nPubkeyAuthentication yes\nPasswordAuthentication no\nPermitEmptyPasswords no\nChallengeResponseAuthentication no\nUsePAM yes\nX11Forwarding no\nPrintMotd yes\nAcceptEnv LANG LC_*\nSubsystem sftp /usr/lib/openssh/sftp-server\nAllowUsers root deploy\nMaxAuthTries 3\nClientAliveInterval 300\nClientAliveCountMax 2\nBanner /etc/issue.net"],
+"Port 22\nAddressFamily any\nListenAddress 0.0.0.0\nPermitRootLogin prohibit-password\nPubkeyAuthentication yes\nPasswordAuthentication no\nPermitEmptyPasswords no\nChallengeResponseAuthentication no\nUsePAM yes\nX11Forwarding no\nPrintMotd yes\nAcceptEnv LANG LC_*\nSubsystem sftp /usr/lib/openssh/sftp-server\nAllowUsers root deploy guest\nMaxAuthTries 3\nClientAliveInterval 300\nClientAliveCountMax 2\nBanner /etc/issue.net"],
     '/etc/ssh/ssh_config'       => ['type'=>'file','mtime'=>mktime(0,0,0,2,14,2024),'content'=>"Host *\n    GSSAPIAuthentication yes\n    SendEnv LANG LC_*\n    HashKnownHosts yes"],
     '/etc/ssh/ssh_host_rsa_key' => ['type'=>'file','mtime'=>mktime(0,0,0,10,27,2023),'content'=>"-----BEGIN OPENSSH PRIVATE KEY-----\n[private key — not readable]\n-----END OPENSSH PRIVATE KEY-----"],
     '/etc/ssh/ssh_host_rsa_key.pub' => ['type'=>'file','mtime'=>mktime(0,0,0,10,27,2023),'content'=>"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC... root@$H"],
@@ -423,20 +423,15 @@ CleanupModulesOnExit=yes"],
 "#!/bin/bash\n# Deployment script\nset -e\ncd /var/www/html\necho \"[$(date)] Starting deployment...\"\ngit fetch origin\ngit reset --hard origin/main\ncomposer install --no-dev --optimize-autoloader\nphp artisan migrate --force\nphp artisan cache:clear\nphp artisan config:cache\nsudo systemctl reload httpd\necho \"[$(date)] Deployment complete.\""],
 
 
-    //  /home/mike
+    //  /home/guest
 
-    '/home/mike'                => ['type'=>'dir'],
-    '/home/mike/.ssh'           => ['type'=>'dir'],
-    '/home/mike/.ssh/authorized_keys' => ['type'=>'file','content'=>
-"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDm7p... mike@laptop"],
-    '/home/mike/.bashrc'        => ['type'=>'file','content'=>
-"# .bashrc\nexport PS1='\\u@\\h:\\w\\$ '\nexport EDITOR=vim\nexport PATH=\$PATH:/home/mike/.local/bin\nalias ll='ls -la'\nalias la='ls -A'\nalias grep='grep --color=auto'"],
-    '/home/mike/.bash_history'  => ['type'=>'file','content'=>
-"ls -la\ncd /var/www/html\ncat /etc/passwd\nsudo systemctl status httpd\ngit log --oneline -10\ndf -h\nfree -h\nps aux | grep httpd"],
-    '/home/mike/.profile'       => ['type'=>'file','content'=>
+    '/home/guest'                => ['type'=>'dir'],
+    '/home/guest/.bashrc'        => ['type'=>'file','content'=>
+"# .bashrc\nexport PS1='\\u@\\h:\\w\\$ '\nexport EDITOR=nano\nalias ll='ls -la'\nalias la='ls -A'\nalias grep='grep --color=auto'"],
+    '/home/guest/.bash_history'  => ['type'=>'file','content'=>
+"ls\nls -la\npwd\nman ls\nfastfetch\ndf -h\nfree -h\nps aux\nsudo su -"],
+    '/home/guest/.profile'       => ['type'=>'file','content'=>
 "# .profile\nif [ -n \"\$BASH_VERSION\" ]; then\n    if [ -f \"\$HOME/.bashrc\" ]; then\n        . \"\$HOME/.bashrc\"\n    fi\nfi"],
-    '/home/mike/notes.txt'      => ['type'=>'file','mtime'=>mktime(9,0,0,3,10,2026),'content'=>
-"TODO\n====\n- check server logs\n- update deployment scripts\n- renew SSL cert before September"],
 
 
     //  /root

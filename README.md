@@ -16,7 +16,7 @@ Whether you want to show off your server-side skills, add a geeky touch to your 
 
 > **No VM. No Docker. No signup. Just open a browser and start typing.**
 
-This project doubles as a free, browser-based Linux sandbox. Use it to practice Linux commands without risking anything on a real server. It runs a simulated AlmaLinux 9.7 environment with a realistic filesystem, two user accounts (`root` and `mike`), and over 65 commands covering everything beginners and intermediate users need to know.
+This project doubles as a free, browser-based Linux sandbox. Use it to practice Linux commands without risking anything on a real server. It runs a simulated AlmaLinux 9.7 environment with a realistic filesystem, three user accounts (`guest`, `deploy`, and `root`), and over 65 commands covering everything beginners and intermediate users need to know.
 
 **Who is this for?**
 
@@ -33,7 +33,7 @@ This project doubles as a free, browser-based Linux sandbox. Use it to practice 
 - Runs in any browser, including mobile
 - **Fully self-hostable** — runs on any machine with PHP 7.4+, including your local laptop, a Raspberry Pi, a shared hosting account, or a VPS. No internet connection required after the initial clone. See [Setup](#setup) below.
 - 65+ commands implemented: `ls`, `cd`, `grep`, `ps`, `top`, `htop`, `systemctl`, `dnf`, `nano`, `sudo`, `chmod`, `tar`, `zip`, `curl`, `wget`, `ping`, and many more
-- Two users: `root` (full access) and `mike` (regular user with `sudo` rights) — practice privilege escalation safely
+- Two users: `guest` (default, logged in automatically), `deploy` (regular user), and `root` (full access via `sudo` or `su`) — practice privilege escalation safely
 - Realistic fake filesystem with config files, logs, home directories, and service unit files
 - Session-persistent — changes you make (`mkdir`, `touch`, `rm`) survive across commands in the same session
 - Embeddable in any page via a single `<iframe>`
@@ -56,7 +56,7 @@ Then open `http://localhost:8080` in your browser. That's it — no database, no
 ## Features
 
 - Realistic boot sequence with configurable kernel version, CPU and disk info (never exposes real server data)
-- Login prompt — password must be longer than 8 characters
+- Auto-login as `guest` — no login prompt, start typing immediately
 - Session-based fake filesystem — `cd`, `mkdir`, `touch`, `rm` persist across commands
 - Full readline-style cursor editing — `←`/`→`, `Home`/`End`, `Backspace`, `Delete`, `Ctrl+A/E/U/K/W`
 - Arrow key command history (`↑`/`↓`)
@@ -136,6 +136,8 @@ Then open `http://localhost:8080` in your browser. That's it — no database, no
 | `Ctrl+K` | Delete from cursor to end of line |
 | `Ctrl+W` | Delete word before cursor |
 | `Ctrl+C` | Cancel current input line (shows `^C`) |
+| `Ctrl+L` | Clear the screen |
+| `Ctrl+R` | Reverse history search (type to search, Enter to run, Esc to cancel) |
 | `Ctrl+V` | Paste clipboard text at cursor |
 | `Ctrl+Shift+C` | Copy selected output text, or typed line if nothing selected |
 
@@ -220,7 +222,7 @@ All constants live in `config.php`. Every option has an inline comment explainin
 | Constant | Description |
 |---|---|
 | `CONF_HOSTNAME` | Hostname shown in the shell prompt and title bar |
-| `CONF_DEFAULT_USER` | If set, skips the username prompt and uses this value |
+| `CONF_DEFAULT_USER` | Override the startup username (default: `guest`) |
 | `CONF_KERNEL` | Kernel version string shown by `uname -a`, `top`, boot sequence |
 | `CONF_ARCH` | CPU architecture shown by `uname -a` |
 | `CONF_OS` | OS name shown by `uname -a` and boot sequence |

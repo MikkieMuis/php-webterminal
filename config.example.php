@@ -9,8 +9,8 @@
 // may leak hosting provider details.
 define('CONF_HOSTNAME', 'your-hostname-here');
 
-// Optionally override the displayed username after login.
-// Leave empty to use whatever the visitor typed at the login prompt.
+// Optionally override the displayed username at startup.
+// Leave empty to use 'guest' (the default).
 define('CONF_DEFAULT_USER', '');
 
 // Fake kernel version, architecture, and OS string shown by uname, top, etc.

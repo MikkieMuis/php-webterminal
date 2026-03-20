@@ -334,12 +334,12 @@ function termCols() {
 }
 
 // state
-var mode      = 'boot';   // boot | username | password | command
+var mode      = 'boot';   // boot | command | sudo_password | su_password | passwd
 var typed     = '';
 var cursorPos = 0;        // insertion point within typed (0 = before first char)
 var masked    = false;
-var loginUser = '';
-var cwd       = '/root';
+var loginUser = 'guest';
+var cwd       = '/home/guest';
 var cmdLog    = [];
 var histIdx   = -1;
 
@@ -742,7 +742,7 @@ document.addEventListener('keydown', function(e) {
     if (nanoActive) return;  // let nano handle it
     if (pagerActive) { pagerExit(); return; }  // Ctrl+C exits pager
     e.preventDefault();
-    if (mode === 'command' || mode === 'username' || mode === 'password') {
+    if (mode === 'command') {
       var cancelled = typed;
       typed     = '';
       cursorPos = 0;
@@ -813,7 +813,7 @@ document.addEventListener('paste', function(e) {
     }
     joeData.modified = true;
     joeRender();
-  } else if (mode === 'command' || mode === 'username' || mode === 'password') {
+  } else if (mode === 'command') {
     // paste into the command line at cursor position (strip newlines — just take first line)
     var firstLine = text.split('\n')[0];
     typed = typed.slice(0, cursorPos) + firstLine + typed.slice(cursorPos);
@@ -886,7 +886,7 @@ window.addEventListener('message', function(e) {
       }
       joeData.modified = true;
       joeRender();
-    } else if (mode === 'command' || mode === 'username' || mode === 'password') {
+    } else if (mode === 'command') {
       var firstLine = text.split('\n')[0];
       typed = typed.slice(0, cursorPos) + firstLine + typed.slice(cursorPos);
       cursorPos += firstLine.length;
@@ -898,56 +898,24 @@ window.addEventListener('message', function(e) {
 
 // enter handler
 function handleEnter(val) {
-  if (mode === 'username') {
-    loginUser = val.trim() || 'user';
-    print('login: ' + loginUser, 'n');
-    mode = 'password';
-    setPrompt('Password:', true);
-
-  } else if (mode === 'password') {
-    print('Password: ', 'n');
-    var pwOk = val.length >= 2;
-    if (pwOk) {
-      doLoginSuccess();
-    } else {
-      print('Login incorrect', 'e');
-      print('', 'n');
-      mode = 'username';
-      setPrompt('login:', false);
-    }
-
-  } else if (mode === 'command') {
+  if (mode === 'command') {
     runCmd(val);
   }
 }
 
-// login
-function startLogin() {
+// login — auto-login as guest, no prompt needed
+function doGuestLogin() {
   clearScr();
   cmdLog    = [];
   histIdx   = -1;
-  loginUser = '';
-  cwd       = '/root';
-  mode      = 'username';
-  print(sysOS, 'b');
-  print('Kernel ' + sysKernel + ' on an ' + sysArch, 'd');
-  print('', 'n');
-    setPrompt('login:', false);
-}
-
-function doLoginSuccess() {
-  print('', 'n');
-  print('Last login: ' + new Date(Date.now() - 86400000).toString().slice(0,24) + ' from 192.168.1.42', 'd');
-  print('', 'n');
-
-  // determine home directory for this user
-  var userHome = (loginUser === 'root') ? '/root' : '/home/' + loginUser;
+  loginUser = 'guest';
+  cwd       = '/home/guest';
 
   // fetch and display /etc/motd
   fetch('terminal.php', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({cmd: 'cat /etc/motd', user: loginUser, cols: 80})
+    body: JSON.stringify({cmd: 'cat /etc/motd', user: 'guest', cols: 80})
   })
   .then(r => r.json())
   .then(data => {
@@ -960,7 +928,6 @@ function doLoginSuccess() {
   .finally(() => {
     mode      = 'command';
     masked    = false;
-    cwd       = userHome;
     typed     = '';
     cursorPos = 0;
     updateTitleAndPrompt();
@@ -978,7 +945,7 @@ function handleResponse(data) {
   } else if (data.logout) {
     print(data.output, 'n');
     print('', 'n');
-    setTimeout(startLogin, 800);
+    setTimeout(doGuestLogin, 800);
     return;
   } else if (data.ping) {
     doPing(data); return;
@@ -1861,7 +1828,7 @@ function boot() {
       var i = 0;
       function next() {
         if (i < BOOT.length) { print(BOOT[i], 'd'); i++; setTimeout(next, 60); }
-        else { startLogin(); }
+        else { doGuestLogin(); }
       }
       next();
     });
