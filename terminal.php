@@ -215,5 +215,104 @@ switch ($cmd) {
         break;
 
     default:
+        // command-not-found handler — suggest a dnf package when we know one
+        $dnf_hints = [
+            // version control
+            'git'        => 'git',
+            'svn'        => 'subversion',
+            'hg'         => 'mercurial',
+            // editors
+            'vim'        => 'vim-enhanced',
+            'vi'         => 'vim-enhanced',
+            'emacs'      => 'emacs',
+            'gedit'      => 'gedit',
+            // languages / runtimes
+            'python'     => 'python3',
+            'python3'    => 'python3',
+            'pip'        => 'python3-pip',
+            'pip3'       => 'python3-pip',
+            'node'       => 'nodejs',
+            'npm'        => 'nodejs',
+            'ruby'       => 'ruby',
+            'gem'        => 'ruby',
+            'go'         => 'golang',
+            'java'       => 'java-17-openjdk',
+            'javac'      => 'java-17-openjdk-devel',
+            'mvn'        => 'maven',
+            'gradle'     => 'gradle',
+            'perl'       => 'perl',
+            'lua'        => 'lua',
+            'rust'       => 'rust',
+            'cargo'      => 'cargo',
+            // network tools
+            'nmap'       => 'nmap',
+            'netstat'    => 'net-tools',
+            'ss'         => 'iproute',
+            'traceroute' => 'traceroute',
+            'dig'        => 'bind-utils',
+            'host'       => 'bind-utils',
+            'nslookup'   => 'bind-utils',
+            'ftp'        => 'ftp',
+            'lftp'       => 'lftp',
+            'rsync'      => 'rsync',
+            'tcpdump'    => 'tcpdump',
+            'whois'      => 'whois',
+            // text tools
+            'jq'         => 'jq',
+            'xmllint'    => 'libxml2',
+            'awk'        => 'gawk',
+            'gawk'       => 'gawk',
+            'sed'        => 'sed',
+            'make'       => 'make',
+            'gcc'        => 'gcc',
+            'g++'        => 'gcc-c++',
+            'cmake'      => 'cmake',
+            // compression
+            'unrar'      => 'unrar',
+            '7z'         => 'p7zip',
+            'lzma'       => 'xz',
+            // system tools
+            'htop'       => 'htop',
+            'iotop'      => 'iotop',
+            'iftop'      => 'iftop',
+            'strace'     => 'strace',
+            'lsof'       => 'lsof',
+            'tree'       => 'tree',
+            'tmux'       => 'tmux',
+            'screen'     => 'screen',
+            'at'         => 'at',
+            'crontab'    => 'cronie',
+            'lsblk'      => 'util-linux',
+            'blkid'      => 'util-linux',
+            'parted'     => 'parted',
+            'fdisk'      => 'util-linux',
+            // database clients
+            'psql'       => 'postgresql',
+            'redis-cli'  => 'redis',
+            'mongo'      => 'mongodb-org-shell',
+            // web / api tools
+            'http'       => 'httpie',
+            'httpie'     => 'httpie',
+            // container / cloud
+            'docker'     => 'docker-ce',
+            'podman'     => 'podman',
+            'kubectl'    => 'kubectl',
+            'helm'       => 'helm',
+            'ansible'    => 'ansible',
+            'terraform'  => 'terraform',
+            // misc
+            'cowsay'     => 'cowsay',
+            'fortune'    => 'fortune-mod',
+            'figlet'     => 'figlet',
+            'sl'         => 'sl',
+            'bc'         => 'bc',
+            'ncdu'       => 'ncdu',
+            'ranger'     => 'ranger',
+            'mc'         => 'mc',
+        ];
+        if (isset($dnf_hints[$cmd])) {
+            $pkg = $dnf_hints[$cmd];
+            err("bash: $cmd: command not found\n\nInstall it with:\n  dnf install $pkg");
+        }
         err('bash: ' . $cmd . ': command not found');
 }

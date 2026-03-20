@@ -343,6 +343,12 @@ var cwd       = '/root';
 var cmdLog    = [];
 var histIdx   = -1;
 
+// reverse history search state
+var rsearchActive = false;
+var rsearchQuery  = '';   // what the user is typing to search for
+var rsearchIdx    = 0;    // which match we are on (0 = most recent)
+var rsearchMatch  = '';   // the currently matched command
+
 // ANSI colour map — SGR codes → CSS colour strings
 // Supports: 0 reset, 1 bold, 30-37 fg, 90-97 bright fg, 38;5;N 256-colour fg
 var _ansiColors = {
@@ -485,6 +491,113 @@ function renderLine() {
   afterEl.textContent   = after;
 }
 
+// Render the reverse-search prompt line.
+// Format: (reverse-i-search)`<query>': <match>
+// The cursor sits at the end of the match (standard bash behaviour).
+function rsearchRender() {
+  var label  = "(reverse-i-search)`" + rsearchQuery + "': ";
+  curprompt.textContent = label;
+  // highlight the matching portion inside the match
+  var matchText = rsearchMatch;
+  typed     = matchText;
+  cursorPos = matchText.length;
+  renderLine();
+  scr.scrollTop = scr.scrollHeight;
+}
+
+// Find the Nth (0-based) match for rsearchQuery in cmdLog (most-recent first).
+// Returns '' if none found.
+function rsearchFind(query, startIdx) {
+  if (!query) return '';
+  var lq = query.toLowerCase();
+  var count = 0;
+  for (var i = 0; i < cmdLog.length; i++) {
+    if (cmdLog[i].toLowerCase().indexOf(lq) !== -1) {
+      if (count === startIdx) return cmdLog[i];
+      count++;
+    }
+  }
+  return '';
+}
+
+// Cancel reverse search — restore original typed content and normal prompt.
+function rsearchCancel(restoreTyped) {
+  rsearchActive = false;
+  histIdx       = -1;
+  typed         = restoreTyped;
+  cursorPos     = typed.length;
+  updateTitleAndPrompt();
+  renderLine();
+}
+
+// Accept the current match — put it on the command line, leave rsearch mode.
+function rsearchAccept() {
+  var accepted  = rsearchMatch;
+  rsearchActive = false;
+  histIdx       = -1;
+  typed         = accepted;
+  cursorPos     = typed.length;
+  updateTitleAndPrompt();
+  renderLine();
+}
+
+// Handle a key while reverse-i-search is active.
+function rsearchKey(key, ctrlKey) {
+  // Ctrl+R — cycle to next (older) match
+  if (ctrlKey && (key === 'r' || key === 'R')) {
+    rsearchIdx++;
+    rsearchMatch = rsearchFind(rsearchQuery, rsearchIdx);
+    if (rsearchMatch === '') {
+      // no more matches — stay at last valid idx
+      rsearchIdx = Math.max(0, rsearchIdx - 1);
+      rsearchMatch = rsearchFind(rsearchQuery, rsearchIdx);
+    }
+    rsearchRender();
+    return;
+  }
+  // Ctrl+G or Escape — cancel, restore empty line
+  if ((ctrlKey && (key === 'g' || key === 'G')) || key === 'Escape') {
+    rsearchCancel('');
+    return;
+  }
+  // Ctrl+C — cancel like a real SIGINT
+  if (ctrlKey && (key === 'c' || key === 'C')) {
+    rsearchCancel('');
+    return;
+  }
+  // Enter — accept and execute
+  if (key === 'Enter') {
+    rsearchAccept();
+    // run the accepted command
+    var val = typed;
+    typed     = '';
+    cursorPos = 0;
+    renderLine();
+    handleEnter(val);
+    return;
+  }
+  // Backspace — remove last char from query
+  if (key === 'Backspace') {
+    if (rsearchQuery.length > 0) {
+      rsearchQuery = rsearchQuery.slice(0, -1);
+      rsearchIdx   = 0;
+      rsearchMatch = rsearchFind(rsearchQuery, 0);
+    }
+    rsearchRender();
+    return;
+  }
+  // Any printable character — append to query
+  if (key.length === 1 && !ctrlKey) {
+    rsearchQuery += key;
+    rsearchIdx   = 0;
+    rsearchMatch = rsearchFind(rsearchQuery, 0);
+    rsearchRender();
+    return;
+  }
+  // Anything else (arrows, Tab, etc.) — accept current match and pass key through
+  rsearchAccept();
+}
+
 function handleKey(key, ctrlKey, altKey, metaKey) {
   if (mode === 'boot') return;
   if (nanoActive)  { nanoKey(key, ctrlKey); return; }
@@ -493,6 +606,9 @@ function handleKey(key, ctrlKey, altKey, metaKey) {
   if (pagerActive) { pagerKey(key); return; }
   if (topActive) return;
   if (htopActive) return;
+
+  // Delegate to reverse-search handler when active
+  if (rsearchActive) { rsearchKey(key, ctrlKey); return; }
 
   // Enter
   if (key === 'Enter') {
@@ -508,6 +624,17 @@ function handleKey(key, ctrlKey, altKey, metaKey) {
   if (ctrlKey) {
     if (key === 'a' || key === 'A') { cursorPos = 0;            renderLine(); return; }  // Ctrl+A: start
     if (key === 'e' || key === 'E') { cursorPos = typed.length; renderLine(); return; }  // Ctrl+E: end
+    if (key === 'l' || key === 'L') { clearScr(); scr.scrollTop = 0; return; }           // Ctrl+L: clear screen
+    if (key === 'r' || key === 'R') {                                                     // Ctrl+R: reverse history search
+      if (mode === 'command' && cmdLog.length > 0) {
+        rsearchActive = true;
+        rsearchQuery  = '';
+        rsearchIdx    = 0;
+        rsearchMatch  = '';
+        rsearchRender();
+      }
+      return;
+    }
     if (key === 'u' || key === 'U') { typed = typed.slice(cursorPos); cursorPos = 0; renderLine(); return; } // Ctrl+U: kill to start
     if (key === 'k' || key === 'K') { typed = typed.slice(0, cursorPos);              renderLine(); return; } // Ctrl+K: kill to end
     if (key === 'w' || key === 'W') {  // Ctrl+W: delete word before cursor
