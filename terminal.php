@@ -174,9 +174,12 @@ if ($cmd === 'll') { $cmd = 'ls'; array_unshift($argv, '-la'); $args = implode('
 switch ($cmd) {
     case 'ls': case 'cd': case 'mkdir': case 'rmdir': case 'touch': case 'rm': case 'cat':
     case 'wc': case 'more': case 'less': case 'grep': case 'cp': case 'mv':
-    case 'head': case 'tail': case 'du': case 'chmod': case 'chown': case 'diff': case 'sort':
-    case 'uniq': case 'find': case 'cut': case 'tr':
+    case 'head': case 'tail': case 'du': case 'chmod': case 'chown': case 'diff':
         require __DIR__ . '/commands/filesystem.php';
+        break;
+
+    case 'sort': case 'uniq': case 'find': case 'cut': case 'tr': case 'awk': case 'sed':
+        require __DIR__ . '/commands/text.php';
         break;
 
     case 'zip': case 'unzip': case 'tar':
@@ -260,9 +263,7 @@ switch ($cmd) {
             // text tools
             'jq'         => 'jq',
             'xmllint'    => 'libxml2',
-            'awk'        => 'gawk',
             'gawk'       => 'gawk',
-            'sed'        => 'sed',
             'make'       => 'make',
             'gcc'        => 'gcc',
             'g++'        => 'gcc-c++',
