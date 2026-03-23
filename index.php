@@ -349,6 +349,10 @@ var rsearchQuery  = '';   // what the user is typing to search for
 var rsearchIdx    = 0;    // which match we are on (0 = most recent)
 var rsearchMatch  = '';   // the currently matched command
 
+// tab-completion state
+var tabLastTyped  = null; // typed string at last Tab press (to detect double-Tab)
+var tabBusy       = false; // debounce: ignore Tab while a fetch is in flight
+
 // ANSI colour map — SGR codes → CSS colour strings
 // Supports: 0 reset, 1 bold, 30-37 fg, 90-97 bright fg, 38;5;N 256-colour fg
 var _ansiColors = {
@@ -697,6 +701,114 @@ function handleKey(key, ctrlKey, altKey, metaKey) {
       renderLine();
       return;
     }
+  }
+
+  // Tab — path/command completion
+  if (key === 'Tab') {
+    if (mode !== 'command' || tabBusy) return;
+    var lineUpToCursor = typed.slice(0, cursorPos);
+    // Split into tokens; the last token is what we complete
+    var tokens  = lineUpToCursor.match(/\S+/g) || [];
+    var lastTok = tokens.length ? tokens[tokens.length - 1] : '';
+    // isCmd: completing first token AND it has no path separator
+    var isCmd   = (tokens.length <= 1) && lastTok.indexOf('/') === -1;
+    // detect double-Tab (same typed string as last Tab press)
+    var dblTab  = (typed === tabLastTyped);
+    tabLastTyped = typed;
+    tabBusy = true;
+    fetch('terminal.php?complete', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({prefix: lastTok, cwd: cwd, isCmd: isCmd})
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(data) {
+      tabBusy = false;
+      var matches = data.matches || [];
+      var isDirs  = data.isDirs  || [];
+      if (matches.length === 0) {
+        // no match — do nothing (real bash also stays silent)
+        return;
+      }
+      if (matches.length === 1) {
+        // single match — complete it
+        var completion = matches[0] + (isDirs[0] ? '/' : ' ');
+        // replace the last token in typed up to cursor
+        var before     = lineUpToCursor.slice(0, lineUpToCursor.length - lastTok.length);
+        var after      = typed.slice(cursorPos);
+        typed     = before + completion + after;
+        cursorPos = before.length + completion.length;
+        tabLastTyped = typed; // reset so next Tab is fresh
+        renderLine();
+      } else {
+        // multiple matches
+        if (!dblTab) {
+          // first Tab: complete the longest common prefix if it extends what we have
+          var lcp = matches[0];
+          for (var mi = 1; mi < matches.length; mi++) {
+            var m = matches[mi];
+            var k = 0;
+            while (k < lcp.length && k < m.length && lcp[k] === m[k]) k++;
+            lcp = lcp.slice(0, k);
+          }
+          if (lcp.length > lastTok.length) {
+            var before2 = lineUpToCursor.slice(0, lineUpToCursor.length - lastTok.length);
+            var after2  = typed.slice(cursorPos);
+            typed     = before2 + lcp + after2;
+            cursorPos = before2.length + lcp.length;
+            tabLastTyped = typed;
+            renderLine();
+          }
+          // else: nothing to extend — wait for double-Tab to show list
+        } else {
+          // double-Tab: show list of matches below current line
+          var promptText = curprompt.textContent;
+          print(promptText + typed, 'n');
+          // display matches in columns (simple: one per line if few, else columns)
+          var names = matches.map(function(m, i){ return m + (isDirs[i] ? '/' : ''); });
+          var cols  = termCols();
+          var maxW  = names.reduce(function(a,b){ return Math.max(a, b.length); }, 0) + 2;
+          var numC  = Math.max(1, Math.floor(cols / maxW));
+          var rows  = Math.ceil(names.length / numC);
+          var lines = [];
+          for (var ri = 0; ri < rows; ri++) {
+            var parts = [];
+            for (var ci = 0; ci < numC; ci++) {
+              var idx = ci * rows + ri;
+              if (idx >= names.length) break;
+              var isLast = (ci === numC - 1) || ((idx + rows) >= names.length);
+              parts.push(isLast ? names[idx] : names[idx] + ' '.repeat(Math.max(0, maxW - names[idx].length)));
+            }
+            lines.push(parts.join(''));
+          }
+          print(lines.join('\n'), 'n');
+          updateTitleAndPrompt();
+          renderLine();
+          curline.style.display = 'flex';
+          scr.scrollTop = scr.scrollHeight;
+        }
+      }
+    })
+    .catch(function(){ tabBusy = false; });
+    return;
+  }
+
+  // Alt+Left / Alt+Right — word-jump (readline Alt+B / Alt+F)
+  if (altKey && (key === 'ArrowLeft' || key === 'b' || key === 'B')) {
+    var i = cursorPos;
+    while (i > 0 && typed[i - 1] === ' ') i--;          // skip spaces
+    while (i > 0 && typed[i - 1] !== ' ') i--;          // skip word chars
+    cursorPos = i;
+    renderLine();
+    return;
+  }
+  if (altKey && (key === 'ArrowRight' || key === 'f' || key === 'F')) {
+    var i = cursorPos;
+    while (i < typed.length && typed[i] === ' ') i++;   // skip spaces
+    while (i < typed.length && typed[i] !== ' ') i++;   // skip word chars
+    cursorPos = i;
+    renderLine();
+    return;
   }
 
   // Printable character — insert at cursor

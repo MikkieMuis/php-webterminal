@@ -32,9 +32,112 @@ if (isset($_GET['sysinfo'])) {
     exit;
 }
 
+// tab-completion endpoint (GET ?complete)
+// POST body: { prefix: string, cwd: string, isCmd: bool }
+// Returns: { matches: string[], isDir: bool[] }
+if (isset($_GET['complete'])) {
+    $body_raw = file_get_contents('php://input', false, null, 0, 4096);
+    $body_c   = json_decode($body_raw, true) ?? [];
+    $prefix   = isset($body_c['prefix']) ? $body_c['prefix'] : '';
+    $req_cwd  = isset($body_c['cwd'])    ? $body_c['cwd']    : '/root';
+    $isCmd    = !empty($body_c['isCmd']);
+
+    // Ensure session filesystem is loaded
+    if (!isset($_SESSION['fs'])) {
+        require_once __DIR__ . '/fs_data.php';
+        $_SESSION['fs']         = fs_get_data();
+        $_SESSION['fs_version'] = FS_VERSION;
+        $_SESSION['cwd']        = '/root';
+        $_SESSION['cmdlog']     = [];
+        $_SESSION['boot']       = time();
+    }
+
+    $matches = [];
+    $isDirs  = [];
+
+    if ($isCmd) {
+        // Complete command names — all known commands + aliases
+        $commands = [
+            'ls','ll','cd','pwd','mkdir','rmdir','touch','rm','cp','mv','cat',
+            'head','tail','more','less','wc','grep','sort','uniq','cut','tr',
+            'find','awk','sed','diff','du','chmod','chown','ln',
+            'zip','unzip','tar',
+            'echo','clear','exit','logout','history','help','alias','last',
+            'sudo','su','man','passwd','base64','bc',
+            'whoami','hostname','uname','uptime','date','df','free',
+            'ps','top','htop','id','env','printenv','which',
+            'fastfetch','neofetch','systemctl','php',
+            'exa','firewall-cmd','kill','pkill',
+            'ifconfig','ip','ping','wget','curl','telnet','sendmail',
+            'nano','joe','dnf','mysql','mariadb',
+        ];
+        foreach ($commands as $cmd) {
+            if ($prefix === '' || strpos($cmd, $prefix) === 0) {
+                $matches[] = $cmd;
+                $isDirs[]  = false;
+            }
+        }
+    } else {
+        // Complete filesystem paths
+        $fs = $_SESSION['fs'];
+
+        // Resolve the directory to scan and the file prefix to match
+        if ($prefix === '' || $prefix === '.') {
+            $dir     = $req_cwd;
+            $filePfx = '';
+        } elseif ($prefix[0] === '/') {
+            // absolute path
+            $dir     = dirname($prefix);
+            $filePfx = basename($prefix);
+            if ($dir === '.') $dir = '/';
+        } else {
+            // relative path
+            $resolved = $req_cwd . '/' . $prefix;
+            $dir      = dirname($resolved);
+            $filePfx  = basename($resolved);
+            // Normalise dir
+            $parts = explode('/', $dir);
+            $stack = [];
+            foreach ($parts as $p) {
+                if ($p === '' || $p === '.') continue;
+                if ($p === '..') { array_pop($stack); continue; }
+                $stack[] = $p;
+            }
+            $dir = '/' . implode('/', $stack);
+        }
+
+        $dirNorm = rtrim($dir, '/');
+
+        foreach ($fs as $path => $node) {
+            if ($path === $dir) continue;
+            $parent = dirname($path);
+            if ($parent !== ($dirNorm === '' ? '/' : $dirNorm)) continue;
+            $name = basename($path);
+            if ($filePfx === '' || strpos($name, $filePfx) === 0) {
+                // Build the completion string to insert
+                if ($prefix === '' || $prefix === '.') {
+                    $insert = $name;
+                } elseif ($prefix[0] === '/') {
+                    $insert = ($dirNorm === '' ? '' : $dirNorm) . '/' . $name;
+                } else {
+                    // Reconstruct relative path: keep whatever the user typed before basename
+                    $slashPos = strrpos($prefix, '/');
+                    $insert   = ($slashPos !== false ? substr($prefix, 0, $slashPos + 1) : '') . $name;
+                }
+                $matches[] = $insert;
+                $isDirs[]  = ($node['type'] === 'dir');
+            }
+        }
+        sort($matches);
+    }
+
+    echo json_encode(['matches' => $matches, 'isDirs' => $isDirs]);
+    exit;
+}
+
 // initialise session filesystem
 // Bump this version string whenever fs_data.php changes to force a session reset.
-define('FS_VERSION', '13');
+define('FS_VERSION', '14');
 
 if (!isset($_SESSION['fs']) || ($_SESSION['fs_version'] ?? '') !== FS_VERSION) {
     require_once __DIR__ . '/fs_data.php';

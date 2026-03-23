@@ -216,7 +216,7 @@ CleanupModulesOnExit=yes"],
 "# /etc/fstab\n# <device>          <mount>    <type>  <options>           <dump> <pass>\n/dev/sda1           /          xfs     defaults            0      1\n/dev/sda2           /boot      xfs     defaults            0      2\n/dev/sdb1           /mnt/db    xfs     defaults,noatime    0      2\n/dev/sdc1           /mnt/backup xfs    defaults,noatime    0      2\ntmpfs               /tmp       tmpfs   defaults,nosuid,nodev 0    0\ntmpfs               /dev/shm   tmpfs   defaults            0      0"],
     '/etc/fuse.conf'        => ['type'=>'file','mtime'=>mktime(0,0,0,10,2,2024),'content'=>"# /etc/fuse.conf\n# Set the maximum number of FUSE mounts allowed to non-root users.\n# The default is 1000.\n#mount_max = 1000\nuser_allow_other"],
     '/etc/group'            => ['type'=>'file','mtime'=>mktime(0,0,0,5,28,2025),'content'=>
-"root:x:0:\nbin:x:1:\ndaemon:x:2:\nsys:x:3:\nadm:x:4:\ntty:x:5:\ndisk:x:6:\nlp:x:7:\nmem:x:8:\nkmem:x:9:\nwheel:x:10:\nmail:x:12:\nman:x:15:\ndialout:x:18:\nfloppy:x:19:\ngames:x:20:\ntape:x:33:\nvideo:x:39:\nftp:x:50:\nlock:x:54:\naudio:x:63:\nnobody:x:65534:\nusers:x:100:\nhttpd:x:48:\nmysql:x:27:\nnginx:x:998:\nphp-fpm:x:997:\nsshd:x:74:\nchrony:x:994:\ndeploy:x:1001:\ndocker:x:999:deploy\nguest:x:1002:"],
+"root:x:0:\nbin:x:1:\ndaemon:x:2:\nsys:x:3:\nadm:x:4:\ntty:x:5:\ndisk:x:6:\nlp:x:7:\nmem:x:8:\nkmem:x:9:\nwheel:x:10:guest\nmail:x:12:\nman:x:15:\ndialout:x:18:\nfloppy:x:19:\ngames:x:20:\ntape:x:33:\nvideo:x:39:\nftp:x:50:\nlock:x:54:\naudio:x:63:\nnobody:x:65534:\nusers:x:100:\nhttpd:x:48:\nmysql:x:27:\nnginx:x:998:\nphp-fpm:x:997:\nsshd:x:74:\nchrony:x:994:\ndeploy:x:1001:\ndocker:x:999:deploy\nguest:x:1002:"],
     '/etc/host.conf'        => ['type'=>'file','mtime'=>mktime(0,0,0,6,23,2020),'content'=>"multi on"],
     '/etc/hostname'         => ['type'=>'file','mtime'=>mktime(0,0,0,2,14,2024),'content'=>$H],
     '/etc/hosts'            => ['type'=>'file','mtime'=>mktime(0,0,0,2,14,2024),'content'=>
@@ -432,6 +432,8 @@ CleanupModulesOnExit=yes"],
 "ls\nls -la\npwd\nman ls\nfastfetch\ndf -h\nfree -h\nps aux\nsudo su -"],
     '/home/guest/.profile'       => ['type'=>'file','content'=>
 "# .profile\nif [ -n \"\$BASH_VERSION\" ]; then\n    if [ -f \"\$HOME/.bashrc\" ]; then\n        . \"\$HOME/.bashrc\"\n    fi\nfi"],
+    '/home/guest/notes.txt'      => ['type'=>'file','content'=>
+"TODO: explore the server\nTODO: check disk usage\n# personal notes\nLogged in for the first time."],
 
 
     //  /root
