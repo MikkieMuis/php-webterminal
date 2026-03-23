@@ -137,7 +137,7 @@ if (isset($_GET['complete'])) {
 
 // initialise session filesystem
 // Bump this version string whenever fs_data.php changes to force a session reset.
-define('FS_VERSION', '14');
+define('FS_VERSION', '15');
 
 if (!isset($_SESSION['fs']) || ($_SESSION['fs_version'] ?? '') !== FS_VERSION) {
     require_once __DIR__ . '/fs_data.php';
