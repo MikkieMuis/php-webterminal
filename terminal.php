@@ -277,11 +277,11 @@ if ($cmd === 'll') { $cmd = 'ls'; array_unshift($argv, '-la'); $args = implode('
 switch ($cmd) {
     case 'ls': case 'cd': case 'mkdir': case 'rmdir': case 'touch': case 'rm': case 'cat':
     case 'wc': case 'more': case 'less': case 'grep': case 'cp': case 'mv':
-    case 'head': case 'tail': case 'du': case 'chmod': case 'chown': case 'diff':
+    case 'head': case 'tail': case 'du': case 'chmod': case 'chown': case 'diff': case 'find':
         require __DIR__ . '/commands/filesystem.php';
         break;
 
-    case 'sort': case 'uniq': case 'find': case 'cut': case 'tr':
+    case 'sort': case 'uniq': case 'cut': case 'tr':
         require __DIR__ . '/commands/text.php';
         break;
 
