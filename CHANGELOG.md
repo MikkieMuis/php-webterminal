@@ -2,6 +2,19 @@
 
 All notable changes to php-webterminal will be documented here.
 
+## [2.8.0] - 2026-03-24
+
+### Added
+- `ln -s TARGET LINK` — create symbolic links in the session filesystem
+  - Link appears cyan in `ls` output (colour-coded like real bash)
+  - `ls -l` shows `lrwxrwxrwx` permissions and `-> target` suffix
+  - Hard links (`ln` without `-s`) give a clear unsupported error
+  - Man page for `ln`
+
+### Fixed
+- `ls`: symlink entries now display with the correct name (broken `rtrim` was corrupting names ending in `l`, `i`, `n`, `k`)
+- `ls -l`: symlinks now show `lrwxrwxrwx` and `-> target` instead of plain `-rw-r--r--`
+
 ## [2.7.0] - 2026-03-17
 
 ### Added

@@ -12,9 +12,9 @@ function ls_color(string $name, string $type, string $path): string {
     if ($type === 'dir') {
         return $ESC . '[1;34m' . $name . $ESC . '[0m';
     }
-    // symlink: name suffix convention OR path under /bin /usr/bin etc. contains ->
+    // symlink: name suffix convention — strip the ~link suffix for display
     if (substr($name, -5) === '~link') {
-        return $ESC . '[0;36m' . rtrim($name, '~link') . $ESC . '[0m';
+        return $ESC . '[0;36m' . substr($name, 0, -5) . $ESC . '[0m';
     }
     // executables: paths under bin/sbin dirs, or .sh extension
     $execDirs = ['/bin/', '/sbin/', '/usr/bin/', '/usr/sbin/', '/usr/local/bin/', '/usr/libexec/'];
@@ -66,12 +66,17 @@ switch ($cmd) {
             if (dirname($p) !== $parent) continue;
             $name = basename($p);
             if (!$all && $name[0] === '.') continue;
-            $perm  = $node['type'] === 'dir' ? 'drwxr-xr-x' : '-rw-r--r--';
-            $size  = isset($node['content']) ? strlen($node['content']) : 4096;
+            $isLink    = (substr($name, -5) === '~link');
+            $dispName  = $isLink ? substr($name, 0, -5) : $name;
+            if (!$all && $dispName[0] === '.') continue;
+            $nodeType  = $isLink ? 'symlink' : $node['type'];
+            $perm      = $nodeType === 'dir' ? 'drwxr-xr-x' : ($nodeType === 'symlink' ? 'lrwxrwxrwx' : '-rw-r--r--');
+            $size      = isset($node['content']) ? strlen($node['content']) : 4096;
             $mtime_raw = isset($node['mtime']) ? $node['mtime'] : 1741507200;
-            $mtime = date('M d H:i', $mtime_raw);
-            $colored = ls_color($name, $node['type'], $p);
-            $entries[] = ['name'=>$name,'colored'=>$colored,'perm'=>$perm,'size'=>$size,'mtime'=>$mtime,'mtime_raw'=>$mtime_raw,'type'=>$node['type']];
+            $mtime     = date('M d H:i', $mtime_raw);
+            $linkTarget = $isLink ? ($node['content'] ?? '') : '';
+            $colored   = ls_color($name, $nodeType, $p);
+            $entries[] = ['name'=>$dispName,'colored'=>$colored,'perm'=>$perm,'size'=>$size,'mtime'=>$mtime,'mtime_raw'=>$mtime_raw,'type'=>$nodeType,'linktarget'=>$linkTarget];
         }
         if (empty($entries)) { out(''); }
 
@@ -111,7 +116,8 @@ switch ($cmd) {
         }
         $lines = ['total ' . (count($entries) * 8)];
         foreach ($entries as $e) {
-            $lines[] = sprintf('%s  2 root root %6d  %s  %s', $e['perm'], $e['size'], $e['mtime'], $e['colored']);
+            $suffix = ($e['type'] === 'symlink' && $e['linktarget'] !== '') ? ' ' . $e['linktarget'] : '';
+            $lines[] = sprintf('%s  2 root root %6d  %s  %s%s', $e['perm'], $e['size'], $e['mtime'], $e['colored'], $suffix);
         }
         out(implode("\n", $lines));
 
@@ -832,6 +838,39 @@ switch ($cmd) {
              'filename' => basename($target),
          ]);
          exit;
+
+    // ln
+    case 'ln': {
+        // Only symbolic links are supported: ln -s TARGET LINK
+        $flags  = '';
+        $lnargs = [];
+        foreach ($argv as $a) {
+            if ($a[0] === '-') { $flags .= ltrim($a, '-'); }
+            else { $lnargs[] = $a; }
+        }
+        if (strpos($flags, 's') === false) {
+            err('ln: hard links are not supported in this terminal — use ln -s');
+        }
+        if (count($lnargs) < 2) {
+            err('ln: missing operand' . (count($lnargs) === 1 ? ' after \'' . $lnargs[0] . '\'' : ''));
+        }
+        $target   = $lnargs[0];           // what the symlink points to
+        $linkPath = res_path($lnargs[1]); // where the symlink is created
+        // if linkPath is an existing directory, create link inside it
+        if (isset($_SESSION['fs'][$linkPath]) && $_SESSION['fs'][$linkPath]['type'] === 'dir') {
+            $linkPath = rtrim($linkPath, '/') . '/' . basename($target);
+        }
+        $linkKey = $linkPath . '~link';
+        if (isset($_SESSION['fs'][$linkPath]) || isset($_SESSION['fs'][$linkKey])) {
+            err('ln: failed to create symbolic link \'' . $lnargs[1] . '\': File exists');
+        }
+        $parent = dirname($linkPath);
+        if (!isset($_SESSION['fs'][$parent]) || $_SESSION['fs'][$parent]['type'] !== 'dir') {
+            err('ln: failed to create symbolic link \'' . $lnargs[1] . '\': No such file or directory');
+        }
+        $_SESSION['fs'][$linkKey] = ['type' => 'file', 'content' => '-> ' . $target, 'mtime' => time()];
+        out('');
+    }
 
     // find
     case 'find': {
