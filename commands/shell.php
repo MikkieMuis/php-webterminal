@@ -58,6 +58,7 @@ switch ($cmd) {
           . "  sed 's/PAT/REP/' F stream editor for text\n"
           . "  diff [-u] F1 F2   compare two files\n"
           . "  du [-sh] [PATH]   disk usage of directory\n"
+          . "  ln -s TARGET LINK create symbolic link\n"
           . "  chmod MODE FILE   change file permissions (cosmetic)\n"
           . "  chown USER FILE   change file owner (cosmetic)\n"
           . "  zip [-r] ARC SRC  create ZIP archive\n"

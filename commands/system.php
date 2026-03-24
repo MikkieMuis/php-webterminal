@@ -206,7 +206,7 @@ switch ($cmd) {
         $bins = [
             'bash'=>'/bin/bash','sh'=>'/bin/sh','ls'=>'/bin/ls','cat'=>'/bin/cat',
             'rm'=>'/bin/rm','cp'=>'/bin/cp','mv'=>'/bin/mv','mkdir'=>'/bin/mkdir',
-            'touch'=>'/bin/touch','chmod'=>'/bin/chmod','chown'=>'/bin/chown',
+            'touch'=>'/bin/touch','ln'=>'/bin/ln','chmod'=>'/bin/chmod','chown'=>'/bin/chown',
             'grep'=>'/bin/grep','find'=>'/usr/bin/find','awk'=>'/usr/bin/awk',
             'sed'=>'/usr/bin/sed','sort'=>'/usr/bin/sort','uniq'=>'/usr/bin/uniq',
             'wc'=>'/usr/bin/wc','head'=>'/usr/bin/head','tail'=>'/usr/bin/tail',
