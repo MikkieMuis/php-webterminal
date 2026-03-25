@@ -16,7 +16,7 @@ Whether you want to show off your server-side skills, add a geeky touch to your 
 
 > **No VM. No Docker. No signup. Just open a browser and start typing.**
 
-This project doubles as a free, browser-based Linux sandbox. Use it to practice Linux commands without risking anything on a real server. It runs a simulated AlmaLinux 9.7 environment with a realistic filesystem, three user accounts (`guest`, `deploy`, and `root`), and over 65 commands covering everything beginners and intermediate users need to know.
+This project doubles as a free, browser-based Linux sandbox. Use it to practice Linux commands without risking anything on a real server. It runs a simulated AlmaLinux 9.7 environment with a realistic filesystem, three user accounts (`guest`, `deploy`, and `root`), and over 80 commands covering everything beginners and intermediate users need to know.
 
 **Who is this for?**
 
@@ -32,7 +32,7 @@ This project doubles as a free, browser-based Linux sandbox. Use it to practice 
 - Zero setup — no account, no download, no VM
 - Runs in any browser, including mobile
 - **Fully self-hostable** — runs on any machine with PHP 7.4+, including your local laptop, a Raspberry Pi, a shared hosting account, or a VPS. No internet connection required after the initial clone. See [Setup](#setup) below.
-- 65+ commands implemented: `ls`, `cd`, `grep`, `ps`, `top`, `htop`, `systemctl`, `dnf`, `nano`, `sudo`, `chmod`, `tar`, `zip`, `curl`, `wget`, `ping`, and many more
+- 80+ commands implemented: `ls`, `cd`, `grep`, `ps`, `top`, `htop`, `systemctl`, `dnf`, `nano`, `sudo`, `chmod`, `tar`, `zip`, `curl`, `wget`, `ping`, `netstat`, `ss`, `dig`, `journalctl`, `awk`, `sed`, and many more
 - Two users: `guest` (default, logged in automatically), `deploy` (regular user), and `root` (full access via `sudo` or `su`) — practice privilege escalation safely
 - Realistic fake filesystem with config files, logs, home directories, and service unit files
 - Session-persistent — changes you make (`mkdir`, `touch`, `rm`) survive across commands in the same session
@@ -69,13 +69,17 @@ Then open `http://localhost:8080` in your browser. That's it — no database, no
 | Category | Commands |
 |---|---|
 | Navigation | `ls`, `ll`, `cd`, `pwd` |
-| Files | `cat`, `touch`, `mkdir`, `rmdir`, `rm`, `cp`, `mv`, `wc`, `grep`, `head`, `tail`, `diff`, `du`, `chmod`, `chown`, `zip`, `unzip`, `tar`, `sort`, `uniq` |
+| Files | `cat`, `touch`, `mkdir`, `rmdir`, `rm`, `cp`, `mv`, `ln`, `wc`, `du`, `chmod`, `chown`, `zip`, `unzip`, `tar` |
+| Search & text | `grep`, `head`, `tail`, `diff`, `find`, `sort`, `uniq`, `cut`, `tr`, `awk`, `sed` |
 | Pagers | `more`, `less` |
-| System | `uname`, `uptime`, `hostname`, `date`, `df`, `free`, `ps`, `top`, `htop`, `id`, `env`, `printenv`, `which`, `whoami`, `fastfetch`, `neofetch`, `systemctl`, `php`, `exa`, `firewall-cmd` |
-| Network | `ping`, `ifconfig`, `ip`, `wget`, `curl`, `telnet`, `sendmail` |
-| Shell | `echo`, `history`, `alias`, `clear`, `exit`, `logout`, `help`, `man`, `sudo`, `last`, `passwd`, `base64`, `bc` |
+| System info | `uname`, `uptime`, `hostname`, `date`, `df`, `free`, `ps`, `top`, `htop`, `id`, `env`, `printenv`, `which`, `whoami`, `fastfetch`, `neofetch`, `exa` |
+| Services | `systemctl`, `firewall-cmd`, `journalctl` |
+| Hardware & processes | `php`, `kill`, `pkill`, `lsblk`, `blkid`, `dmesg`, `vmstat`, `iostat`, `hostnamectl`, `timedatectl`, `chgrp`, `logger`, `lsof` |
+| Network | `ping`, `ifconfig`, `ip`, `wget`, `curl`, `telnet`, `sendmail`, `netstat`, `ss`, `ssh`, `dig`, `host` |
+| Shell | `echo`, `history`, `alias`, `clear`, `exit`, `logout`, `help`, `man`, `sudo`, `su`, `last`, `passwd`, `base64`, `bc`, `pushd`, `popd`, `dirs` |
 | Editors | `nano`, `joe` |
 | Packages | `dnf` |
+| Database | `mysql`, `mariadb` |
 
 `grep` supports `-i` (ignore case), `-n` (line numbers), `-v` (invert), `-c` (count), `-l` (filenames only), and `-r` (recursive).
 
@@ -120,6 +124,46 @@ Then open `http://localhost:8080` in your browser. That's it — no database, no
 `passwd` simulates a password change prompt and always reports success. `base64` encodes or decodes a string (`-d` / `--decode`); pass input via `<<<`. `bc` evaluates arithmetic expressions (`+`, `-`, `*`, `/`, `^`, `%`, parentheses); pass the expression via `<<<`.
 
 `nano` is a full-screen text editor overlay. Open a file with `nano <file>`, edit freely, and save with `Ctrl+O` (then Enter) or exit with `Ctrl+X`. `joe` is an alternative full-screen editor with `^K` prefix key bindings; save with `^KD`, exit with `^KX`, abort with `^KC`.
+
+`ln -s TARGET LINK` creates symbolic links. Symlinks appear cyan in `ls` output and show `lrwxrwxrwx -> target` in `ls -l`. Hard links are not supported.
+
+`cut` extracts fields or byte ranges from lines. Supports `-f` (fields), `-d` (delimiter), `-c` (character positions), and `--complement`.
+
+`tr` translates or deletes characters. Supports `-d` (delete), `-s` (squeeze), and character classes such as `[:upper:]`, `[:lower:]`, `[:digit:]`.
+
+`awk` processes text by field. Supports `print`, `printf`, `$0`–`$NF`, `NR`, `NF`, `BEGIN`/`END` blocks, and field separator with `-F`. Pass the program as `awk '{...}' file` or via stdin.
+
+`sed` applies substitutions and other edits to text. Supports `s/pattern/replacement/[g]`, address ranges, `-n` (suppress default output), and `p` (print). Pass the script as `sed 's/.../' file` or via stdin.
+
+`kill PID` sends SIGTERM to a process; `kill -9 PID` sends SIGKILL. `pkill NAME` kills processes by name. Both operate on the fake process table.
+
+`lsblk` lists block devices in a tree layout (three disks `sda`/`sdb`/`sdc` with partitions). `blkid` prints UUIDs and filesystem types for each partition.
+
+`dmesg` prints the kernel ring buffer. Supports `-T` (human-readable timestamps) and `-n N` (last N lines).
+
+`vmstat` shows virtual memory statistics (single static snapshot). `iostat` shows CPU and per-disk I/O statistics.
+
+`hostnamectl` shows the system hostname, machine ID, OS, kernel, and chassis type. `timedatectl` shows local time, UTC time, timezone, and NTP sync status.
+
+`chgrp` is a cosmetic stub — it accepts standard arguments and exits silently. `logger` writes a message to the system log (cosmetic; no persistent syslog across sessions).
+
+`lsof` lists open files and network sockets. Filter by `-i :PORT` (connections on a port), `-p PID` (files for a process), or `-u USER` (files for a user).
+
+`journalctl` queries the systemd journal. Supports `-u UNIT` (filter by service), `-n N` (last N lines), `-r` (reverse order), `-f` (simulated follow), and `--since DATE`.
+
+`netstat` prints active connections and listening sockets. Supports `-a` (all), `-n` (numeric), `-p` (show PID/program), `-t` (TCP), `-u` (UDP), `-l` (listening only), and `-r` (routing table).
+
+`ss` shows socket statistics (iproute2 replacement for `netstat`). Supports `-a`, `-l`, `-n`, `-p`, `-t`, `-u`.
+
+`ssh [USER@]HOST` simulates a remote login. Connections to localhost succeed; all other hosts are refused. Supports `-v` (verbose handshake output).
+
+`dig HOST [TYPE]` performs a DNS lookup and prints a full resolver-style response. Supports record types A, MX, NS, TXT, CNAME, SOA, ANY, and the `@server` flag to specify a resolver.
+
+`host HOST [-t TYPE]` is a concise DNS lookup. Supports reverse PTR lookups for IP addresses and `-t TYPE` to request a specific record type.
+
+`pushd <dir>` changes to the given directory and pushes the previous directory onto the stack. Called with no arguments it swaps the top two stack entries. `popd` returns to the previous directory by popping the stack. `dirs [-v]` displays the directory stack; `-v` shows numbered entries.
+
+`mysql` and `mariadb` open an interactive database session stub. Supports `SHOW DATABASES`, `USE db`, `SHOW TABLES`, `DESCRIBE table`, `SELECT`, `INSERT`, `UPDATE`, `DELETE`, `CREATE TABLE`, and `DROP TABLE` against a small in-memory fake schema.
 
 ---
 
