@@ -59,6 +59,7 @@ Then open `http://localhost:8080` in your browser. That's it — no database, no
 - Auto-login as `guest` — no login prompt, start typing immediately
 - Session-based fake filesystem — `cd`, `mkdir`, `touch`, `rm` persist across commands
 - Full readline-style cursor editing — `←`/`→`, `Home`/`End`, `Backspace`, `Delete`, `Ctrl+A/E/U/K/W`
+- Tab completion for commands and file paths
 - Arrow key command history (`↑`/`↓`)
 - Clipboard support — paste from browser with `Ctrl+V`, copy output with mouse selection or `Ctrl+Shift+C`
 - Embeddable via `<iframe>` or standalone
@@ -137,7 +138,7 @@ Then open `http://localhost:8080` in your browser. That's it — no database, no
 
 `kill PID` sends SIGTERM to a process; `kill -9 PID` sends SIGKILL. `pkill NAME` kills processes by name. Both operate on the fake process table.
 
-`lsblk` lists block devices in a tree layout (three disks `sda`/`sdb`/`sdc` with partitions). `blkid` prints UUIDs and filesystem types for each partition.
+`lsblk` lists block devices in a tree layout (four disks: `sda` 500G, `sdb` 2T, `sdc` 4T, `sdd` 500G, each with partitions). `blkid` prints UUIDs and filesystem types for each partition.
 
 `dmesg` prints the kernel ring buffer. Supports `-T` (human-readable timestamps) and `-n N` (last N lines).
 
@@ -254,7 +255,7 @@ Edit `fs_data.php` to change what files and directories exist. Each entry is an 
 After changing `fs_data.php`, bump the `FS_VERSION` constant at the top of `terminal.php` to force all active browser sessions to reload the new filesystem:
 
 ```php
-define('FS_VERSION', '7');  // increment this whenever fs_data.php changes
+define('FS_VERSION', '18');  // increment this whenever fs_data.php changes
 ```
 
 ---
