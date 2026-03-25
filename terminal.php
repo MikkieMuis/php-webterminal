@@ -63,14 +63,16 @@ if (isset($_GET['complete'])) {
             'find','awk','sed','diff','du','chmod','chown','ln',
             'zip','unzip','tar',
             'echo','clear','exit','logout','history','help','alias','last',
-            'sudo','su','man','passwd','base64','bc',
+            'sudo','su','man','passwd','base64','bc','pushd','popd','dirs',
             'whoami','hostname','uname','uptime','date','df','free',
             'ps','top','htop','id','env','printenv','which',
             'fastfetch','neofetch','systemctl','php',
             'exa','firewall-cmd','kill','pkill',
             'lsblk','blkid','dmesg','vmstat','iostat',
             'hostnamectl','timedatectl','chgrp','logger',
+            'journalctl','lsof',
             'ifconfig','ip','ping','wget','curl','telnet','sendmail',
+            'netstat','ss','ssh','dig','host',
             'nano','joe','dnf','mysql','mariadb',
         ];
         foreach ($commands as $cmd) {
@@ -287,9 +289,13 @@ if ($cmd === 'll') { $cmd = 'ls'; array_unshift($argv, '-la'); $args = implode('
 // command dispatch
 switch ($cmd) {
     case 'ls': case 'cd': case 'mkdir': case 'rmdir': case 'touch': case 'rm': case 'cat':
-    case 'wc': case 'more': case 'less': case 'grep': case 'cp': case 'mv':
-    case 'head': case 'tail': case 'du': case 'chmod': case 'chown': case 'diff': case 'find':
+    case 'wc': case 'more': case 'less': case 'cp': case 'mv':
+    case 'du': case 'chmod': case 'chown': case 'ln':
         require __DIR__ . '/commands/filesystem.php';
+        break;
+
+    case 'grep': case 'head': case 'tail': case 'diff': case 'find':
+        require __DIR__ . '/commands/search.php';
         break;
 
     case 'sort': case 'uniq': case 'cut': case 'tr':
@@ -310,22 +316,30 @@ switch ($cmd) {
 
     case 'whoami': case 'pwd': case 'hostname': case 'uname': case 'uptime':
     case 'date': case 'df': case 'free': case 'ps': case 'top': case 'htop':
-    case 'id': case 'env': case 'printenv': case 'which':
-    case 'fastfetch': case 'neofetch': case 'systemctl': case 'php':
-    case 'exa': case 'firewall-cmd': case 'kill': case 'pkill':
-    case 'lsblk': case 'blkid': case 'dmesg': case 'vmstat': case 'iostat':
-    case 'hostnamectl': case 'timedatectl': case 'chgrp': case 'logger':
-        require __DIR__ . '/commands/system.php';
+    case 'id': case 'env': case 'printenv': case 'which': case 'exa':
+    case 'fastfetch': case 'neofetch':
+        require __DIR__ . '/commands/sysinfo.php';
+        break;
+
+    case 'systemctl': case 'firewall-cmd': case 'journalctl':
+        require __DIR__ . '/commands/services.php';
+        break;
+
+    case 'php': case 'kill': case 'pkill': case 'lsblk': case 'blkid':
+    case 'dmesg': case 'vmstat': case 'iostat': case 'hostnamectl':
+    case 'timedatectl': case 'chgrp': case 'logger': case 'lsof':
+        require __DIR__ . '/commands/hardware.php';
         break;
 
     case 'ifconfig': case 'ip': case 'ping': case 'wget': case 'curl':
     case 'telnet': case 'sendmail':
+    case 'netstat': case 'ss': case 'ssh': case 'dig': case 'host':
         require __DIR__ . '/commands/network.php';
         break;
 
     case 'echo': case 'clear': case 'exit': case 'logout': case 'history':
     case 'help': case 'alias': case 'last': case 'sudo': case 'su': case 'man':
-    case 'passwd': case 'base64': case 'bc':
+    case 'passwd': case 'base64': case 'bc': case 'pushd': case 'popd': case 'dirs':
         require __DIR__ . '/commands/shell.php';
         break;
 

@@ -1,5 +1,6 @@
 <?php
-//  network commands: ifconfig, ip, ping, wget, curl, telnet, sendmail
+//  network commands: ifconfig, ip, ping, wget, curl, telnet, sendmail,
+//                    netstat, ss, ssh, dig, host
 //  Receives: $cmd, $args, $argv, $user, $body  (from terminal.php scope)
 
 switch ($cmd) {
@@ -172,6 +173,286 @@ switch ($cmd) {
             'port'    => $telPort,
         ]);
         exit;
+    }
+
+    // netstat
+    case 'netstat': {
+        $showAll  = (strpos($args, 'a') !== false);
+        $showNum  = (strpos($args, 'n') !== false);
+        $showPid  = (strpos($args, 'p') !== false);
+        $showTcp  = (strpos($args, 't') !== false) || $args === '' || $args === '-a';
+        $showUdp  = (strpos($args, 'u') !== false) || $args === '' || $args === '-a';
+        $showListen = (strpos($args, 'l') !== false) || $showAll;
+
+        if (strpos($args, 'r') !== false) {
+            // routing table
+            out("Kernel IP routing table\n"
+              . "Destination     Gateway         Genmask         Flags   MSS Window  irtt Iface\n"
+              . "0.0.0.0         192.168.1.1     0.0.0.0         UG        0 0          0 eth0\n"
+              . "192.168.1.0     0.0.0.0         255.255.255.0   U         0 0          0 eth0\n"
+              . "127.0.0.0       0.0.0.0         255.0.0.0       U         0 0          0 lo");
+        }
+
+        $lines = ["Active Internet connections" . ($showAll ? " (servers and established)" : " (w/o servers)")];
+        $lines[] = "Proto Recv-Q Send-Q Local Address           Foreign Address         State" . ($showPid ? "       PID/Program" : "");
+
+        // TCP established
+        $established = [
+            ['tcp', '0', '0', '0.0.0.0:22',    '192.168.1.42:54321', 'ESTABLISHED', '1234/sshd'],
+            ['tcp', '0', '0', '127.0.0.1:3306', '127.0.0.1:51820',   'ESTABLISHED', '2001/mysqld'],
+            ['tcp', '0', '0', '0.0.0.0:80',     '93.184.216.34:51200','ESTABLISHED', '1100/httpd'],
+        ];
+        // TCP listeners
+        $listeners = [
+            ['tcp', '0', '0', '0.0.0.0:22',    '0.0.0.0:*', 'LISTEN', '1234/sshd'],
+            ['tcp', '0', '0', '0.0.0.0:80',    '0.0.0.0:*', 'LISTEN', '1100/httpd'],
+            ['tcp', '0', '0', '0.0.0.0:443',   '0.0.0.0:*', 'LISTEN', '1100/httpd'],
+            ['tcp', '0', '0', '127.0.0.1:3306','0.0.0.0:*', 'LISTEN', '2001/mysqld'],
+            ['tcp', '0', '0', '127.0.0.1:9000','0.0.0.0:*', 'LISTEN', '2222/php-fpm'],
+        ];
+        // UDP
+        $udp = [
+            ['udp', '0', '0', '0.0.0.0:68',   '0.0.0.0:*', '', '888/dhclient'],
+            ['udp', '0', '0', '127.0.0.1:323', '0.0.0.0:*', '', '777/chronyd'],
+        ];
+
+        $rows = [];
+        if ($showListen) {
+            foreach ($listeners as $r) $rows[] = $r;
+        }
+        if (!$showListen || $showAll) {
+            foreach ($established as $r) $rows[] = $r;
+        }
+        if ($showUdp) {
+            foreach ($udp as $r) $rows[] = $r;
+        }
+
+        foreach ($rows as $r) {
+            $line = sprintf("%-5s %-6s %-6s %-23s %-23s %-11s", $r[0], $r[1], $r[2], $r[3], $r[4], $r[5]);
+            if ($showPid) $line .= ' ' . $r[6];
+            $lines[] = $line;
+        }
+        out(implode("\n", $lines));
+    }
+
+    // ss
+    case 'ss': {
+        $showAll    = (strpos($args, 'a') !== false);
+        $showListen = (strpos($args, 'l') !== false) || $showAll;
+        $showNum    = (strpos($args, 'n') !== false);
+        $showProc   = (strpos($args, 'p') !== false);
+        $showTcp    = (strpos($args, 't') !== false) || $args === '' || $args === '-a'
+                   || (strpos($args, 'l') !== false && strpos($args, 'u') === false);
+        $showUdp    = (strpos($args, 'u') !== false);
+
+        if (strpos($args, 'r') !== false) {
+            // route summary like ss -r
+            out("Routing table output not supported. Use: ip route");
+        }
+
+        $lines = ["Netid  State      Recv-Q Send-Q Local Address:Port               Peer Address:Port" . ($showProc ? "  Process" : "")];
+
+        $sockets = [
+            // state,      recv,send, local,                          peer
+            ['tcp', 'LISTEN',     '0', '128', '0.0.0.0:22',         '0.0.0.0:*',         '1234/sshd'],
+            ['tcp', 'LISTEN',     '0', '128', '0.0.0.0:80',         '0.0.0.0:*',         '1100/httpd'],
+            ['tcp', 'LISTEN',     '0', '128', '0.0.0.0:443',        '0.0.0.0:*',         '1100/httpd'],
+            ['tcp', 'LISTEN',     '0', '80',  '127.0.0.1:3306',     '0.0.0.0:*',         '2001/mysqld'],
+            ['tcp', 'LISTEN',     '0', '511', '127.0.0.1:9000',     '0.0.0.0:*',         '2222/php-fpm'],
+            ['tcp', 'ESTABLISHED','0', '0',   '192.168.1.10:22',    '192.168.1.42:54321', '1234/sshd'],
+            ['udp', 'UNCONN',     '0', '0',   '0.0.0.0:68',         '0.0.0.0:*',         '888/dhclient'],
+            ['udp', 'UNCONN',     '0', '0',   '127.0.0.1:323',      '0.0.0.0:*',         '777/chronyd'],
+        ];
+
+        $listenOnly = (strpos($args, 'l') !== false) && !$showAll;
+        foreach ($sockets as $s) {
+            list($proto, $state, $rq, $sq, $local, $peer, $proc) = $s;
+            if (!$showTcp && $proto === 'tcp') continue;
+            if (!$showUdp && $proto === 'udp' && $showTcp) continue;
+            if (!$showListen && $state === 'LISTEN') continue;
+            if ($listenOnly && $state !== 'LISTEN') continue;
+            $line = sprintf("%-6s %-11s %-6s %-6s %-31s %-31s", $proto, $state, $rq, $sq, $local, $peer);
+            if ($showProc) $line .= ' users:(("' . explode('/', $proc)[1] . '",pid=' . explode('/', $proc)[0] . ',fd=3))';
+            $lines[] = $line;
+        }
+        out(implode("\n", $lines));
+    }
+
+    // ssh
+    case 'ssh': {
+        if ($args === '') {
+            out("usage: ssh [-46AaCfGgKkMNnqsTtVvXxYy] [-b bind_interface]\n"
+              . "           [-c cipher_spec] [-D [bind_address:]port]\n"
+              . "           [-E log_file] [-e escape_char]\n"
+              . "           [-F configfile] [-I pkcs11] [-i identity_file]\n"
+              . "           [-J [user@]host[:port]] [-L address]\n"
+              . "           [-l login_name] [-m mac_spec] [-O ctl_cmd]\n"
+              . "           [-o option] [-p port] [-Q query_option]\n"
+              . "           [-R address] [-S ctl_path] [-W host:port]\n"
+              . "           [-w local_tun[:remote_tun]] destination [command]");
+        }
+
+        // parse flags
+        $sshUser = $user;
+        $sshPort = 22;
+        $sshHost = '';
+        $sshVerbose = false;
+        for ($si = 0; $si < count($argv); $si++) {
+            $a = $argv[$si];
+            if ($a === '-l' && isset($argv[$si+1])) { $sshUser = $argv[++$si]; }
+            elseif ($a === '-p' && isset($argv[$si+1])) { $sshPort = (int)$argv[++$si]; }
+            elseif ($a === '-v' || $a === '-vv' || $a === '-vvv') { $sshVerbose = true; }
+            elseif ($a[0] !== '-' && $sshHost === '') {
+                // user@host syntax
+                if (strpos($a, '@') !== false) {
+                    list($sshUser, $sshHost) = explode('@', $a, 2);
+                } else {
+                    $sshHost = $a;
+                }
+            }
+        }
+
+        if ($sshHost === '') {
+            err('ssh: no host specified');
+        }
+
+        // Resolve IP
+        $knownHosts = [
+            'localhost'   => '127.0.0.1',
+            '127.0.0.1'   => '127.0.0.1',
+            'github.com'  => '140.82.121.4',
+            'google.com'  => '142.250.185.46',
+        ];
+        $ip = isset($knownHosts[$sshHost]) ? $knownHosts[$sshHost]
+            : implode('.', [rand(1,254),rand(1,254),rand(1,254),rand(1,254)]);
+
+        $portStr = ($sshPort !== 22) ? ' port ' . $sshPort : '';
+
+        $verbose = '';
+        if ($sshVerbose) {
+            $verbose = "OpenSSH_8.7p1, OpenSSL 3.0.7 1 Nov 2022\n"
+                     . "debug1: Reading configuration data /etc/ssh/ssh_config\n"
+                     . "debug1: Connecting to $sshHost [$ip]$portStr\n"
+                     . "debug1: Connection established.\n"
+                     . "debug1: Host '$sshHost' is known and matches the ECDSA host key.\n"
+                     . "debug1: Authenticating to $sshHost:$sshPort as '$sshUser'\n"
+                     . "debug1: Authentications that can continue: publickey,password\n"
+                     . "debug1: Trying private key: /root/.ssh/id_rsa\n"
+                     . "debug1: Authentication succeeded (publickey).\n";
+        }
+
+        // Simulate connection refused for non-localhost hosts (realistic)
+        if ($ip !== '127.0.0.1') {
+            $banner = $verbose . "ssh: connect to host $sshHost port $sshPort: Connection refused";
+            err($banner);
+        }
+
+        out($verbose . "Last login: " . date('D M j H:i:s Y') . " from 192.168.1.42\n"
+          . "[" . $sshUser . "@" . CONF_HOSTNAME . " ~]$ ");
+    }
+
+    // dig
+    case 'dig': {
+        if ($args === '') {
+            out("; <<>> DiG 9.16.23-RH <<>>\n"
+              . ";; global options: +cmd\n"
+              . ";; Got answer:\n"
+              . ";; QUESTION SECTION:\n"
+              . ";.                              IN      NS\n\n"
+              . "Usage: dig [@server] name [type]");
+        }
+
+        // Parse: dig [@server] hostname [type]
+        $digHost  = '';
+        $digType  = 'A';
+        $digServer= '';
+        foreach ($argv as $a) {
+            if ($a[0] === '@') { $digServer = substr($a, 1); }
+            elseif (in_array(strtoupper($a), ['A','AAAA','MX','NS','TXT','CNAME','SOA','PTR','ANY'])) {
+                $digType = strtoupper($a);
+            } elseif ($a[0] !== '-' && $digHost === '') {
+                $digHost = $a;
+            }
+        }
+
+        if ($digHost === '') err('dig: no host specified');
+
+        // Static DNS records
+        $dns = [
+            'google.com'     => ['A'=>['142.250.185.46'], 'MX'=>['10 smtp.google.com.'], 'NS'=>['ns1.google.com.','ns2.google.com.']],
+            'github.com'     => ['A'=>['140.82.121.4'],   'NS'=>['ns-1707.awsdns-21.co.uk.']],
+            'cloudflare.com' => ['A'=>['104.16.132.229'], 'MX'=>['10 mail.cloudflare.com.']],
+            'localhost'      => ['A'=>['127.0.0.1']],
+        ];
+
+        $records = isset($dns[$digHost][$digType]) ? $dns[$digHost][$digType]
+                 : [implode('.', [rand(1,254),rand(1,254),rand(1,254),rand(1,254)])];
+
+        $qtime = rand(10, 120);
+        $server = $digServer ?: '8.8.8.8';
+        $ts = date('D M j H:i:s Y T');
+
+        $answer = '';
+        foreach ($records as $rec) {
+            $answer .= sprintf("%-23s 300     IN      %-6s %s\n", $digHost.'.', $digType, $rec);
+        }
+
+        out("; <<>> DiG 9.16.23-RH <<>> $digHost" . ($digType !== 'A' ? " $digType" : "") . "\n"
+          . ";; global options: +cmd\n"
+          . ";; Got answer:\n"
+          . ";; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: " . rand(1000,9999) . "\n"
+          . ";; flags: qr rd ra; QUERY: 1, ANSWER: " . count($records) . ", AUTHORITY: 0, ADDITIONAL: 0\n\n"
+          . ";; QUESTION SECTION:\n"
+          . sprintf(";%-22s IN      %s\n\n", $digHost.'.', $digType)
+          . ";; ANSWER SECTION:\n"
+          . $answer . "\n"
+          . ";; Query time: $qtime msec\n"
+          . ";; SERVER: $server#53($server)\n"
+          . ";; WHEN: $ts\n"
+          . ";; MSG SIZE  rcvd: " . (rand(4,10) * 12));
+    }
+
+    // host
+    case 'host': {
+        if ($args === '') {
+            out("Usage: host [-aCdilrTvVw] [-c class] [-N ndots] [-t type] [-W time]\n"
+              . "            [-R number] [-m flag] [-4] [-6] hostname [server]");
+        }
+
+        $hostTarget = '';
+        $hostType   = 'A';
+        foreach ($argv as $a) {
+            if ($a === '-t' ) continue;
+            if (in_array(strtoupper($a), ['A','AAAA','MX','NS','TXT','CNAME','SOA'])) {
+                $hostType = strtoupper($a);
+            } elseif ($a[0] !== '-' && $hostTarget === '') {
+                $hostTarget = $a;
+            }
+        }
+
+        if ($hostTarget === '') err('host: no host specified');
+
+        $dns = [
+            'google.com'     => ['A'=>['142.250.185.46'], 'MX'=>['google.com mail is handled by 10 smtp.google.com.']],
+            'github.com'     => ['A'=>['140.82.121.4']],
+            'cloudflare.com' => ['A'=>['104.16.132.229']],
+            'localhost'      => ['A'=>['127.0.0.1']],
+        ];
+
+        // Reverse PTR lookup
+        if (preg_match('/^\d+\.\d+\.\d+\.\d+$/', $hostTarget)) {
+            $rev = implode('.', array_reverse(explode('.', $hostTarget))) . '.in-addr.arpa';
+            $ptr = 'server-' . str_replace('.', '-', $hostTarget) . '.example.com';
+            out("$rev domain name pointer $ptr.");
+        }
+
+        if ($hostType === 'MX' && isset($dns[$hostTarget]['MX'])) {
+            foreach ($dns[$hostTarget]['MX'] as $rec) out($hostTarget . ' ' . $rec);
+        }
+
+        $ip = isset($dns[$hostTarget]['A'][0]) ? $dns[$hostTarget]['A'][0]
+            : implode('.', [rand(1,254),rand(1,254),rand(1,254),rand(1,254)]);
+        out("$hostTarget has address $ip");
     }
 
     // sendmail

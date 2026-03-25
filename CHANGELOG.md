@@ -2,6 +2,33 @@
 
 All notable changes to php-webterminal will be documented here.
 
+## [2.12.0] - 2026-03-25
+
+### Changed
+- Split `commands/system.php` (1158 lines) into three focused files:
+  - `commands/sysinfo.php` — whoami, pwd, hostname, uname, uptime, date, df, free, ps, top, htop, id, env, printenv, which, exa, fastfetch, neofetch
+  - `commands/services.php` — systemctl, firewall-cmd, journalctl
+  - `commands/hardware.php` — php, kill, pkill, lsblk, blkid, dmesg, vmstat, iostat, hostnamectl, timedatectl, chgrp, logger, lsof
+- Extracted grep/head/tail/diff/find from `commands/filesystem.php` into `commands/search.php`; moved `grep_collect_files()` and `glob_to_pcre()` helpers there as well
+- Updated `terminal.php` dispatch switch to route each command group to its new file
+- Deleted `commands/system.php`
+
+## [2.11.0] - 2026-03-25
+
+### Added
+- `netstat` — print active connections, listening sockets and routing table (`-a`, `-n`, `-p`, `-t`, `-u`, `-l`, `-r`)
+- `ss` — iproute2 socket statistics (`-a`, `-l`, `-n`, `-p`, `-t`, `-u`)
+- `ssh [USER@]HOST` — simulated remote login; verbose mode (`-v`); connection refused for non-localhost
+- `dig HOST [TYPE]` — DNS lookup with A, MX, NS, TXT, CNAME, SOA, ANY support; `@server` flag
+- `host HOST [-t TYPE]` — short DNS lookup; reverse PTR for IP addresses
+- `journalctl` — query the systemd journal; `-u UNIT`, `-n N`, `-r`, `-f`, `--since`; per-service log lines
+- `lsof` — list open files and sockets; filter by `-i PORT`, `-p PID`, `-u USER`
+- `pushd <dir>` — push directory onto stack and cd; swap top two entries when called with no args
+- `popd` — pop directory from stack and return to previous directory
+- `dirs [-v]` — display the directory stack; `-v` shows numbered entries
+- Man pages for all ten new commands
+- All new commands added to `help`, `which` binary map, tab-completion, and dispatch switch
+
 ## [2.10.0] - 2026-03-25
 
 ### Added

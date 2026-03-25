@@ -1,6 +1,7 @@
 <?php
 //  shell commands: echo, clear, exit, logout, history, help,
-//                  alias, last, sudo, man, passwd, base64, bc
+//                  alias, last, sudo, man, passwd, base64, bc,
+//                  pushd, popd, dirs
 //  Receives: $cmd, $args, $argv, $user, $body  (from terminal.php scope)
 
 switch ($cmd) {
@@ -92,6 +93,8 @@ switch ($cmd) {
           . "  iostat            report CPU and disk I/O statistics\n"
           . "  hostnamectl       show/set system hostname info\n"
           . "  timedatectl       show/set system time and NTP status\n"
+          . "  journalctl [-u SVC] [-n N]  query the journal log\n"
+          . "  lsof [-i PORT] [-p PID]     list open files and sockets\n"
           . "  php [-v|-i|-m|-r] PHP CLI\n"
           . "\n"
           . "NETWORK\n"
@@ -102,6 +105,11 @@ switch ($cmd) {
           . "  curl <url>        transfer data from/to URL\n"
           . "  telnet HOST [PORT] open TCP connection (simulated)\n"
           . "  sendmail [-v] TO  send mail message\n"
+          . "  netstat [-anp]    show network connections\n"
+          . "  ss [-tlnp]        socket statistics\n"
+          . "  ssh [USER@]HOST   connect to remote host (simulated)\n"
+          . "  dig HOST [TYPE]   DNS lookup\n"
+          . "  host HOST         DNS lookup (short form)\n"
           . "\n"
           . "SHELL & MISC\n"
           . "  echo <text>       print text to screen\n"
@@ -115,6 +123,9 @@ switch ($cmd) {
           . "  base64 [-d]       encode/decode base64\n"
           . "  bc                basic calculator\n"
           . "  logger MSG        write message to system log\n"
+          . "  pushd <dir>       push directory onto stack and cd\n"
+          . "  popd              pop directory from stack and cd\n"
+          . "  dirs [-v]         display directory stack\n"
           . "  nano <file>       text editor\n"
            . "  joe <file>        Joe's Own Editor (^K commands)\n"
            . "  mysql [-u USER]   MySQL/MariaDB interactive client\n"
@@ -254,5 +265,50 @@ switch ($cmd) {
             ? rtrim(rtrim(number_format($result, 10, '.', ''), '0'), '.')
             : (string)(int)$result;
         out($formatted);
+    }
+
+    // pushd
+    case 'pushd': {
+        if (!isset($_SESSION['dirstack'])) $_SESSION['dirstack'] = [];
+        if ($args === '') {
+            // With no args, swap top of stack with cwd (like bash)
+            if (empty($_SESSION['dirstack'])) err('pushd: no other directory');
+            $top = array_pop($_SESSION['dirstack']);
+            array_push($_SESSION['dirstack'], $_SESSION['cwd']);
+            $_SESSION['cwd'] = $top;
+            $stack = array_merge([$_SESSION['cwd']], array_reverse($_SESSION['dirstack']));
+            out(implode(' ', $stack));
+        }
+        $fs   = $_SESSION['fs'];
+        $dest = res_path($args);
+        if (!isset($fs[$dest]) || $fs[$dest]['type'] !== 'dir') {
+            err('pushd: ' . $args . ': No such file or directory');
+        }
+        array_push($_SESSION['dirstack'], $_SESSION['cwd']);
+        $_SESSION['cwd'] = $dest;
+        $stack = array_merge([$dest], array_reverse($_SESSION['dirstack']));
+        out(implode(' ', $stack));
+    }
+
+    // popd
+    case 'popd': {
+        if (!isset($_SESSION['dirstack'])) $_SESSION['dirstack'] = [];
+        if (empty($_SESSION['dirstack'])) err('popd: directory stack empty');
+        $_SESSION['cwd'] = array_pop($_SESSION['dirstack']);
+        $stack = array_merge([$_SESSION['cwd']], array_reverse($_SESSION['dirstack']));
+        out(implode(' ', $stack));
+    }
+
+    // dirs
+    case 'dirs': {
+        if (!isset($_SESSION['dirstack'])) $_SESSION['dirstack'] = [];
+        $stack = array_merge([$_SESSION['cwd']], array_reverse($_SESSION['dirstack']));
+        if (strpos($args, '-v') !== false) {
+            $lines = [];
+            foreach ($stack as $i => $d) $lines[] = " $i  $d";
+            out(implode("\n", $lines));
+        } else {
+            out(implode(' ', $stack));
+        }
     }
 }

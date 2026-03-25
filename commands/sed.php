@@ -19,10 +19,15 @@ switch ($cmd) {
         while ($i < count($argv)) {
             $a = $argv[$i];
             if ($a === '-n') { $suppressDefault = true; }
-            elseif ($a === '-e' && isset($argv[$i+1])) { $scripts[] = $argv[++$i]; }
+            elseif ($a === '-e' && isset($argv[$i+1])) {
+                $scripts[] = preg_replace('/^([\'"])(.*)\1$/', '$2', $argv[++$i]);
+            }
             elseif (preg_match('/^-e(.+)$/', $a, $m)) { $scripts[] = $m[1]; }
             elseif ($a === '-i' || $a === '--in-place') { $inPlace = true; }
-            elseif ($a[0] !== '-' && empty($scripts)) { $scripts[] = $a; }  // bare script
+            elseif ($a[0] !== '-' && empty($scripts)) {
+                // strip surrounding quotes (terminal splits on whitespace, quotes come through literally)
+                $scripts[] = preg_replace('/^([\'"])(.*)\1$/', '$2', $a);
+            }
             elseif ($a[0] !== '-') { $sedFiles[] = $a; }
             $i++;
         }

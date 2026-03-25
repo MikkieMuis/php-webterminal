@@ -26,7 +26,8 @@ switch ($cmd) {
             } elseif ($a === '-v' && isset($argv[$i+1])) {
                 $assignVars[] = $argv[++$i];
             } elseif ($a[0] !== '-' && $program === '') {
-                $program = $a;
+                // strip surrounding single or double quotes (terminal splits on whitespace, quotes come through literally)
+                $program = preg_replace('/^([\'"])(.*)\1$/', '$2', $a);
             } elseif ($a[0] !== '-') {
                 $awkFiles[] = $a;
             }
