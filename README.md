@@ -12,6 +12,27 @@ Whether you want to show off your server-side skills, add a geeky touch to your 
 
 ---
 
+## Add a terminal to your website
+
+Drop a fully working Linux terminal into any page in one line:
+
+```html
+<iframe src="path/to/php-webterminal/index.php" width="900" height="520"></iframe>
+```
+
+That's it. Visitors get a real-feeling shell they can type in — no backend wiring, no database, no JavaScript build step. It runs entirely off a single PHP file.
+
+**Why bother?**
+
+- It's a great gimmick for a portfolio or agency site — something interactive beats a static screenshot every time
+- Drop it on a "contact" or "about" page and let visitors poke around a fake server
+- Use it as a polished live demo of your sysadmin or DevOps skills
+- Configure it to match your own hostname, OS, and disk layout so it looks like your actual stack
+
+Everything is configurable: the hostname, kernel version, users, filesystem contents, load averages, disk sizes — all set in a single `config.php` file. Clone the repo, copy the example config, done.
+
+---
+
 ## Use it as a free Linux practice environment
 
 > **No VM. No Docker. No signup. Just open a browser and start typing.**
