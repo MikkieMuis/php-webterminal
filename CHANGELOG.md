@@ -2,6 +2,19 @@
 
 All notable changes to php-webterminal will be documented here.
 
+## [2.9.0] - 2026-03-25
+
+### Security
+- Write-permission enforcement for all mutating commands
+  - `nano` / `joe` open: deny editing files outside the current user's home and `/tmp/`
+  - `__nano_save`: deny saving to paths the user cannot write
+  - `mkdir`, `touch`, `rmdir`: deny creating/removing entries outside writable paths
+  - `rm`: deny removing files the user does not own
+  - `cp`: deny copying to a destination the user cannot write
+  - `mv`: deny moving a source the user cannot write, or to a destination they cannot write
+  - `ln -s`: deny creating symlinks in directories the user cannot write
+  - Root is always allowed; guest/non-root restricted to `/home/<user>/` and `/tmp/`
+
 ## [2.8.0] - 2026-03-24
 
 ### Added

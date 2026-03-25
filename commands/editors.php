@@ -22,6 +22,9 @@ switch ($cmd) {
                 $content = $_SESSION['fs'][$path]['content'] ?? '';
             }
         }
+        if (!can_write($path, $user)) {
+            err('nano: ' . $args . ': Permission denied');
+        }
         echo json_encode([
             'output'   => '',
             'nano'     => true,
@@ -50,6 +53,9 @@ switch ($cmd) {
                 $content = $_SESSION['fs'][$path]['content'] ?? '';
             }
         }
+        if (!can_write($path, $user)) {
+            err('joe: ' . $args . ': Permission denied');
+        }
         echo json_encode([
             'output'   => '',
             'joe'      => true,
@@ -66,6 +72,9 @@ switch ($cmd) {
         $saveContent = isset($body['content']) ? $body['content'] : '';
         if ($savePath === '') err('nano_save: missing path');
         $savePath = res_path($savePath);
+        if (!can_write($savePath, $user)) {
+            err('Permission denied');
+        }
         $parent   = dirname($savePath);
         if (!isset($_SESSION['fs'][$parent])) {
             err('nano_save: ' . $savePath . ': No such directory');

@@ -139,6 +139,7 @@ switch ($cmd) {
     case 'mkdir':
         if ($args === '') err('mkdir: missing operand');
         $target = res_path($args);
+        if (!can_write($target, $user)) err('mkdir: cannot create directory \'' . $args . '\': Permission denied');
         if (isset($_SESSION['fs'][$target])) err('mkdir: cannot create directory \'' . $args . '\': File exists');
         $parent = dirname($target);
         if (!isset($_SESSION['fs'][$parent]) || $_SESSION['fs'][$parent]['type'] !== 'dir') {
@@ -151,6 +152,7 @@ switch ($cmd) {
     case 'touch':
         if ($args === '') err('touch: missing file operand');
         $target = res_path($args);
+        if (!can_write($target, $user)) err('touch: cannot touch \'' . $args . '\': Permission denied');
         if (!isset($_SESSION['fs'][$target])) {
             $parent = dirname($target);
             if (!isset($_SESSION['fs'][$parent])) err('touch: cannot touch \'' . $args . '\': No such file or directory');
@@ -177,6 +179,7 @@ switch ($cmd) {
         }
         $path = res_path($target);
         if (!isset($_SESSION['fs'][$path])) err('rm: cannot remove \'' . $target . '\': No such file or directory');
+        if (!can_write($path, $user)) err('rm: cannot remove \'' . $target . '\': Permission denied');
         if ($_SESSION['fs'][$path]['type'] === 'dir' && strpos($flags,'-r') === false) {
             err('rm: cannot remove \'' . $target . '\': Is a directory');
         }
@@ -262,6 +265,7 @@ switch ($cmd) {
         if (!isset($_SESSION['fs'][$destParent]) || $_SESSION['fs'][$destParent]['type'] !== 'dir') {
             err('cp: cannot create \'' . $cpargs[1] . '\': No such file or directory');
         }
+        if (!can_write($dest, $user)) err('cp: cannot create \'' . $cpargs[1] . '\': Permission denied');
         if ($srcType === 'file') {
             $_SESSION['fs'][$dest] = array_merge($_SESSION['fs'][$src], ['mtime' => time()]);
         } else {
@@ -290,6 +294,7 @@ switch ($cmd) {
         $src  = res_path($mvargs[0]);
         $dest = res_path($mvargs[1]);
         if (!isset($_SESSION['fs'][$src])) err('mv: cannot stat \'' . $mvargs[0] . '\': No such file or directory');
+        if (!can_write($src, $user)) err('mv: cannot move \'' . $mvargs[0] . '\': Permission denied');
         // if dest is an existing directory, move into it
         if (isset($_SESSION['fs'][$dest]) && $_SESSION['fs'][$dest]['type'] === 'dir') {
             $dest = rtrim($dest, '/') . '/' . basename($src);
@@ -298,6 +303,7 @@ switch ($cmd) {
         if (!isset($_SESSION['fs'][$destParent]) || $_SESSION['fs'][$destParent]['type'] !== 'dir') {
             err('mv: cannot move \'' . $mvargs[0] . '\' to \'' . $mvargs[1] . '\': No such file or directory');
         }
+        if (!can_write($dest, $user)) err('mv: cannot move \'' . $mvargs[0] . '\' to \'' . $mvargs[1] . '\': Permission denied');
         // move: copy all matching keys to new prefix, then remove old ones
         $srcPrefix  = rtrim($src, '/');
         $destPrefix = rtrim($dest, '/');
@@ -624,6 +630,7 @@ switch ($cmd) {
         $target = res_path($args);
         if (!isset($_SESSION['fs'][$target])) err('rmdir: failed to remove \'' . $args . '\': No such file or directory');
         if ($_SESSION['fs'][$target]['type'] !== 'dir') err('rmdir: failed to remove \'' . $args . '\': Not a directory');
+        if (!can_write($target, $user)) err('rmdir: failed to remove \'' . $args . '\': Permission denied');
         // check empty: any key that starts with target/ is a child
         $prefix = rtrim($target, '/') . '/';
         foreach (array_keys($_SESSION['fs']) as $k) {
@@ -867,6 +874,9 @@ switch ($cmd) {
         $parent = dirname($linkPath);
         if (!isset($_SESSION['fs'][$parent]) || $_SESSION['fs'][$parent]['type'] !== 'dir') {
             err('ln: failed to create symbolic link \'' . $lnargs[1] . '\': No such file or directory');
+        }
+        if (!can_write($linkPath, $user)) {
+            err('ln: failed to create symbolic link \'' . $lnargs[1] . '\': Permission denied');
         }
         $_SESSION['fs'][$linkKey] = ['type' => 'file', 'content' => '-> ' . $target, 'mtime' => time()];
         out('');
