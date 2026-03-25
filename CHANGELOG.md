@@ -2,6 +2,21 @@
 
 All notable changes to php-webterminal will be documented here.
 
+## [2.10.0] - 2026-03-25
+
+### Added
+- `lsblk` — list block devices with tree layout (sda/sdb/sdc/sdd + partitions)
+- `blkid` — print block device UUIDs and filesystem types
+- `dmesg` — fake kernel ring buffer; supports `-T` (human timestamps) and `-n N` (last N lines)
+- `vmstat` — virtual memory statistics (single static snapshot)
+- `iostat` — CPU and disk I/O statistics table
+- `hostnamectl` — show hostname, OS, kernel, chassis, machine-ID
+- `timedatectl` — show local/UTC time, timezone, NTP status
+- `chgrp` — cosmetic stub (accepts args, exits silently like `chmod`/`chown`)
+- `logger` — write message to system log (cosmetic; no persistent syslog in session)
+- Man pages for all nine new commands
+- All new commands added to `help`, `which`, and tab-completion
+
 ## [2.9.0] - 2026-03-25
 
 ### Security

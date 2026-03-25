@@ -1,7 +1,9 @@
 <?php
 //  system commands: whoami, pwd, hostname, uname, uptime, date,
 //                   df, free, ps, top, id, env, which, fastfetch, neofetch,
-//                   systemctl, php, exa, firewall-cmd
+//                   systemctl, php, exa, firewall-cmd,
+//                   lsblk, blkid, dmesg, vmstat, iostat,
+//                   hostnamectl, timedatectl, chgrp, logger
 //  Receives: $cmd, $args, $argv, $user, $body  (from terminal.php scope)
 
 switch ($cmd) {
@@ -235,6 +237,10 @@ switch ($cmd) {
             'base64'=>'/usr/bin/base64','bc'=>'/usr/bin/bc',
             'exa'=>'/usr/bin/exa','firewall-cmd'=>'/usr/bin/firewall-cmd',
             'telnet'=>'/usr/bin/telnet','sendmail'=>'/usr/sbin/sendmail',
+            'lsblk'=>'/bin/lsblk','blkid'=>'/sbin/blkid','dmesg'=>'/bin/dmesg',
+            'vmstat'=>'/usr/bin/vmstat','iostat'=>'/usr/bin/iostat',
+            'hostnamectl'=>'/usr/bin/hostnamectl','timedatectl'=>'/usr/bin/timedatectl',
+            'chgrp'=>'/bin/chgrp','logger'=>'/usr/bin/logger',
         ];
         $results = [];
         foreach (explode(' ', $args) as $w) {
@@ -849,4 +855,131 @@ switch ($cmd) {
         out('');
         break;
     }
+
+    // lsblk
+    case 'lsblk':
+        out("NAME   MAJ:MIN RM   SIZE RO TYPE MOUNTPOINTS\n"
+          . "sda      8:0    0   500G  0 disk\n"
+          . "├─sda1   8:1    0   499G  0 part /\n"
+          . "└─sda2   8:2    0   512M  0 part /boot\n"
+          . "sdb      8:16   0     2T  0 disk\n"
+          . "└─sdb1   8:17   0     2T  0 part /mnt/db\n"
+          . "sdc      8:32   0     4T  0 disk\n"
+          . "└─sdc1   8:33   0     4T  0 part /mnt/backup\n"
+          . "sdd      8:48   0   500G  0 disk\n"
+          . "└─sdd1   8:49   0   500G  0 part /home\n"
+          . "sr0     11:0    1  1024M  0 rom");
+
+    // blkid
+    case 'blkid':
+        out('/dev/sda1: UUID="a1b2c3d4-e5f6-7890-abcd-ef1234567890" BLOCK_SIZE="512" TYPE="xfs" PARTUUID="00000001-01"\n'
+          . '/dev/sda2: UUID="b2c3d4e5-f6a7-8901-bcde-f12345678901" BLOCK_SIZE="512" TYPE="xfs" PARTUUID="00000001-02"\n'
+          . '/dev/sdb1: UUID="c3d4e5f6-a7b8-9012-cdef-123456789012" BLOCK_SIZE="512" TYPE="xfs" PARTUUID="00000002-01"\n'
+          . '/dev/sdc1: UUID="d4e5f6a7-b8c9-0123-defa-234567890123" BLOCK_SIZE="512" TYPE="xfs" PARTUUID="00000003-01"\n'
+          . '/dev/sdd1: UUID="e5f6a7b8-c9d0-1234-efab-345678901234" BLOCK_SIZE="512" TYPE="xfs" PARTUUID="00000004-01"');
+
+    // dmesg
+    case 'dmesg': {
+        $boot = date('H:i:s', $_SESSION['boot']);
+        $lines = [
+            '[    0.000000] Linux version ' . SYS_KERNEL . ' (mockbuild@mock.alma.example.com) (gcc version 11.4.1) #1 SMP',
+            '[    0.000000] Command line: BOOT_IMAGE=/vmlinuz-' . SYS_KERNEL . ' root=/dev/sda1 ro rhgb quiet',
+            '[    0.000000] BIOS-provided physical RAM map:',
+            '[    0.000000] BIOS-e820: [mem 0x0000000000000000-0x000000000009fbff] usable',
+            '[    0.000000] ACPI: IRQ0 used by override.',
+            '[    0.296462] PCI: Using configuration type 1 for base access',
+            '[    1.024381] SCSI subsystem initialized',
+            '[    1.238710] ata1: SATA max UDMA/133 abar m2048@0xf0814000 port 0xf0814100 irq 29',
+            '[    1.431022] scsi 0:0:0:0: Direct-Access     ATA      SAMSUNG MZNLN512 MAV2 PQ: 0 ANSI: 5',
+            '[    1.892034] sd 0:0:0:0: [sda] 1048576000 512-byte logical blocks: (537 GB/500 GiB)',
+            '[    2.013456] EXT4-fs (sda1): mounted filesystem with ordered data mode',
+            '[    2.341987] NET: Registered PF_INET6 protocol family',
+            '[    3.012345] e1000e: Intel(R) PRO/1000 Network Driver',
+            '[    3.567891] e1000e 0000:00:19.0 eth0: (PCI Express:2.5GT/s:Width x1)',
+            '[    4.123456] RPC: Registered named UNIX socket transport module.',
+            '[    5.234567] systemd[1]: Detected virtualization none.',
+            '[    5.891234] systemd[1]: Detected architecture x86-64.',
+            '[    6.012345] systemd[1]: Running in system mode.',
+            '[    7.123456] Started dracut-pre-udev.service - dracut pre-udev hook.',
+            '[    8.234567] dracut-pre-udev[312]: Starting udev.',
+            '[    9.345678] systemd-udevd[432]: starting version 249',
+            '[   10.456789] random: crng init done',
+            '[   11.567890] NET: Registered PF_PACKET protocol family',
+            '[   12.678901] audit: type=1404 audit(0.000:2): enforcing=1 old_enforcing=0 auid=4294967295 ses=4294967295 res=1',
+            '[   15.890123] SELinux: policy loaded with name "targeted"',
+            '[   18.012345] Started NetworkManager.service - Network Manager.',
+            '[   19.123456] Started sshd.service - OpenSSH server daemon.',
+            '[   20.234567] Started httpd.service - The Apache HTTP Server.',
+            '[   21.345678] Started mariadb.service - MariaDB 10.5 database server.',
+        ];
+        // Apply -n flag: last N lines
+        if (preg_match('/-n\s*(\d+)/', $args, $m)) {
+            $lines = array_slice($lines, -(int)$m[1]);
+        }
+        // -T: human-readable timestamps (replace [N.N] with date-like string)
+        if (strpos($args, '-T') !== false) {
+            $bootTs = $_SESSION['boot'];
+            $lines = array_map(function($l) use ($bootTs) {
+                return preg_replace_callback('/^\[\s*([\d.]+)\]/', function($m) use ($bootTs) {
+                    return '[' . date('Y-m-d H:i:s', $bootTs + (int)$m[1]) . ']';
+                }, $l);
+            }, $lines);
+        }
+        out(implode("\n", $lines));
+    }
+
+    // vmstat
+    case 'vmstat': {
+        $load = CONF_LOAD_1;
+        out("procs -----------memory---------- ---swap-- -----io---- -system-- ------cpu-----\n"
+          . " r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st\n"
+          . " 1  0      0 8847360   4096 4128768   0    0    12    24  312  641  3  1 95  1  0");
+    }
+
+    // iostat
+    case 'iostat': {
+        out("Linux " . SYS_KERNEL . " (" . CONF_HOSTNAME . ")  " . date('m/d/Y') . "  _x86_64_  (4 CPU)\n"
+          . "\navg-cpu:  %user   %nice %system %iowait  %steal   %idle\n"
+          . "           2.84    0.00    0.92    0.42    0.00   95.82\n"
+          . "\nDevice             tps    kB_read/s    kB_wrtn/s    kB_dscd/s    kB_read    kB_wrtn    kB_dscd\n"
+          . "sda               4.21        28.34        94.12         0.00     104293     346102          0\n"
+          . "sdb               1.03         8.11        22.44         0.00      29834      82519          0\n"
+          . "sdc               0.31         2.04         8.77         0.00       7503      32261          0\n"
+          . "sdd               0.18         1.22         3.10         0.00       4489      11402          0");
+    }
+
+    // hostnamectl
+    case 'hostnamectl':
+        out(" Static hostname: " . CONF_HOSTNAME . "\n"
+          . "       Icon name: computer-server\n"
+          . "         Chassis: server\n"
+          . "      Machine ID: a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6\n"
+          . "         Boot ID: f1e2d3c4b5a6978869504d3c2b1a0f9e\n"
+          . "Operating System: " . CONF_OS . "\n"
+          . "     CPE OS Name: cpe:/o:almalinux:almalinux:9::baseos\n"
+          . "          Kernel: Linux " . SYS_KERNEL . "\n"
+          . "    Architecture: x86-64\n"
+          . " Hardware Vendor: Dell Inc.\n"
+          . "  Hardware Model: PowerEdge R640");
+
+    // timedatectl
+    case 'timedatectl':
+        out("               Local time: " . date('D Y-m-d H:i:s T') . "\n"
+          . "           Universal time: " . gmdate('D Y-m-d H:i:s') . " UTC\n"
+          . "                 RTC time: " . gmdate('D Y-m-d H:i:s') . "\n"
+          . "                Time zone: Europe/Amsterdam (CET, +0100)\n"
+          . "System clock synchronized: yes\n"
+          . "              NTP service: active\n"
+          . "          RTC in local TZ: no");
+
+    // chgrp — cosmetic stub
+    case 'chgrp':
+        if (count($argv) < 2) err('chgrp: missing operand');
+        out('');
+
+    // logger
+    case 'logger':
+        if ($args === '') err('logger: missing message operand');
+        out('');  // silently accepted — real logger writes to syslog, no stdout
 }
+

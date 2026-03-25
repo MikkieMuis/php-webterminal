@@ -68,6 +68,8 @@ if (isset($_GET['complete'])) {
             'ps','top','htop','id','env','printenv','which',
             'fastfetch','neofetch','systemctl','php',
             'exa','firewall-cmd','kill','pkill',
+            'lsblk','blkid','dmesg','vmstat','iostat',
+            'hostnamectl','timedatectl','chgrp','logger',
             'ifconfig','ip','ping','wget','curl','telnet','sendmail',
             'nano','joe','dnf','mysql','mariadb',
         ];
@@ -173,6 +175,15 @@ function res_path($path) {
         $stack[] = $p;
     }
     return '/' . implode('/', $stack);
+}
+
+// Returns true if $user may write to $path.
+// root: always yes. Others: only under /home/<user>/ and /tmp/.
+function can_write(string $path, string $user): bool {
+    if ($user === 'root') return true;
+    $home = '/home/' . $user;
+    return (strpos($path, $home . '/') === 0 || $path === $home
+         || strpos($path, '/tmp/') === 0 || $path === '/tmp');
 }
 
 function ls_dir($path, $long, $cols = 80) {
@@ -302,6 +313,8 @@ switch ($cmd) {
     case 'id': case 'env': case 'printenv': case 'which':
     case 'fastfetch': case 'neofetch': case 'systemctl': case 'php':
     case 'exa': case 'firewall-cmd': case 'kill': case 'pkill':
+    case 'lsblk': case 'blkid': case 'dmesg': case 'vmstat': case 'iostat':
+    case 'hostnamectl': case 'timedatectl': case 'chgrp': case 'logger':
         require __DIR__ . '/commands/system.php';
         break;
 
