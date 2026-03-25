@@ -14,22 +14,21 @@ Whether you want to show off your server-side skills, add a geeky touch to your 
 
 ## Add a terminal to your website
 
+Sometimes you just want something on your site that makes people go "oh, that's cool."
+
 Drop a fully working Linux terminal into any page in one line:
 
 ```html
 <iframe src="path/to/php-webterminal/index.php" width="900" height="520"></iframe>
 ```
 
-That's it. Visitors get a real-feeling shell they can type in — no backend wiring, no database, no JavaScript build step. It runs entirely off a single PHP file.
+Visitors get a real shell they can actually type in. They can `ls` around, read fake config files, break things, `sudo` to root, run `htop`, mess with `nano` — the whole deal. Nothing is real, nothing breaks, and most people will spend way longer poking at it than you'd expect.
 
-**Why bother?**
+It's a great addition to a portfolio, an agency site, or honestly anywhere you want to make a good impression on someone who knows their way around a terminal. A static screenshot of a server says "I know Linux." An interactive terminal says it louder.
 
-- It's a great gimmick for a portfolio or agency site — something interactive beats a static screenshot every time
-- Drop it on a "contact" or "about" page and let visitors poke around a fake server
-- Use it as a polished live demo of your sysadmin or DevOps skills
-- Configure it to match your own hostname, OS, and disk layout so it looks like your actual stack
+Configure it to look like your own stack — set the hostname, OS, kernel version, disk layout, whatever — and it'll feel like you're giving someone a live shell on your actual machine. You're not, obviously, but it looks the part.
 
-Everything is configurable: the hostname, kernel version, users, filesystem contents, load averages, disk sizes — all set in a single `config.php` file. Clone the repo, copy the example config, done.
+No database. No npm. No framework. One PHP file and you're done.
 
 ---
 
