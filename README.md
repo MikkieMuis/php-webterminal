@@ -12,8 +12,6 @@ Whether you want to show off your server-side skills, add a geeky touch to your 
 
 ---
 
-## Fun stuff
-
 Open the demo and have a poke around. Some highlights:
 
 - **`sudo rm -rf /`** — just try it. You'll see why it's in here.
