@@ -12,6 +12,29 @@ Whether you want to show off your server-side skills, add a geeky touch to your 
 
 ---
 
+## Fun stuff
+
+Open the demo and have a poke around. Some highlights:
+
+- **`sudo rm -rf /`** — just try it. You'll see why it's in here.
+- **`sudo su`** or **`su root`** — become root. The prompt changes, permissions change, locked commands unlock.
+- **`cat /etc/shadow`** — readable as root only. Try it as guest first.
+- **`nano /etc/hosts`** — open and edit a real-looking system file. Save it, `cat` it back, the change sticks for the session.
+- **`mysql -u root -p`** — a full fake database session. `SHOW DATABASES`, `USE production`, `SELECT * FROM users`. It's all there.
+- **`htop`** — colour bars, fake processes, press `q` to exit.
+- **`ssh someserver.com`** — it'll refuse the connection. Try `ssh localhost` instead.
+- **`dig clsoftware.nl MX`** — fake but formatted like the real thing.
+- **`bc <<< "2^32"`** — it actually calculates it.
+- **`base64 <<< "hello"`** — encodes it. `base64 -d` decodes it back.
+- **`neofetch`** — AlmaLinux logo, fake specs, the works.
+- **`pushd /var/log`** then **`dirs`** then **`popd`** — directory stack, works as expected.
+- **`dnf install vim`** — watch it pretend to install something. Root only.
+- **`man ssh`** — there are man pages for everything.
+
+The terminal resets when you close the tab. Nothing is real. Break whatever you want.
+
+---
+
 ## Add a terminal to your website
 
 Sometimes you just want something on your site that makes people go "oh, that's cool."
@@ -32,11 +55,11 @@ No database. No npm. No framework. One PHP file and you're done.
 
 ---
 
-## Use it as a free Linux practice environment
+## Use it as a self-hosted Linux practice environment
 
 > **No VM. No Docker. No signup. Just open a browser and start typing.**
 
-This project doubles as a free, browser-based Linux sandbox. Use it to practice Linux commands without risking anything on a real server. It runs a simulated AlmaLinux 9.7 environment with a realistic filesystem, three user accounts (`guest`, `deploy`, and `root`), and over 80 commands covering everything beginners and intermediate users need to know.
+This project doubles as a self-hosted, browser-based Linux sandbox. Use it to practice Linux commands without risking anything on a real server. It runs a simulated AlmaLinux 9.7 environment with a realistic filesystem, three user accounts (`guest`, `deploy`, and `root`), and over 80 commands covering everything beginners and intermediate users need to know.
 
 **Who is this for?**
 
@@ -48,7 +71,7 @@ This project doubles as a free, browser-based Linux sandbox. Use it to practice 
 
 **What makes it different from paid Linux practice sites?**
 
-- Free and open source (MIT licence)
+- Open source (MIT licence)
 - Zero setup — no account, no download, no VM
 - Runs in any browser, including mobile
 - **Fully self-hostable** — runs on any machine with PHP 7.4+, including your local laptop, a Raspberry Pi, a shared hosting account, or a VPS. No internet connection required after the initial clone. See [Setup](#setup) below.
