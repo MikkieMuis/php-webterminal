@@ -296,7 +296,12 @@ html, body {
 
   <!-- vim overlay (hidden until vim/vi command runs) -->
   <!-- Layout (top→bottom): content area | status line | cmdline bar -->
+  <!-- vimInput: hidden textarea that holds focus while vim is open.
+       Keeping a real editable element focused prevents browser extensions
+       (e.g. Vimium C) from intercepting keystrokes before our handler sees them. -->
   <div id="vim-overlay" style="display:none;">
+    <textarea id="vimInput" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+      style="position:fixed;opacity:0;pointer-events:none;width:1px;height:1px;top:0;left:0;border:none;padding:0;margin:0;font-size:16px;resize:none;"></textarea>
     <div id="vim-content"></div>
     <div id="vim-status"><span></span><span></span></div>
     <div id="vim-cmdline"></div>

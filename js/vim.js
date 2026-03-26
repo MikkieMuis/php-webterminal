@@ -224,6 +224,11 @@ function doVim(data) {
     hidePrompt();
     vimRender();
 
+    // Focus the hidden textarea so browser extensions (Vimium C etc.) don't
+    // intercept keystrokes intended for vim.
+    var inp = document.getElementById('vimInput');
+    if (inp) { inp.value = ''; inp.focus(); }
+
     // Auto-dismiss splash after 2 seconds
     if (d.splashTimer) clearTimeout(d.splashTimer);
     d.splashTimer = setTimeout(function() {
@@ -782,8 +787,53 @@ function vimClose() {
     vimActive = false;
     if (vimData.splashTimer) { clearTimeout(vimData.splashTimer); vimData.splashTimer = null; }
     document.getElementById('vim-overlay').style.display = 'none';
+    var inp = document.getElementById('vimInput');
+    if (inp) inp.blur();
     print('', 'n');
     updateTitleAndPrompt();
     curline.style.display = 'flex';
     scr.scrollTop = scr.scrollHeight;
 }
+
+// ── vimInput keyboard handling ────────────────────────────────────────────
+// The hidden #vimInput textarea holds focus while vim is open so browser
+// extensions (Vimium C, etc.) cannot intercept vim key bindings.
+// We wire up keydown + input events here, mirroring mobileInput in index.php.
+(function() {
+    function getInp() { return document.getElementById('vimInput'); }
+
+    // keydown: handle every key (control keys AND printable) directly.
+    // stopPropagation prevents the document-level keydown from also firing.
+    document.addEventListener('DOMContentLoaded', function() {
+        var inp = getInp();
+        if (!inp) return;
+
+        inp.addEventListener('keydown', function(e) {
+            if (!vimActive) return;
+            e.stopPropagation();
+            e.preventDefault();
+            inp.value = '';
+            vimKey(e.key, e.ctrlKey, e.altKey);
+        });
+
+        // 'input' event fires on Android / some mobile keyboards for printable
+        // chars before keydown. Feed each character individually.
+        inp.addEventListener('input', function() {
+            if (!vimActive) return;
+            var val = inp.value;
+            inp.value = '';
+            if (!val) return;
+            for (var i = 0; i < val.length; i++) {
+                vimKey(val[i], false, false);
+            }
+        });
+
+        // If the user clicks anywhere on the vim overlay, refocus vimInput
+        var overlay = document.getElementById('vim-overlay');
+        if (overlay) {
+            overlay.addEventListener('click', function() {
+                if (vimActive) { inp.value = ''; inp.focus(); }
+            });
+        }
+    });
+})();
