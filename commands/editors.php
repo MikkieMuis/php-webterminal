@@ -66,7 +66,39 @@ switch ($cmd) {
         ]);
         exit;
 
-    // __nano_save (internal — called by JS nano/joe overlay)
+    // vi / vim
+    case 'vi':
+    case 'vim':
+        if ($args === '') {
+            // no filename — open a new empty buffer (like real vim)
+            $path    = res_path('New Buffer');
+            $isNew   = true;
+            $content = '';
+        } else {
+            $path    = res_path($args);
+            $isNew   = !isset($_SESSION['fs'][$path]);
+            $content = '';
+            if (!$isNew) {
+                if ($_SESSION['fs'][$path]['type'] === 'dir') {
+                    err('vim: ' . $args . ': Is a directory');
+                }
+                $content = $_SESSION['fs'][$path]['content'] ?? '';
+            }
+        }
+        if (!can_write($path, $user)) {
+            err('vim: ' . $args . ': Permission denied');
+        }
+        echo json_encode([
+            'output'   => '',
+            'vim'      => true,
+            'path'     => $path,
+            'filename' => $args === '' ? 'New Buffer' : basename($path),
+            'content'  => $content,
+            'isnew'    => $isNew,
+        ]);
+        exit;
+
+    // __nano_save (internal — called by JS nano/joe/vim overlay)
     case '__nano_save':
         $savePath    = isset($body['path'])    ? $body['path']    : '';
         $saveContent = isset($body['content']) ? $body['content'] : '';

@@ -220,7 +220,7 @@ switch ($cmd) {
             'kill'=>'/bin/kill','df'=>'/bin/df','free'=>'/usr/bin/free',
             'ifconfig'=>'/sbin/ifconfig','ip'=>'/sbin/ip','ping'=>'/usr/bin/ping',
             'netstat'=>'/usr/bin/netstat','ss'=>'/usr/sbin/ss','nmap'=>'/usr/bin/nmap',
-            'vim'=>'/usr/bin/vim','nano'=>'/usr/bin/nano','joe'=>'/usr/bin/joe',
+            'vim'=>'/usr/bin/vim','vi'=>'/usr/bin/vi','nano'=>'/usr/bin/nano','joe'=>'/usr/bin/joe',
             'tar'=>'/bin/tar','gzip'=>'/bin/gzip','zip'=>'/usr/bin/zip',
             'uname'=>'/bin/uname','hostname'=>'/bin/hostname','date'=>'/bin/date',
             'echo'=>'/bin/echo','printf'=>'/usr/bin/printf','env'=>'/usr/bin/env',

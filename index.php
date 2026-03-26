@@ -155,6 +155,56 @@ html, body {
   background:#e0e0e0; animation:blink 1s infinite;
 }
 
+/* vim overlay — styled after real Vim 9 */
+#vim-overlay {
+  position:absolute; top:0; left:0; width:100%; height:100%;
+  background:#0a0a0a; color:#e0e0e0;
+  font-family:'JetBrains Mono','Courier New',monospace; font-size:13px;
+  display:flex; flex-direction:column;
+  z-index:103; overflow:hidden;
+}
+/* Content area: fills the space between top and status/cmdline */
+#vim-content {
+  flex:1; overflow:hidden; position:relative;
+  padding:0; white-space:pre;
+  font-family:'JetBrains Mono','Courier New',monospace;
+}
+/* Block cursor in normal mode */
+.vim-cur {
+  background:#e0e0e0; color:#0a0a0a;
+}
+/* Thin cursor in insert mode */
+.vim-cur-insert {
+  border-left:2px solid #e0e0e0;
+}
+/* Tilde lines (lines past end of file) */
+.vim-tilde {
+  color:#5555cc;
+}
+/* Line number gutter */
+.vim-gutter {
+  color:#555555; user-select:none; -webkit-user-select:none;
+  display:inline-block;
+}
+/* Visual selection highlight */
+.vim-visual {
+  background:#264f78; color:#e0e0e0;
+}
+/* Status line — reverse video, bottom of content area */
+#vim-status {
+  background:#e0e0e0; color:#0a0a0a;
+  padding:1px 4px; flex-shrink:0;
+  font-size:13px; font-weight:bold;
+  display:flex; justify-content:space-between;
+  white-space:nowrap; overflow:hidden;
+}
+/* Cmdline bar — very bottom, shows : and / commands, flash messages */
+#vim-cmdline {
+  background:#0a0a0a; color:#e0e0e0;
+  padding:1px 4px; min-height:1.4em; flex-shrink:0;
+  font-size:13px;
+}
+
 /* joe overlay — styled after real JOE 4.6 */
 #joe-overlay {
   position:absolute; top:0; left:0; width:100%; height:100%;
@@ -244,6 +294,14 @@ html, body {
     <div id="joe-status-bottom"></div>
   </div>
 
+  <!-- vim overlay (hidden until vim/vi command runs) -->
+  <!-- Layout (top→bottom): content area | status line | cmdline bar -->
+  <div id="vim-overlay" style="display:none;">
+    <div id="vim-content"></div>
+    <div id="vim-status"><span></span><span></span></div>
+    <div id="vim-cmdline"></div>
+  </div>
+
   <!-- mysql overlay (hidden until mysql/mariadb command runs) -->
   <div id="mysql-overlay" style="display:none;">
     <div id="mysql-titlebar">MariaDB 10.5.22</div>
@@ -257,6 +315,7 @@ html, body {
 <script src="js/pager.js?v=<?php echo filemtime(__DIR__.'/js/pager.js'); ?>"></script>
 <script src="js/nano.js?v=<?php echo filemtime(__DIR__.'/js/nano.js'); ?>"></script>
 <script src="js/joe.js?v=<?php echo filemtime(__DIR__.'/js/joe.js'); ?>"></script>
+<script src="js/vim.js?v=<?php echo filemtime(__DIR__.'/js/vim.js'); ?>"></script>
 <script src="js/mysql.js?v=<?php echo filemtime(__DIR__.'/js/mysql.js'); ?>"></script>
 <script src="js/interactive.js?v=<?php echo filemtime(__DIR__.'/js/interactive.js'); ?>"></script>
 <script src="js/rsearch.js?v=<?php echo filemtime(__DIR__.'/js/rsearch.js'); ?>"></script>
@@ -503,6 +562,7 @@ function handleKey(key, ctrlKey, altKey, metaKey) {
   if (mode === 'boot') return;
   if (nanoActive)  { nanoKey(key, ctrlKey); return; }
   if (joeActive)   { joeKey(key, ctrlKey, altKey); return; }
+  if (vimActive)   { vimKey(key, ctrlKey, altKey); return; }
   if (mysqlActive) { mysqlKey(key, ctrlKey); return; }
   if (pagerActive) { pagerKey(key); return; }
   if (topActive) return;
@@ -746,6 +806,13 @@ document.addEventListener('keydown', function(e) {
     return;
   }
 
+  // When vim is active, prevent browser Ctrl shortcuts so they reach vim
+  if (vimActive && e.ctrlKey && !e.shiftKey) {
+    e.preventDefault();
+    handleKey(e.key, e.ctrlKey, e.altKey, e.metaKey);
+    return;
+  }
+
   // Ctrl+C — cancel typed line (SIGINT), show ^C like a real terminal
   if (e.ctrlKey && !e.shiftKey && (e.key === 'c' || e.key === 'C')) {
     if (nanoActive) return;  // let nano handle it
@@ -822,6 +889,29 @@ document.addEventListener('paste', function(e) {
     }
     joeData.modified = true;
     joeRender();
+  } else if (vimActive) {
+    // insert pasted text into vim at cursor position (in insert mode only; otherwise ignore)
+    if (vimData.mode === 'insert') {
+      var lines = text.split('\n');
+      var cur = vimData.lines[vimData.curRow];
+      var before = cur.slice(0, vimData.curCol);
+      var after  = cur.slice(vimData.curCol);
+      if (lines.length === 1) {
+        vimData.lines[vimData.curRow] = before + lines[0] + after;
+        vimData.curCol += lines[0].length;
+      } else {
+        vimData.lines[vimData.curRow] = before + lines[0];
+        for (var vi = 1; vi < lines.length - 1; vi++) {
+          vimData.curRow++;
+          vimData.lines.splice(vimData.curRow, 0, lines[vi]);
+        }
+        vimData.curRow++;
+        vimData.lines.splice(vimData.curRow, 0, lines[lines.length-1] + after);
+        vimData.curCol = lines[lines.length-1].length;
+      }
+      vimData.modified = true;
+      vimRender();
+    }
   } else if (mode === 'command') {
     // paste into the command line at cursor position (strip newlines — just take first line)
     var firstLine = text.split('\n')[0];
@@ -895,6 +985,29 @@ window.addEventListener('message', function(e) {
       }
       joeData.modified = true;
       joeRender();
+    } else if (vimActive) {
+      // insert pasted text into vim at cursor position (in insert mode only)
+      if (vimData.mode === 'insert') {
+        var lines = text.split('\n');
+        var cur = vimData.lines[vimData.curRow];
+        var before = cur.slice(0, vimData.curCol);
+        var after  = cur.slice(vimData.curCol);
+        if (lines.length === 1) {
+          vimData.lines[vimData.curRow] = before + lines[0] + after;
+          vimData.curCol += lines[0].length;
+        } else {
+          vimData.lines[vimData.curRow] = before + lines[0];
+          for (var wi = 1; wi < lines.length - 1; wi++) {
+            vimData.curRow++;
+            vimData.lines.splice(vimData.curRow, 0, lines[wi]);
+          }
+          vimData.curRow++;
+          vimData.lines.splice(vimData.curRow, 0, lines[lines.length-1] + after);
+          vimData.curCol = lines[lines.length-1].length;
+        }
+        vimData.modified = true;
+        vimRender();
+      }
     } else if (mode === 'command') {
       var firstLine = text.split('\n')[0];
       typed = typed.slice(0, cursorPos) + firstLine + typed.slice(cursorPos);
@@ -979,6 +1092,8 @@ function handleResponse(data) {
     doNano(data); return;
   } else if (data.joe) {
     doJoe(data); return;
+  } else if (data.vim) {
+    doVim(data); return;
   } else if (data.mysql) {
     doMysql(data); return;
   } else if (data.pager !== undefined) {

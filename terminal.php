@@ -73,7 +73,7 @@ if (isset($_GET['complete'])) {
             'journalctl','lsof',
             'ifconfig','ip','ping','wget','curl','telnet','sendmail',
             'netstat','ss','ssh','dig','host','scp','nmcli',
-            'nano','joe','dnf','mysql','mariadb',
+            'nano','joe','vim','vi','dnf','mysql','mariadb',
             'xargs','strace',
         ];
         foreach ($commands as $cmd) {
@@ -346,7 +346,7 @@ switch ($cmd) {
         require __DIR__ . '/commands/shell.php';
         break;
 
-    case 'nano': case 'joe': case '__nano_save':
+    case 'nano': case 'joe': case 'vi': case 'vim': case '__nano_save':
         require __DIR__ . '/commands/editors.php';
         break;
 
@@ -366,8 +366,6 @@ switch ($cmd) {
             'svn'        => 'subversion',
             'hg'         => 'mercurial',
             // editors
-            'vim'        => 'vim-enhanced',
-            'vi'         => 'vim-enhanced',
             'emacs'      => 'emacs',
             'gedit'      => 'gedit',
             // languages / runtimes

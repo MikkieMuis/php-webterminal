@@ -73,7 +73,7 @@ This project doubles as a self-hosted, browser-based Linux sandbox. Use it to pr
 - Zero setup — no account, no download, no VM
 - Runs in any browser, including mobile
 - **Fully self-hostable** — runs on any machine with PHP 7.4+, including your local laptop, a Raspberry Pi, a shared hosting account, or a VPS. No internet connection required after the initial clone. See [Setup](#setup) below.
-- 80+ commands implemented: `ls`, `cd`, `grep`, `ps`, `top`, `htop`, `systemctl`, `dnf`, `nano`, `sudo`, `chmod`, `tar`, `zip`, `curl`, `wget`, `ping`, `netstat`, `ss`, `dig`, `journalctl`, `awk`, `sed`, and many more
+- 80+ commands implemented: `ls`, `cd`, `grep`, `ps`, `top`, `htop`, `systemctl`, `dnf`, `nano`, `vim`, `sudo`, `chmod`, `tar`, `zip`, `curl`, `wget`, `ping`, `netstat`, `ss`, `dig`, `journalctl`, `awk`, `sed`, and many more
 - Two users: `guest` (default, logged in automatically), `deploy` (regular user), and `root` (full access via `sudo` or `su`) — practice privilege escalation safely
 - Realistic fake filesystem with config files, logs, home directories, and service unit files
 - Session-persistent — changes you make (`mkdir`, `touch`, `rm`) survive across commands in the same session
@@ -119,7 +119,7 @@ Then open `http://localhost:8080` in your browser. That's it — no database, no
 | Hardware & processes | `php`, `kill`, `pkill`, `lsblk`, `blkid`, `dmesg`, `vmstat`, `iostat`, `hostnamectl`, `timedatectl`, `chgrp`, `logger`, `lsof`, `strace` |
 | Network | `ping`, `ifconfig`, `ip`, `wget`, `curl`, `telnet`, `sendmail`, `netstat`, `ss`, `ssh`, `dig`, `host`, `scp`, `nmcli` |
 | Shell | `echo`, `history`, `alias`, `clear`, `exit`, `logout`, `help`, `man`, `sudo`, `su`, `last`, `passwd`, `base64`, `bc`, `pushd`, `popd`, `dirs`, `xargs` |
-| Editors | `nano`, `joe` |
+| Editors | `nano`, `joe`, `vim`, `vi` |
 | Packages | `dnf` |
 | Database | `mysql`, `mariadb` |
 
@@ -173,7 +173,7 @@ Then open `http://localhost:8080` in your browser. That's it — no database, no
 
 `passwd` simulates a password change prompt and always reports success. `base64` encodes or decodes a string (`-d` / `--decode`); pass input via `<<<`. `bc` evaluates arithmetic expressions (`+`, `-`, `*`, `/`, `^`, `%`, parentheses); pass the expression via `<<<`.
 
-`nano` is a full-screen text editor overlay. Open a file with `nano <file>`, edit freely, and save with `Ctrl+O` (then Enter) or exit with `Ctrl+X`. `joe` is an alternative full-screen editor with `^K` prefix key bindings; save with `^KD`, exit with `^KX`, abort with `^KC`.
+`nano` is a full-screen text editor overlay. Open a file with `nano <file>`, edit freely, and save with `Ctrl+O` (then Enter) or exit with `Ctrl+X`. `joe` is an alternative full-screen editor with `^K` prefix key bindings; save with `^KD`, exit with `^KX`, abort with `^KC`. `vim` (and its alias `vi`) is a full modal editor with Normal, Insert, Visual, and Cmdline modes; open a file with `vim <file>`, press `i` to insert, `Esc` to return to Normal mode, and `:wq` to save and quit.
 
 `ln -s TARGET LINK` creates symbolic links. Symlinks appear cyan in `ls` output and show `lrwxrwxrwx -> target` in `ls -l`. Hard links are not supported.
 
