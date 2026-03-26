@@ -72,8 +72,9 @@ if (isset($_GET['complete'])) {
             'hostnamectl','timedatectl','chgrp','logger',
             'journalctl','lsof',
             'ifconfig','ip','ping','wget','curl','telnet','sendmail',
-            'netstat','ss','ssh','dig','host',
+            'netstat','ss','ssh','dig','host','scp','nmcli',
             'nano','joe','dnf','mysql','mariadb',
+            'xargs','strace',
         ];
         foreach ($commands as $cmd) {
             if ($prefix === '' || strpos($cmd, $prefix) === 0) {
@@ -327,19 +328,21 @@ switch ($cmd) {
 
     case 'php': case 'kill': case 'pkill': case 'lsblk': case 'blkid':
     case 'dmesg': case 'vmstat': case 'iostat': case 'hostnamectl':
-    case 'timedatectl': case 'chgrp': case 'logger': case 'lsof':
+    case 'timedatectl': case 'chgrp': case 'logger': case 'lsof': case 'strace':
         require __DIR__ . '/commands/hardware.php';
         break;
 
     case 'ifconfig': case 'ip': case 'ping': case 'wget': case 'curl':
     case 'telnet': case 'sendmail':
     case 'netstat': case 'ss': case 'ssh': case 'dig': case 'host':
+    case 'scp': case 'nmcli':
         require __DIR__ . '/commands/network.php';
         break;
 
     case 'echo': case 'clear': case 'exit': case 'logout': case 'history':
     case 'help': case 'alias': case 'last': case 'sudo': case 'su': case 'man':
     case 'passwd': case 'base64': case 'bc': case 'pushd': case 'popd': case 'dirs':
+    case 'xargs':
         require __DIR__ . '/commands/shell.php';
         break;
 

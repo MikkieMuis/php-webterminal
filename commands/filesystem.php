@@ -341,12 +341,23 @@ switch ($cmd) {
 
     // du
     case 'du': {
-        // Usage: du [-s] [-h] [PATH...]
-        $showHuman = (strpos($args, 'h') !== false);
-        $summarise = (strpos($args, 's') !== false);
-        $paths = [];
-        foreach ($argv as $a) {
-            if ($a[0] !== '-') $paths[] = $a;
+        // Usage: du [-s] [-h] [-d N] [PATH...]
+        $showHuman = false;
+        $summarise = false;
+        $maxDepth  = PHP_INT_MAX;
+        $paths     = [];
+        for ($di = 0; $di < count($argv); $di++) {
+            $a = $argv[$di];
+            if ($a === '-d' && isset($argv[$di+1])) {
+                $maxDepth = max(0, (int)$argv[++$di]);
+            } elseif (preg_match('/^--max-depth=(\d+)$/', $a, $dm)) {
+                $maxDepth = max(0, (int)$dm[1]);
+            } elseif ($a[0] === '-') {
+                if (strpos($a, 'h') !== false) $showHuman = true;
+                if (strpos($a, 's') !== false) $summarise = true;
+            } else {
+                $paths[] = $a;
+            }
         }
         if (empty($paths)) $paths = [$_SESSION['cwd']];
 
@@ -394,7 +405,10 @@ switch ($cmd) {
                 $sorted = array_keys($dirTotals);
                 rsort($sorted);
                 foreach ($sorted as $d) {
+                    // count depth relative to base
                     $rel = ($d === $base) ? $rawPath : $rawPath . substr($d, strlen($prefix));
+                    $depth = ($d === $base) ? 0 : substr_count(substr($d, strlen($prefix)), '/');
+                    if ($depth > $maxDepth) continue;
                     $lines[] = $fmtSize($dirTotals[$d]) . "\t" . $rel;
                 }
             }

@@ -314,4 +314,59 @@ switch ($cmd) {
         }
         out(implode("\n", $lines));
     }
+
+    // strace
+    case 'strace': {
+        // Usage: strace [-p PID] [-e trace=SYSCALLS] [CMD [ARGS...]]
+        $tracePid  = null;
+        $traceCmd  = '';
+        $traceArgs = [];
+        for ($si = 0; $si < count($argv); $si++) {
+            if ($argv[$si] === '-p' && isset($argv[$si+1])) {
+                $tracePid = (int)$argv[++$si];
+            } elseif ($argv[$si] === '-e' && isset($argv[$si+1])) {
+                $si++; // skip -e trace=xxx
+            } elseif ($argv[$si][0] !== '-' && $traceCmd === '') {
+                $traceCmd = $argv[$si];
+                $traceArgs = array_slice($argv, $si + 1);
+                break;
+            }
+        }
+
+        if ($tracePid === null && $traceCmd === '') {
+            err("strace: must have PROG [ARGS] or -p PID\nTry 'strace -h' for more information.");
+        }
+
+        // Fake PID
+        $pid = $tracePid ?? rand(1000, 9999);
+
+        if ($traceCmd !== '') {
+            $execArgs = array_merge([$traceCmd], $traceArgs);
+            $execStr  = '"' . $traceCmd . '", ["' . implode('", "', $execArgs) . '"], /* envp */';
+            $header   = 'execve("' . '/usr/bin/' . $traceCmd . '", ' . $execStr . ') = 0';
+        } else {
+            $header = 'Process ' . $pid . ' attached';
+        }
+
+        $syscalls = [
+            'brk(NULL)                               = 0x' . dechex(rand(0x55a000000, 0x55affffff)),
+            'access("/etc/ld.so.preload", R_OK)      = -1 ENOENT (No such file or directory)',
+            'openat(AT_FDCWD, "/etc/ld.so.cache", O_RDONLY|O_CLOEXEC) = 3',
+            'fstat(3, {st_mode=S_IFREG|0644, st_size=' . rand(80000, 200000) . ', ...}) = 0',
+            'mmap(NULL, ' . rand(80000, 200000) . ', PROT_READ, MAP_PRIVATE, 3, 0) = 0x7f' . bin2hex(random_bytes(3)),
+            'close(3)                                = 0',
+            'openat(AT_FDCWD, "/lib/x86_64-linux-gnu/libc.so.6", O_RDONLY|O_CLOEXEC) = 3',
+            'read(3, "\177ELF\2\1\1\3\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0P"..., 832) = 832',
+            'fstat(3, {st_mode=S_IFREG|0755, st_size=1839792, ...}) = 0',
+            'mmap(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f' . bin2hex(random_bytes(3)),
+            'close(3)                                = 0',
+            'arch_prctl(ARCH_SET_FS, 0x7f' . bin2hex(random_bytes(3)) . ') = 0',
+            'munmap(0x7f' . bin2hex(random_bytes(3)) . ', ' . rand(80000, 200000) . ') = 0',
+            'write(1, "' . ($traceCmd ?: 'output') . '\\n", ' . rand(5, 20) . ') = ' . rand(5, 20),
+            'exit_group(0)                           = ?',
+            '+++ exited with 0 +++',
+        ];
+
+        out($header . "\n" . implode("\n", $syscalls));
+    }
 }

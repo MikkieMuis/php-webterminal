@@ -241,6 +241,9 @@ switch ($cmd) {
             'chgrp'=>'/bin/chgrp','logger'=>'/usr/bin/logger',
             'dig'=>'/usr/bin/dig','host'=>'/usr/bin/host',
             'lsof'=>'/usr/sbin/lsof',
+            'xargs'=>'/usr/bin/xargs',
+            'strace'=>'/usr/bin/strace',
+            'nmcli'=>'/usr/bin/nmcli',
         ];
         $results = [];
         foreach (explode(' ', $args) as $w) {

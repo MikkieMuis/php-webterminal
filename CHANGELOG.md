@@ -2,6 +2,18 @@
 
 All notable changes to php-webterminal will be documented here.
 
+## [2.13.0] - 2026-03-26
+
+### Added
+- `du -d N` / `--max-depth=N` — limit `du` output to N levels of depth below the target path
+- `xargs [CMD]` — read whitespace-separated tokens from stdin and append them as arguments to a command (default: `echo`); pipe-compatible; dispatches back into the command engine
+- `strace` — trace system calls; supports `strace CMD` (execve trace) and `strace -p PID` (attach to process); outputs a realistic fake syscall log
+- `scp` — secure file copy between hosts (simulated); supports `[user@]host:path` syntax, `-P` port, animated progress output (browser-side, like `wget`)
+- `nmcli` — NetworkManager command-line client; supports `device status`, `device show`, `connection show`, `general status`, `radio`, and `--version`
+- Man pages for all five new/updated commands
+- All new commands added to `help`, `which` binary map, tab-completion, and dispatch switch in `terminal.php` and `terminal_runner.php`
+- 54 new tests (1127 total, all passing)
+
 ## [2.12.0] - 2026-03-25
 
 ### Changed

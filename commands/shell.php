@@ -58,7 +58,7 @@ switch ($cmd) {
           . "  awk 'PROG' [FILE]  pattern-action text processor\n"
           . "  sed 's/PAT/REP/' F stream editor for text\n"
           . "  diff [-u] F1 F2   compare two files\n"
-          . "  du [-sh] [PATH]   disk usage of directory\n"
+          . "  du [-shd N] [PATH]  disk usage of directory\n"
           . "  ln -s TARGET LINK create symbolic link\n"
           . "  chmod MODE FILE   change file permissions (cosmetic)\n"
           . "  chown USER FILE   change file owner (cosmetic)\n"
@@ -108,8 +108,10 @@ switch ($cmd) {
           . "  netstat [-anp]    show network connections\n"
           . "  ss [-tlnp]        socket statistics\n"
           . "  ssh [USER@]HOST   connect to remote host (simulated)\n"
+          . "  scp SRC DEST      secure copy between hosts (simulated)\n"
           . "  dig HOST [TYPE]   DNS lookup\n"
           . "  host HOST         DNS lookup (short form)\n"
+          . "  nmcli             NetworkManager command-line client\n"
           . "\n"
           . "SHELL & MISC\n"
           . "  echo <text>       print text to screen\n"
@@ -126,6 +128,8 @@ switch ($cmd) {
           . "  pushd <dir>       push directory onto stack and cd\n"
           . "  popd              pop directory from stack and cd\n"
           . "  dirs [-v]         display directory stack\n"
+          . "  xargs [CMD]       build and execute commands from stdin\n"
+          . "  strace [-p PID]   trace system calls\n"
           . "  nano <file>       text editor\n"
            . "  joe <file>        Joe's Own Editor (^K commands)\n"
            . "  mysql [-u USER]   MySQL/MariaDB interactive client\n"
@@ -310,5 +314,72 @@ switch ($cmd) {
         } else {
             out(implode(' ', $stack));
         }
+    }
+
+    // xargs
+    case 'xargs': {
+        // Usage: xargs [CMD [ARGS...]]
+        // In a pipe context $body contains the stdin fed via pipe.
+        // Without pipe, xargs with no stdin acts as if reading an empty list.
+        // xargs CMD  — appends each whitespace-separated token from stdin as args to CMD.
+        // xargs      — default command is echo.
+
+        $xcmd  = isset($argv[0]) ? $argv[0] : 'echo';
+        // Extra static args before the appended tokens (everything after xcmd)
+        $xstatic = count($argv) > 1 ? array_slice($argv, 1) : [];
+
+        // stdin comes from $body (pipe) or is empty
+        $stdin = isset($body) ? trim($body) : '';
+        if ($stdin === '') {
+            // no stdin → nothing to do, run cmd with no extra args
+            $tokens = [];
+        } else {
+            $tokens = preg_split('/\s+/', $stdin, -1, PREG_SPLIT_NO_EMPTY);
+        }
+
+        // Build the effective command and re-dispatch it
+        $allArgs = array_merge($xstatic, $tokens);
+        $full    = $xcmd . (count($allArgs) ? ' ' . implode(' ', $allArgs) : '');
+
+        // Re-invoke terminal with the built command
+        $cmd  = strtolower($xcmd);
+        $argv = $allArgs;
+        $args = implode(' ', $allArgs);
+
+        // Dispatch to the appropriate command file
+        $dispatchMap = [
+            'ls'=>'filesystem','cd'=>'filesystem','mkdir'=>'filesystem','rmdir'=>'filesystem',
+            'touch'=>'filesystem','rm'=>'filesystem','cat'=>'filesystem','wc'=>'filesystem',
+            'more'=>'filesystem','less'=>'filesystem','cp'=>'filesystem','mv'=>'filesystem',
+            'du'=>'filesystem','chmod'=>'filesystem','chown'=>'filesystem','ln'=>'filesystem',
+            'grep'=>'search','head'=>'search','tail'=>'search','diff'=>'search','find'=>'search',
+            'sort'=>'text','uniq'=>'text','cut'=>'text','tr'=>'text',
+            'awk'=>'awk','sed'=>'sed',
+            'zip'=>'archive','unzip'=>'archive','tar'=>'archive',
+            'whoami'=>'sysinfo','pwd'=>'sysinfo','hostname'=>'sysinfo','uname'=>'sysinfo',
+            'uptime'=>'sysinfo','date'=>'sysinfo','df'=>'sysinfo','free'=>'sysinfo',
+            'ps'=>'sysinfo','top'=>'sysinfo','htop'=>'sysinfo','id'=>'sysinfo',
+            'env'=>'sysinfo','printenv'=>'sysinfo','which'=>'sysinfo','exa'=>'sysinfo',
+            'fastfetch'=>'sysinfo','neofetch'=>'sysinfo',
+            'systemctl'=>'services','firewall-cmd'=>'services','journalctl'=>'services',
+            'php'=>'hardware','kill'=>'hardware','pkill'=>'hardware','lsblk'=>'hardware',
+            'blkid'=>'hardware','dmesg'=>'hardware','vmstat'=>'hardware','iostat'=>'hardware',
+            'hostnamectl'=>'hardware','timedatectl'=>'hardware','chgrp'=>'hardware',
+            'logger'=>'hardware','lsof'=>'hardware','strace'=>'hardware',
+            'ifconfig'=>'network','ip'=>'network','ping'=>'network','wget'=>'network',
+            'curl'=>'network','telnet'=>'network','sendmail'=>'network',
+            'netstat'=>'network','ss'=>'network','ssh'=>'network','dig'=>'network',
+            'host'=>'network','scp'=>'network','nmcli'=>'network',
+            'echo'=>'shell','history'=>'shell','alias'=>'shell','last'=>'shell',
+            'sudo'=>'shell','su'=>'shell','man'=>'shell','passwd'=>'shell',
+            'base64'=>'shell','bc'=>'shell','pushd'=>'shell','popd'=>'shell','dirs'=>'shell',
+        ];
+        if (isset($dispatchMap[$cmd])) {
+            require __DIR__ . '/' . $dispatchMap[$cmd] . '.php';
+        } else {
+            // fallback: just echo the constructed command line
+            out($full);
+        }
+        exit;
     }
 }

@@ -116,9 +116,9 @@ Then open `http://localhost:8080` in your browser. That's it — no database, no
 | Pagers | `more`, `less` |
 | System info | `uname`, `uptime`, `hostname`, `date`, `df`, `free`, `ps`, `top`, `htop`, `id`, `env`, `printenv`, `which`, `whoami`, `fastfetch`, `neofetch`, `exa` |
 | Services | `systemctl`, `firewall-cmd`, `journalctl` |
-| Hardware & processes | `php`, `kill`, `pkill`, `lsblk`, `blkid`, `dmesg`, `vmstat`, `iostat`, `hostnamectl`, `timedatectl`, `chgrp`, `logger`, `lsof` |
-| Network | `ping`, `ifconfig`, `ip`, `wget`, `curl`, `telnet`, `sendmail`, `netstat`, `ss`, `ssh`, `dig`, `host` |
-| Shell | `echo`, `history`, `alias`, `clear`, `exit`, `logout`, `help`, `man`, `sudo`, `su`, `last`, `passwd`, `base64`, `bc`, `pushd`, `popd`, `dirs` |
+| Hardware & processes | `php`, `kill`, `pkill`, `lsblk`, `blkid`, `dmesg`, `vmstat`, `iostat`, `hostnamectl`, `timedatectl`, `chgrp`, `logger`, `lsof`, `strace` |
+| Network | `ping`, `ifconfig`, `ip`, `wget`, `curl`, `telnet`, `sendmail`, `netstat`, `ss`, `ssh`, `dig`, `host`, `scp`, `nmcli` |
+| Shell | `echo`, `history`, `alias`, `clear`, `exit`, `logout`, `help`, `man`, `sudo`, `su`, `last`, `passwd`, `base64`, `bc`, `pushd`, `popd`, `dirs`, `xargs` |
 | Editors | `nano`, `joe` |
 | Packages | `dnf` |
 | Database | `mysql`, `mariadb` |
@@ -161,7 +161,15 @@ Then open `http://localhost:8080` in your browser. That's it — no database, no
 
 `sendmail` queues a mail message. Plain invocation reports the message as queued. `-v` prints a full SMTP trace (EHLO, MAIL FROM, RCPT TO, DATA, QUIT). `-t` accepts the message from stdin (non-interactive stub).
 
-`rmdir` removes empty directories (errors if the directory has contents). `du` reports disk usage; supports `-s` (summarise) and `-h` (human-readable). `chmod` and `chown` are cosmetic — they accept the standard arguments and succeed silently. `diff` compares two files line by line; supports `-u` (unified format) and `-i` (ignore case).
+`rmdir` removes empty directories (errors if the directory has contents). `du` reports disk usage; supports `-s` (summarise), `-h` (human-readable), and `-d N` / `--max-depth=N` (limit output depth). `chmod` and `chown` are cosmetic — they accept the standard arguments and succeed silently. `diff` compares two files line by line; supports `-u` (unified format) and `-i` (ignore case).
+
+`xargs` reads whitespace-separated tokens from stdin and appends them as arguments to a command (default: `echo`). Fully pipe-compatible.
+
+`strace` traces system calls for a command (`strace ls`) or an existing process (`strace -p PID`). Outputs a fake but realistic syscall log ending with `+++ exited with 0 +++`.
+
+`scp` copies files to/from a remote host over SSH (simulated). Accepts the standard `[user@]host:path` syntax, `-P` for port, and `-r` for recursive. Returns a progress animation to the browser like `wget`.
+
+`nmcli` is the NetworkManager command-line client. Supports `device status`, `device show [IFACE]`, `connection show`, `general status`, `radio`, and `--version`.
 
 `passwd` simulates a password change prompt and always reports success. `base64` encodes or decodes a string (`-d` / `--decode`); pass input via `<<<`. `bc` evaluates arithmetic expressions (`+`, `-`, `*`, `/`, `^`, `%`, parentheses); pass the expression via `<<<`.
 

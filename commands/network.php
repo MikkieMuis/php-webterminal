@@ -492,4 +492,131 @@ switch ($cmd) {
         out("Message queued for delivery to " . $recipient . "\nDate: " . $ts);
         break;
     }
+
+    // scp
+    case 'scp': {
+        // Usage: scp [opts] [[user@]host:]src [[user@]host:]dest
+        if ($args === '') err("usage: scp [-346BCpqrTv] [-c cipher] [-F ssh_config] [-i identity_file]\n           [-J destination] [-l limit] [-o ssh_option] [-P port]\n           [-S program] source ... target");
+
+        // Parse source and destination (last two non-flag args)
+        $scpFiles = [];
+        $scpPort  = 22;
+        for ($si = 0; $si < count($argv); $si++) {
+            if (($argv[$si] === '-P') && isset($argv[$si+1])) {
+                $scpPort = (int)$argv[++$si];
+            } elseif ($argv[$si][0] !== '-') {
+                $scpFiles[] = $argv[$si];
+            }
+        }
+        if (count($scpFiles) < 2) err('scp: specify source and destination');
+
+        $scpSrc  = $scpFiles[0];
+        $scpDest = $scpFiles[count($scpFiles) - 1];
+
+        // Determine filename for progress display
+        $scpFile = basename(str_replace(':', '/', $scpSrc));
+        if ($scpFile === '') $scpFile = 'file';
+
+        $scpSize = rand(512, 8192);
+
+        // Return as a download-style animation (like wget)
+        echo json_encode([
+            'output' => '',
+            'scp'    => true,
+            'src'    => $scpSrc,
+            'dest'   => $scpDest,
+            'file'   => $scpFile,
+            'size'   => $scpSize,
+            'port'   => $scpPort,
+        ]);
+        exit;
+    }
+
+    // nmcli
+    case 'nmcli': {
+        // Usage: nmcli [device status | connection show | general status | ...]
+        $sub  = isset($argv[0]) ? strtolower($argv[0]) : '';
+        $sub2 = isset($argv[1]) ? strtolower($argv[1]) : '';
+
+        if ($sub === '' || ($sub === 'general' && ($sub2 === '' || $sub2 === 'status'))) {
+            out("STATE      CONNECTIVITY  WIFI-HW  WIFI     WWAN-HW  WWAN\n"
+              . "connected  full          enabled  enabled  enabled  enabled");
+        }
+
+        if ($sub === 'device' && ($sub2 === '' || $sub2 === 'status')) {
+            out("DEVICE  TYPE      STATE      CONNECTION\n"
+              . "eth0    ethernet  connected  Wired connection 1\n"
+              . "lo      loopback  unmanaged  --");
+        }
+
+        if ($sub === 'device' && $sub2 === 'show') {
+            $dev = isset($argv[2]) ? $argv[2] : 'eth0';
+            out("GENERAL.DEVICE:                         " . $dev . "\n"
+              . "GENERAL.TYPE:                           ethernet\n"
+              . "GENERAL.HWADDR:                         00:15:5D:00:00:01\n"
+              . "GENERAL.MTU:                            1500\n"
+              . "GENERAL.STATE:                          100 (connected)\n"
+              . "GENERAL.CONNECTION:                     Wired connection 1\n"
+              . "GENERAL.CON-PATH:                       /org/freedesktop/NetworkManager/ActiveConnection/1\n"
+              . "WIRED-PROPERTIES.CARRIER:               on\n"
+              . "IP4.ADDRESS[1]:                         192.168.1.10/24\n"
+              . "IP4.GATEWAY:                            192.168.1.1\n"
+              . "IP4.ROUTE[1]:                           dst = 0.0.0.0/0, nh = 192.168.1.1, mt = 100\n"
+              . "IP4.DNS[1]:                             8.8.8.8\n"
+              . "IP4.DNS[2]:                             8.8.4.4\n"
+              . "IP6.ADDRESS[1]:                         fe80::215:5dff:fe00:1/64\n"
+              . "IP6.GATEWAY:                            --");
+        }
+
+        if ($sub === 'connection' && ($sub2 === '' || $sub2 === 'show')) {
+            out("NAME                UUID                                  TYPE      DEVICE\n"
+              . "Wired connection 1  12345678-aaaa-bbbb-cccc-ddddeeeeffff  ethernet  eth0");
+        }
+
+        if ($sub === 'connection' && $sub2 === 'show' && isset($argv[2])) {
+            $conn = $argv[2];
+            out("connection.id:                          " . $conn . "\n"
+              . "connection.uuid:                        12345678-aaaa-bbbb-cccc-ddddeeeeffff\n"
+              . "connection.type:                        802-3-ethernet\n"
+              . "connection.interface-name:              eth0\n"
+              . "connection.autoconnect:                 yes\n"
+              . "ipv4.method:                            auto\n"
+              . "ipv4.addresses:                         --\n"
+              . "ipv4.gateway:                           --\n"
+              . "ipv4.dns:                               --\n"
+              . "GENERAL.STATE:                          activated\n"
+              . "GENERAL.DEFAULT:                        yes\n"
+              . "IP4.ADDRESS[1]:                         192.168.1.10/24\n"
+              . "IP4.GATEWAY:                            192.168.1.1");
+        }
+
+        if ($sub === 'radio') {
+            out("WIFI-HW  WIFI     WWAN-HW  WWAN\n"
+              . "enabled  enabled  enabled  enabled");
+        }
+
+        if ($sub === '--version' || $sub === '-v') {
+            out("nmcli tool, version 1.42.2-1");
+        }
+
+        // Default / help
+        if ($sub === '--help' || $sub === '-h' || $sub === 'help') {
+            out("Usage: nmcli [OPTIONS] OBJECT { COMMAND | help }\n\n"
+              . "OPTIONS:\n"
+              . "  -v[ersion]                         show program version\n"
+              . "  -h[elp]                            print this help\n\n"
+              . "OBJECT:\n"
+              . "  g[eneral]       NetworkManager's general status and operations\n"
+              . "  n[etworking]    overall networking control\n"
+              . "  r[adio]         NetworkManager radio switches\n"
+              . "  c[onnection]    NetworkManager's connections\n"
+              . "  d[evice]        devices managed by NetworkManager\n"
+              . "  a[gent]         NetworkManager secret agent or polkit agent\n"
+              . "  m[onitor]       monitor NetworkManager changes");
+        }
+
+        // If sub command matched above, out() already exited via out(). If we get here
+        // the subcommand was not recognised — show a short error.
+        err("Error: Object '" . $sub . "' is unknown, try 'nmcli help'.");
+    }
 }
