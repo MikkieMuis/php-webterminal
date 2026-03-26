@@ -798,31 +798,32 @@ function vimClose() {
 // ── vimInput keyboard handling ────────────────────────────────────────────
 // The hidden #vimInput textarea holds focus while vim is open so browser
 // extensions (Vimium C, etc.) cannot intercept vim key bindings.
-// We wire up keydown + input events here, mirroring mobileInput in index.php.
 (function() {
-    function getInp() { return document.getElementById('vimInput'); }
-
-    // keydown: handle every key (control keys AND printable) directly.
-    // stopPropagation prevents the document-level keydown from also firing.
     document.addEventListener('DOMContentLoaded', function() {
-        var inp = getInp();
+        var inp = document.getElementById('vimInput');
         if (!inp) return;
+
+        // Track whether the last keydown was handled so the 'input' event
+        // (which also fires for printable keys) doesn't double-fire vimKey.
+        var keydownHandled = false;
 
         inp.addEventListener('keydown', function(e) {
             if (!vimActive) return;
             e.stopPropagation();
             e.preventDefault();
+            keydownHandled = true;
             inp.value = '';
             vimKey(e.key, e.ctrlKey, e.altKey);
         });
 
-        // 'input' event fires on Android / some mobile keyboards for printable
-        // chars before keydown. Feed each character individually.
+        // 'input' event: fallback for Android soft keyboards that don't fire
+        // reliable keydown events. Only process if keydown did NOT already handle it.
         inp.addEventListener('input', function() {
             if (!vimActive) return;
             var val = inp.value;
             inp.value = '';
             if (!val) return;
+            if (keydownHandled) { keydownHandled = false; return; }
             for (var i = 0; i < val.length; i++) {
                 vimKey(val[i], false, false);
             }
